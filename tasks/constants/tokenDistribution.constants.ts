@@ -1,0 +1,15 @@
+export const TOKEN_DISTRIBUTION_ADDRESSES = {
+  goerli: "",
+  sepolia: "0x5B4fd470bc5bE647695f18a6CB4E5Ac530eb8220",
+  hardhat: "",
+  kovan: "",
+  mainnet: "",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+};

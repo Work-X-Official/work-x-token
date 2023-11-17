@@ -1,0 +1,15 @@
+export const WORK_TOKEN_ADDRESSES = {
+  goerli: "",
+  sepolia: "0xF904d047cc673AB3EC0AD1e776c447B895179501",
+  hardhat: "",
+  kovan: "",
+  mainnet: "",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+};

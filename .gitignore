@@ -1,0 +1,33 @@
+# directories
+**/artifacts
+**/build
+**/cache
+**/coverage
+**/typings
+**/.coverage_artifacts
+**/.coverage_cache
+**/.coverage_contracts
+**/dist
+**/node_modules
+**/DS_Store
+
+# files
+*.env
+*.log
+.pnp.*
+coverage.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# types
+**/typings
+
+# cache
+.DS_Store
+.dccache
+
+.vscode
+.yarn
+
+contracts_list.txt
