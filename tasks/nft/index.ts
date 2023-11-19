@@ -1,1 +1,2 @@
 import "./nftDeploy";
+import "./nftInfo";
