@@ -37,6 +37,7 @@ const chainIds = {
   apothem: 51,
   polygon: 137,
   mumbai: 80001,
+  scrollSepolia: 534351,
 };
 
 const chainUrls = {
@@ -53,6 +54,7 @@ const chainUrls = {
   apothem: "https://rpc.apothem.network",
   polygon: "https://polygon-rpc.com/",
   mumbai: "https://rpc-mumbai.maticvigil.com/",
+  scrollSepolia: "https://sepolia-rpc.scroll.io/",
 };
 
 function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
@@ -125,6 +127,7 @@ const config: HardhatUserConfig = {
     apothem: getChainConfig("apothem"),
     polygon: getChainConfig("polygon"),
     mumbai: getChainConfig("mumbai"),
+    scrollSepolia: getChainConfig("scrollSepolia"),
   },
   etherscan: {
     apiKey: {
@@ -138,7 +141,18 @@ const config: HardhatUserConfig = {
       polygonMumbai: process.env.POLYSCAN_API_KEY || "",
       avalanche: process.env.SNOWTRACE_API_KEY || "",
       avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY || "",
+      scrollSepolia: process.env.SCROLLSCAN_API_KEY || "",
     },
+    customChains: [
+      {
+        network: "scrollSepolia",
+        chainId: 534351,
+        urls: {
+          apiURL: "https://sepolia-blockscout.scroll.io/api",
+          browserURL: "https://sepolia-blockscout.scroll.io/",
+        },
+      },
+    ],
   },
 };
 

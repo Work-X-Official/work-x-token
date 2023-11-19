@@ -12,4 +12,5 @@ export const TOKEN_DISTRIBUTION_ADDRESSES = {
   apothem: "",
   polygon: "",
   mumbai: "",
+  scrollSepolia: "0x873dFF5DB8BfFa293Ecc05Ce7be2B447912dDCc7",
 };
