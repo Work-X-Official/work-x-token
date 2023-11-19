@@ -10,6 +10,7 @@ import { resolve } from "path";
 
 import "./tasks/work";
 import "./tasks/sale";
+import "./tasks/nft";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
