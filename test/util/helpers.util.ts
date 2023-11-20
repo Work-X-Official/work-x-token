@@ -13,7 +13,7 @@ export const mineDays = async (days: number, network: Network) => {
   await network.provider.send("evm_mine");
 };
 
-export const mineTime = async (time: number, network: Network) => {
+export const timeTravel = async (time: number, network: Network) => {
   await network.provider.send("evm_increaseTime", [time]);
   await network.provider.send("evm_mine");
 };

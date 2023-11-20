@@ -30,9 +30,9 @@ contract TokenDistribution is Ownable, AccessControl, ReentrancyGuard {
     }
     mapping(address => Balance) public accountBalance;
 
-    constructor(address _tokenAddress) {
+    constructor(address _tokenAddress, uint256 _startTime) {
         workToken = WorkToken(_tokenAddress);
-        startTime = block.timestamp;
+        startTime = _startTime;
     }
 
     /****
@@ -93,21 +93,32 @@ contract TokenDistribution is Ownable, AccessControl, ReentrancyGuard {
         return _vestedTokens(_account);
     }
 
-    function balance(address _account) external view returns (uint256, uint256, uint256, uint256, uint256) {
+    function balance(
+        address _account
+    )
+        external
+        view
+        returns (
+            uint256 _totalBought,
+            uint256 _totalClaimed,
+            uint256 _claimable,
+            uint256 _vested,
+            uint256 _lastClaimDate
+        )
+    {
         Balance memory _balance = accountBalance[_account];
-        return (
-            _balance.totalBought * 10 ** 18,
-            _balance.totalClaimed,
-            _balance.bought1 * 10 ** 18,
-            _balance.bought2 * 10 ** 18,
-            _balance.bought3 * 10 ** 18
-        );
+        _totalBought = uint256(_balance.totalBought) * 10 ** 18;
+        _totalClaimed = _balance.totalClaimed;
+        _claimable = _claimableTokens(_account);
+        _vested = _vestedTokens(_account);
+        _lastClaimDate = lastClaimDate(_account);
     }
 
-    function lastClaimDate() external view returns (uint256) {
+    function lastClaimDate(address _account) public view returns (uint256) {
         if (block.timestamp < startTime) return 0;
+        Balance memory _balance = accountBalance[_account];
+        if (_balance.totalClaimed == 0) return 0;
         uint256 periodLargest = 0;
-        Balance memory _balance = accountBalance[msg.sender];
         periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD1, _balance.totalClaimed, _balance.bought1);
         periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD2, _balance.totalClaimed, _balance.bought2);
         periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD3, _balance.totalClaimed, _balance.bought3);
@@ -144,7 +155,7 @@ contract TokenDistribution is Ownable, AccessControl, ReentrancyGuard {
     }
 
     function _vestedTokens(address _account) private view returns (uint256 vestedAmount) {
-        if (block.timestamp <= startTime) return 0;
+        if (block.timestamp < startTime) return 0;
         Balance memory _balance = accountBalance[_account];
         uint256 timeElapsed = block.timestamp - startTime;
 

@@ -78,7 +78,7 @@ const config: HardhatUserConfig = {
       // Disable the optimizer when debugging
       optimizer: {
         enabled: true,
-        runs: 800,
+        runs: 1000,
       },
     },
   },
@@ -107,11 +107,11 @@ const config: HardhatUserConfig = {
         accountsBalance: "100000000000000000000000000",
       },
       chainId: chainIds.hardhat,
-      forking: process.env.FORK
-        ? {
-            url: process.env.FORK,
-          }
-        : undefined,
+      // forking: process.env.FORK
+      //   ? {
+      //       url: process.env.FORK,
+      //     }
+      //   : undefined,
     },
     mainnet: getChainConfig("mainnet"),
     goerli: getChainConfig("goerli"),
