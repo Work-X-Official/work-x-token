@@ -55,7 +55,7 @@ contract TokenDistribution is Ownable, AccessControl, ReentrancyGuard {
      ****/
 
     function startDistribution(uint256 _startTime) external onlyOwner {
-        require(startTime < block.timestamp, "TokenDistribution: The token distribution has already started");
+        require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
         startTime = _startTime;
     }
 
