@@ -442,7 +442,11 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
 
     function getNftInfo(
         uint256 _tokenId
-    ) external view returns (uint256 staked, uint256 stakingAllowance, uint16 shares, uint16 level, uint16 tier) {
+    )
+        external
+        view
+        returns (uint256 staked, uint256 stakingAllowance, uint16 shares, uint16 level, uint16 tier, uint64 lockPeriod)
+    {
         NftInfo storage _nft = nft[_tokenId];
         for (uint8 i = getCurrentMonth() + 1; i >= 1; i--) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
@@ -453,7 +457,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         }
         stakingAllowance = getStakingAllowance(_tokenId);
         level = getLevel(_tokenId);
-        tier = getTier(_tokenId);
+        tier = _nft.tier;
+        lockPeriod = _nft.lockPeriod;
     }
 
     function getNftInfoAtMonth(
