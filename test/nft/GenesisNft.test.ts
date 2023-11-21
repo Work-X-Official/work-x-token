@@ -316,6 +316,12 @@ describe("GenesisNft", () => {
     before(async () => {
       ownerNft2 = accounts[1];
       ownerNft3 = accounts[2];
+
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 9;
+      await regenerateTokenDistribution(startTime);
+      await regenerateNft();
+
+      await mintNft(network, nft, workToken, nftMinter1, 158075, 0, chainId);
       const lockPeriod = monthsToSeconds(nftLockTimeByStake(5000, seed1kInv));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, ownerNft2, 5000, lockPeriod, chainId));
       await mineDays(11, network);
@@ -324,9 +330,13 @@ describe("GenesisNft", () => {
       await mintNft(network, nft, workToken, ownerNft3, 0, 0, chainId);
     });
 
+    it("Destroying NFT you are not the owner of", async () => {
+      await expectToRevert(nft.connect(ownerNft3).destroyNft(nftId2), "GenesisNft: You are not the owner of this NFT!");
+    });
+
     it("Destroying unapproved NFT", async () => {
       await expectToRevert(
-        nft.connect(nftMinter1).destroyNft(nftId1),
+        nft.connect(ownerNft2).destroyNft(nftId2),
         "GenesisNft: This contract is not allowed to burn this NFT",
       );
     });
@@ -358,6 +368,8 @@ describe("GenesisNft", () => {
       const workTokenBalance = await balanceOf(workToken, accounts[1].address);
       // mine some more because they are a lot longer locked now with the lockfunctions, how long this in the future we have to mine depends on the locktime, this is tested in the distribution functions
       await mineDays(600, network);
+      const staked = await nft.getStaked(nftId2);
+      console.log("staked", staked.toString());
       await nft.connect(accounts[1]).destroyNft(nftId2);
       await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
       expect(await nft.getStaked(nftId2)).to.equal(big(0));

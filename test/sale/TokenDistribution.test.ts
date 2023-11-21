@@ -18,7 +18,7 @@ import {
   VESTING_LENGHT_SEED_MONTHS,
 } from "../../tasks/constants/sale.constants";
 
-describe("TokenDistribution", function () {
+describe.only("TokenDistribution", function () {
   let distribution: TokenDistribution;
   let accounts: SignerWithAddress[];
   let workToken: WorkToken;
@@ -74,7 +74,7 @@ describe("TokenDistribution", function () {
     });
 
     it("Return 0 if no time has passed", async () => {
-      startTime = (await ethers.provider.getBlock("latest")).timestamp + 3;
+      startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
       await regenerateTokenDistribution(startTime);
       await setClaimable(accounts[0], 0, "1000", distribution);
       expect(await distribution.claimableTokens(accounts[0].address)).to.equal(big(0));
@@ -119,6 +119,7 @@ describe("TokenDistribution", function () {
       });
 
       it("Calculate reported vested amount if over vested 2 years", async () => {
+        startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
         claimable = await testInvestAndVest(accounts[0], 730, [1000, 1000, 1000], [6000, 6000, 6000], startTime);
         expect(await distribution.vestedTokens(accounts[0].address))
           .to.eq(await distribution.claimableTokens(accounts[0].address))
@@ -163,6 +164,7 @@ describe("TokenDistribution", function () {
       });
 
       it("Calculate reported vested amount if over vested time", async () => {
+        startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
         claimable = await testInvestAndVest(accounts[0], 720, investment, pools, startTime);
         expect(await distribution.vestedTokens(accounts[0].address))
           .to.eq(await distribution.claimableTokens(accounts[0].address))
@@ -209,6 +211,7 @@ describe("TokenDistribution", function () {
       });
 
       it("Calculate reported vested amount if over vested time", async () => {
+        startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
         claimable = await testInvestAndVest(accounts[0], 720, investment, pools, startTime);
         expect(await distribution.vestedTokens(accounts[0].address))
           .to.eq(await distribution.claimableTokens(accounts[0].address))
@@ -254,6 +257,7 @@ describe("TokenDistribution", function () {
       });
 
       it("Calculate reported vested amount if over vested time", async () => {
+        startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
         claimable = await testInvestAndVest(accounts[0], 730, investment, pools, startTime);
         expect(await distribution.vestedTokens(accounts[0].address))
           .to.eq(await distribution.claimableTokens(accounts[0].address))

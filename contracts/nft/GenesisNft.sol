@@ -201,7 +201,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         );
         uint8 currentMonth = getCurrentMonth();
         _updateMonthly(_tokenId, false, _amount, currentMonth);
-        _updateShares(_tokenId, false);
+        // _updateShares(_tokenId, false);
         NftInfoMonth storage _nftMonth = nft[_tokenId].monthly[currentMonth];
         _nftMonth.hasWithdrawn = 1;
 
@@ -271,8 +271,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     }
 
     function _refundTokens(uint256 _amount) internal {
-        uint256 erc20Balance = token.balanceOf(address(this));
-        require(erc20Balance >= _amount, "GenesisNft: Not enough $WORK tokens in the contract");
+        uint256 amount = token.balanceOf(address(this));
+        require(amount >= _amount, "GenesisNft: Not enough $WORK tokens in the contract");
         token.transfer(msg.sender, _amount);
     }
 
@@ -281,7 +281,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
         for (uint8 i = _month + 1; i >= 1; --i) {
-            NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
+            NftInfoMonth memory _nftMonth = _nft.monthly[i - 1];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1 || i == 1) {
                 uint256 stakedDelta;
                 if (_isIncreasingStake) {
@@ -312,7 +312,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
 
                 for (uint8 ii = _month + 1; ii >= 1; --ii) {
                     // Update monthly totals
-                    NftTotalMonth storage _monthlyTotal = monthlyTotal[ii - 1];
+                    NftTotalMonth memory _monthlyTotal = monthlyTotal[ii - 1];
                     if (_monthlyTotal.totalStaked > 0 || _monthlyTotal.hasWithdrawn == 1 || ii == 1) {
                         if (_isIncreasingStake) {
                             _totalToSet.totalStaked = _monthlyTotal.totalStaked + _amount;

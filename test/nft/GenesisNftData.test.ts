@@ -17,9 +17,9 @@ describe("GenesisNftData", () => {
   });
 
   it("the mapping GenderOptions should be initialized", async () => {
-    const genderOption0 = await genesisNftData.sexOptions("00");
+    const genderOption0 = await genesisNftData.genderOptions("00");
     expect(genderOption0).to.equal("Male");
-    const genderOption1 = await genesisNftData.sexOptions("01");
+    const genderOption1 = await genesisNftData.genderOptions("01");
     expect(genderOption1).to.equal("Female");
   });
 

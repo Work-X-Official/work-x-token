@@ -60,12 +60,13 @@ contract TokenDistribution is Ownable, AccessControl, ReentrancyGuard {
     }
 
     function setWalletClaimable(
-        address[] memory wallet,
-        uint32[] memory amount1,
-        uint32[] memory amount2,
-        uint32[] memory amount3,
-        uint32[] memory totalClaimed
+        address[] calldata wallet,
+        uint32[] calldata amount1,
+        uint32[] calldata amount2,
+        uint32[] calldata amount3,
+        uint32[] calldata totalClaimed
     ) external onlyOwner {
+        require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
         for (uint8 w = 0; w < wallet.length; w++) {
             accountBalance[wallet[w]] = Balance(
                 amount1[w] + amount2[w] + amount3[w],
