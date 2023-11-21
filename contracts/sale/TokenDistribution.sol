@@ -3,15 +3,13 @@
 pragma solidity ^0.8.22;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../work/WorkToken.sol";
 
 //TODO: remove all console.log from contracts
 import "hardhat/console.sol";
 
-contract TokenDistribution is Ownable, AccessControl, ReentrancyGuard {
-    WorkToken public workToken;
+contract TokenDistribution is Ownable {
+    WorkToken public immutable workToken;
 
     uint256 public startTime;
     uint256 public constant VESTING_PERIOD1 = 547.5 days;
@@ -39,7 +37,7 @@ contract TokenDistribution is Ownable, AccessControl, ReentrancyGuard {
      **** EXTERNAL WRITE
      ****/
 
-    function claimTokens() external nonReentrant {
+    function claimTokens() external {
         require(block.timestamp >= startTime, "TokenDistribution: The distribution hasn't started yet");
         uint256 availableTokens = _claimableTokens(msg.sender);
         require(availableTokens > 0, "TokenDistribution: You don't have any tokens to claim");
