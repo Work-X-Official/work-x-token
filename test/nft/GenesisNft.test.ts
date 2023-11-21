@@ -39,7 +39,7 @@ chai.use(solidity);
  * - [x] Test new locktime calculation
  */
 
-describe("GenesisNft", () => {
+describe.only("GenesisNft", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
   let signerImpersonated: SignerWithAddress;
@@ -368,8 +368,6 @@ describe("GenesisNft", () => {
       const workTokenBalance = await balanceOf(workToken, accounts[1].address);
       // mine some more because they are a lot longer locked now with the lockfunctions, how long this in the future we have to mine depends on the locktime, this is tested in the distribution functions
       await mineDays(600, network);
-      const staked = await nft.getStaked(nftId2);
-      console.log("staked", staked.toString());
       await nft.connect(accounts[1]).destroyNft(nftId2);
       await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
       expect(await nft.getStaked(nftId2)).to.equal(big(0));
@@ -396,8 +394,9 @@ describe("GenesisNft", () => {
     let nftId4: number;
     before(async () => {
       ownerNft4 = accounts[4];
-      const timestamp = (await ethers.provider.getBlock("latest")).timestamp;
-      await distribution.startDistribution(timestamp);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
+      await regenerateTokenDistribution(startTime);
+      await regenerateNft();
       ({ nftId: nftId4 } = await mintNft(network, nft, workToken, ownerNft4, 0, 0, chainId));
     });
 
@@ -440,8 +439,9 @@ describe("GenesisNft", () => {
     let nftId5: number;
     before(async () => {
       ownerNft5 = accounts[5];
-      const timestamp = (await ethers.provider.getBlock("latest")).timestamp;
-      await distribution.startDistribution(timestamp);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
+      await regenerateTokenDistribution(startTime);
+      await regenerateNft();
       const lockPeriod = monthsToSeconds(nftLockTimeByStake(251, seed251Inv));
       ({ nftId: nftId5 } = await mintNft(network, nft, workToken, ownerNft5, 251, lockPeriod, chainId));
       await mineDays(1000, network);
@@ -607,6 +607,11 @@ describe("GenesisNft", () => {
     before(async () => {
       ownerNft6 = accounts[6];
       ownerNft7 = accounts[7];
+
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
+      await regenerateTokenDistribution(startTime);
+      await regenerateNft();
+
       voucher = await nftMintVoucherGenerateLocal(
         ownerNft6.address,
         0,
@@ -625,8 +630,6 @@ describe("GenesisNft", () => {
     });
 
     it("Check that the voucher works and is set to used", async () => {
-      const currentBlockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
-      await distribution.startDistribution(currentBlockTimestamp);
       nftId6 = (await nft.nftIdCounter()) + 1;
       await expect(
         await nft
@@ -902,9 +905,10 @@ describe("GenesisNft", () => {
 
   describe("Private Functions: Update monthly staking balances for a tokenId", async () => {
     before(async () => {
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
+      await regenerateTokenDistribution(startTime);
+      await regenerateNft();
       tokenId = await mintNft(network, nft, workToken, nftMinter1, 1000, chainId);
-      const timestamp = (await ethers.provider.getBlock("latest")).timestamp;
-      await tokenDistribution.startDistribution(timestamp);
     });
 
     it("Increase in month 0, minimum stays initial staking amount and current staked adds amount", async () => {

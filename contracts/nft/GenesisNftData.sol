@@ -99,14 +99,14 @@ contract GenesisNftData is Ownable {
     }
 
     function getLevel(uint256 _staked) public view returns (uint16) {
-        for (uint16 s1 = 1; s1 <= 4; s1++) {
+        for (uint256 s1 = 1; s1 <= 4; s1++) {
             if (_staked < uint256(levels[s1 * 20 - 1]) * 10 ** 18) {
-                for (uint16 s2 = 1; s2 <= 4; s2++) {
+                for (uint256 s2 = 1; s2 <= 4; s2++) {
                     if (_staked <= uint256(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * 10 ** 18) {
-                        uint16 ls = (s1 - 1) * 20 + (s2 - 1) * 5;
-                        for (uint16 level = ls; level <= ls + 4; level++) {
+                        uint256 ls = (s1 - 1) * 20 + (s2 - 1) * 5;
+                        for (uint256 level = ls; level <= ls + 4; level++) {
                             if (_staked < uint256(levels[level]) * 10 ** 18) {
-                                return level;
+                                return uint16(level);
                             }
                         }
                     }
@@ -119,7 +119,6 @@ contract GenesisNftData is Ownable {
     function getLevelCapped(uint256 _staked, uint16 _tier) public view returns (uint16) {
         uint16 level = getLevel(_staked);
         if ((_tier + 1) * 10 < level) {
-            //console.log("getLevelCapped.tiercapped", (_tier + 1) * 10, _tier, _staked);
             return (_tier + 1) * 10;
         }
         return level;

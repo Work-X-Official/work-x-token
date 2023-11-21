@@ -11,13 +11,14 @@ import "hardhat/console.sol";
 contract TokenDistribution is Ownable {
     WorkToken public immutable workToken;
 
-    uint128 public startTime;
-    uint128 public constant VESTING_PERIOD1 = 547.5 days;
-    uint128 public constant VESTING_PERIOD2 = 365 days;
-    uint128 public constant VESTING_PERIOD3 = 273.75 days;
-    uint128 public constant VESTING_PERIOD3_DIRECT_UNLOCK = 27.375 days;
+    uint64 public constant VESTING_PERIOD1 = 547.5 days;
+    uint64 public constant VESTING_PERIOD2 = 365 days;
+    uint64 public constant VESTING_PERIOD3 = 273.75 days;
+    uint64 public constant VESTING_PERIOD3_DIRECT_UNLOCK = 27.375 days;
     uint128 constant ONE_E18 = 10 ** 18;
     uint128 constant ONE_E17 = 10 ** 17;
+
+    uint128 public startTime;
 
     event ClaimTokens(address indexed beneficiary, uint256 amount);
 
@@ -81,15 +82,15 @@ contract TokenDistribution is Ownable {
      **** EXTERNAL VIEW
      ****/
 
-    function claimableTokens(address _account) external view returns (uint256) {
+    function claimableTokens(address _account) external view returns (uint128) {
         return _claimableTokens(_account);
     }
 
-    function claimedTokens(address _account) external view returns (uint256) {
+    function claimedTokens(address _account) external view returns (uint128) {
         return accountBalance[_account].totalClaimed;
     }
 
-    function vestedTokens(address _account) external view returns (uint256) {
+    function vestedTokens(address _account) external view returns (uint128) {
         return _vestedTokens(_account);
     }
 
@@ -135,14 +136,17 @@ contract TokenDistribution is Ownable {
         uint128 _period,
         uint128 _claimed,
         uint32 _bought
-    ) private view returns (uint128 periodLargest) {
-        uint128 timeElapsed = uint128(block.timestamp) - startTime;
-        if (timeElapsed > _period) {
-            if (_period > _periodLargest) periodLargest = _period;
-        } else {
-            uint128 tmpPeriod = ((_period * _claimed) / uint128(_bought)) * timeElapsed * _period;
-            if (tmpPeriod > _periodLargest) periodLargest = tmpPeriod;
+    ) private view returns (uint128) {
+        if (_bought > 0) {
+            uint128 timeElapsed = uint128(block.timestamp) - startTime;
+            if (timeElapsed > _period) {
+                if (_period > _periodLargest) return _period;
+            } else {
+                uint128 tmpPeriod = ((_period * _claimed) / uint128(_bought)) * timeElapsed * _period;
+                if (tmpPeriod > _periodLargest) return tmpPeriod;
+            }
         }
+        return _periodLargest;
     }
 
     function _claimableTokens(address _account) private view returns (uint128 claimableAmount) {
