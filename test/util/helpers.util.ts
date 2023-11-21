@@ -4,6 +4,11 @@ import { Network } from "hardhat/types/runtime";
 
 export type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
 
+type ImpersonatedAccounts = {
+  signerImpersonatedAddress: string;
+  stablecoinAddress: string;
+};
+
 export const amount = (a: number) => ethers.utils.parseUnits(a.toString(), 18);
 export const amountFromString = (a: string) => ethers.utils.parseUnits(a, 18);
 export const big = (a: number) => ethers.BigNumber.from(a.toString());
@@ -82,4 +87,58 @@ export const generateCodeSignature = async (account: Signer, code = Math.random(
   const signature = await account.signMessage(ethers.utils.arrayify(codeHash));
 
   return { code: codeHash, signature };
+};
+
+export const getImpersonateAccounts = async (network: Network): Promise<ImpersonatedAccounts> => {
+  let signerImpersonatedAddress: string;
+  let stablecoinAddress: string;
+  let blockNumberStart: number;
+
+  if (process.env.FORK?.includes("https://eth-mainnet.g.alchemy.com/v2/")) {
+    signerImpersonatedAddress = "0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503";
+    stablecoinAddress = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+    blockNumberStart = 18341430;
+  } else if (
+    process.env.FORK === "https://bsc-dataseed.binance.org/" ||
+    process.env.FORK?.includes("https://bsc.getblock.io/")
+  ) {
+    signerImpersonatedAddress = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+    stablecoinAddress = "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56";
+    blockNumberStart = 32568495;
+  } else {
+    console.log("no account is impersonated");
+    throw new Error("no account is impersonated");
+  }
+
+  try {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: process.env.FORK,
+            blockNumber: blockNumberStart,
+          },
+        },
+      ],
+    });
+  } catch (error) {
+    console.log("Error while forking:", error);
+    throw new Error("Error while forking: " + error);
+  }
+
+  try {
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [signerImpersonatedAddress],
+    });
+  } catch (error) {
+    console.log("Error while impersonating account:", error);
+    throw new Error("Error while impersonating account: " + error);
+  }
+
+  return {
+    signerImpersonatedAddress,
+    stablecoinAddress: stablecoinAddress,
+  };
 };

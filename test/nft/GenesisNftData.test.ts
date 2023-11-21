@@ -16,11 +16,11 @@ describe("GenesisNftData", () => {
     genesisNftData = await (await ethers.getContractFactory("GenesisNftData", accounts[0])).deploy();
   });
 
-  it("the mapping sexOptions should be initialized", async () => {
-    const sexOption0 = await genesisNftData.sexOptions("00");
-    expect(sexOption0).to.equal("Male");
-    const sexOption1 = await genesisNftData.sexOptions("01");
-    expect(sexOption1).to.equal("Female");
+  it("the mapping GenderOptions should be initialized", async () => {
+    const genderOption0 = await genesisNftData.sexOptions("00");
+    expect(genderOption0).to.equal("Male");
+    const genderOption1 = await genesisNftData.sexOptions("01");
+    expect(genderOption1).to.equal("Female");
   });
 
   it("the mapping skinOptions should be initialized", async () => {

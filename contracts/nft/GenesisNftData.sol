@@ -6,7 +6,7 @@ contract GenesisNftData is Ownable {
     mapping(string => string) private typeToName;
     mapping(string => string) private typeToDescription;
     mapping(string => string) private typeToImageURI;
-    mapping(string => string) public sexOptions;
+    mapping(string => string) public genderOptions;
     mapping(string => string) public skinOptions;
     mapping(string => string) public professionOptions;
     uint24[80] private levels = [
@@ -93,7 +93,7 @@ contract GenesisNftData is Ownable {
     ];
 
     constructor() {
-        initSexOptions();
+        initGenderOptions();
         initSkinOptions();
         initProfessionOptions();
     }
@@ -160,17 +160,16 @@ contract GenesisNftData is Ownable {
     ) public view returns (string[3] memory attributeArray) {
         string[] memory encodedAttributesArray = split(_encodedAttributes);
 
-        attributeArray[0] = sexOptions[encodedAttributesArray[0]];
+        attributeArray[0] = genderOptions[encodedAttributesArray[0]];
         attributeArray[1] = skinOptions[encodedAttributesArray[1]];
         attributeArray[2] = professionOptions[encodedAttributesArray[2]];
 
         return attributeArray;
     }
 
-    function initSexOptions() public {
-        sexOptions["00"] = "Male";
-        sexOptions["01"] = "Female";
-        sexOptions["02"] = "Male";
+    function initGenderOptions() public {
+        genderOptions["00"] = "Male";
+        genderOptions["01"] = "Female";
     }
 
     function initSkinOptions() public {

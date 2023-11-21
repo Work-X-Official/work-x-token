@@ -1,3 +1,4 @@
+import { BUY_MORE_PRICE } from "../../tasks/constants/sale.constants";
 import { daysToSeconds } from "./helpers.util";
 
 export const vestingPeriods = [daysToSeconds(547.5), daysToSeconds(365), daysToSeconds(273.75)];
@@ -14,7 +15,7 @@ export type Investment = {
   buyMore: number;
 };
 
-export const zeroInv: Investment = {
+const zero = {
   seed: 0,
   seedPool: 0,
   priv: 0,
@@ -25,81 +26,52 @@ export const zeroInv: Investment = {
   buyMore: 0,
 };
 
+export const zeroInv: Investment = {
+  ...zero,
+};
+
 export const seed1kInv: Investment = {
+  ...zero,
   seed: 1000,
   seedPool: 1000,
-  priv: 0,
-  privPool: 0,
-  pre: 0,
-  preDisc: 0,
-  prePool: 0,
-  buyMore: 0,
 };
 
 export const seed251Inv: Investment = {
+  ...zero,
   seed: 24,
   seedPool: 24,
-  priv: 0,
-  privPool: 0,
-  pre: 0,
-  preDisc: 0,
-  prePool: 0,
-  buyMore: 0,
 };
 
 export const seedPriv2kInv: Investment = {
+  ...zero,
   seed: 2000,
   seedPool: 2000,
   priv: 2000,
   privPool: 2000,
-  pre: 0,
-  preDisc: 0,
-  prePool: 0,
-  buyMore: 0,
 };
 
 export const seed8kInv: Investment = {
+  ...zero,
   seed: 8000,
   seedPool: 8000,
-  priv: 0,
-  privPool: 0,
-  pre: 0,
-  preDisc: 0,
-  prePool: 0,
-  buyMore: 0,
 };
 
 export const seed10kInv: Investment = {
+  ...zero,
   seed: 10000,
   seedPool: 10000,
-  priv: 0,
-  privPool: 0,
-  pre: 0,
-  preDisc: 0,
-  prePool: 0,
-  buyMore: 0,
 };
 
 export const seed32kInv: Investment = {
+  ...zero,
   seed: 32000,
   seedPool: 32000,
-  priv: 0,
-  privPool: 0,
-  pre: 0,
-  preDisc: 0,
-  prePool: 0,
-  buyMore: 0,
 };
 
 export const seed140kInv: Investment = {
-  seed: 32000,
-  seedPool: 32000,
-  priv: 0,
-  privPool: 0,
-  pre: 0,
-  preDisc: 0,
-  prePool: 0,
-  buyMore: 0,
+  ...zero,
+  seed: 140000,
+  seedPool: 140000,
 };
 
 export const workBought = (
@@ -127,6 +99,10 @@ export const workBought = (
   const calculatedAmount = Number(amount) / buyPrice;
 
   return Math.ceil(calculatedAmount);
+};
+
+export const calculateBuyMoreTokenBalance = (boughtMore: number): number => {
+  return Math.ceil(boughtMore / BUY_MORE_PRICE);
 };
 
 export const calculateAmountBoughtTotal = (investment: Investment) => {
