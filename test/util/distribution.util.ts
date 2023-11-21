@@ -14,11 +14,10 @@ export const startLater = async (blocks: number, distribution: TokenDistribution
 };
 
 export const claimTokens = async (distribution: TokenDistribution) => {
-  await startLater(1, distribution);
   await distribution.claimTokens();
 };
 
-export const invest = async (
+export const setClaimable = async (
   account: SignerWithAddress,
   round: number,
   amount: string,
@@ -27,18 +26,17 @@ export const invest = async (
   const amount1 = round == 0 ? amount : "0";
   const amount2 = round == 1 ? amount : "0";
   const amount3 = round == 2 ? amount : "0";
-  await startLater(1, distribution);
   await distribution.setWalletClaimable([account.address], [amount1], [amount2], [amount3], [0]);
 };
 
-export const setClaimable = async (
+export const setClaimableByInvestment = async (
   wallet: string,
   invests: number[],
   poolSizes: number[],
   distribution: TokenDistribution,
   preClaimed: number = 0,
 ) => {
-  await startLater(1, distribution);
+  // await startLater(1, distribution);
   await distribution.setWalletClaimable(
     [wallet],
     [invests[0] > 0 ? workBought(0, invests[0], poolSizes[0], false) : 0],
