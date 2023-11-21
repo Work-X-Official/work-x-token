@@ -239,7 +239,9 @@ describe("TokenDistribution", function () {
         const balanceBefore = await workToken.balanceOf(accounts[0].address);
         await claimTokens(distribution);
         const balanceAfter = await workToken.balanceOf(accounts[0].address);
-        expect(balanceAfter.sub(balanceBefore)).to.eq(claimable);
+        const timeElapsed = (await ethers.provider.getBlock("latest")).timestamp - startTime;
+        const total = expectedVestedTotal(timeElapsed, investment, pools);
+        expect(balanceAfter.sub(balanceBefore)).to.eq(total);
         expect(await distribution.claimableTokens(accounts[0].address)).to.equal(big(0));
       });
 
