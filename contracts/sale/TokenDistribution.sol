@@ -15,7 +15,7 @@ contract TokenDistribution is Ownable {
     uint128 public constant VESTING_PERIOD1 = 547.5 days;
     uint128 public constant VESTING_PERIOD2 = 365 days;
     uint128 public constant VESTING_PERIOD3 = 273.75 days;
-    uint128 public constant VESTING_PERIOD3_CLIFF = 27.375 days;
+    uint128 public constant VESTING_PERIOD3_DIRECT_UNLOCK = 27.375 days;
     uint128 constant ONE_E18 = 10 ** 18;
     uint128 constant ONE_E17 = 10 ** 17;
 
@@ -173,7 +173,7 @@ contract TokenDistribution is Ownable {
         if (timeElapsed >= VESTING_PERIOD3) {
             vestedAmount += uint128(_balance.bought3) * ONE_E18;
         } else {
-            if (timeElapsed < VESTING_PERIOD3_CLIFF) {
+            if (timeElapsed < VESTING_PERIOD3_DIRECT_UNLOCK) {
                 vestedAmount += (uint128(_balance.bought3) * ONE_E17);
             } else {
                 vestedAmount += (_balance.bought3 * timeElapsed * ONE_E18) / VESTING_PERIOD3;
