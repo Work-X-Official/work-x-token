@@ -87,7 +87,7 @@ describe("TokenDistribution", function () {
         claimable = await testInvestAndVest(accounts[0], 0, [0, 0, 1000], [0, 0, 6000], startTime);
       });
 
-      it("Revert if minting tokens without having the minter role. the correct tokens that are claimable", async () => {
+      it("Revert if minting tokens without having the minter role. No tokens are claimable", async () => {
         await workToken.revokeRole(await workToken.MINTER_ROLE(), distribution.address);
         const balanceBefore = await workToken.balanceOf(accounts[0].address);
         const claimableTokensBySenderBefore = await distribution.claimableTokens(accounts[0].address);
@@ -128,7 +128,6 @@ describe("TokenDistribution", function () {
       it("Remain 0 after claiming and time passes", async () => {
         const balanceBefore = await workToken.balanceOf(accounts[0].address);
         await distribution.claimTokens();
-        // await timeTravel(-2, network);
         const balanceAfter = await workToken.balanceOf(accounts[0].address);
         expect(balanceAfter.sub(balanceBefore)).to.eq(claimable);
         await mineDays(99999, network);
@@ -138,23 +137,20 @@ describe("TokenDistribution", function () {
 
     describe("Second step sector [25,000 - 75,000]", () => {
       let claimable: BigNumber;
+      const investment = [30_000, 30_000, 30_000];
+      const pools = [30_000, 30_000, 30_000];
       it("Return correct total reported amount based on vesting", async () => {
         startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
-        claimable = await testInvestAndVest(
-          accounts[0],
-          0,
-          [30_000, 30_000, 30_000],
-          [30_000, 30_000, 30_000],
-          startTime,
-        );
+        claimable = await testInvestAndVest(accounts[0], 0, investment, pools, startTime);
       });
 
       it("Mint the correct tokens that are claimable", async () => {
         const balanceBefore = await workToken.balanceOf(accounts[0].address);
         await distribution.claimTokens();
         const balanceAfter = await workToken.balanceOf(accounts[0].address);
-        console.log(ethers.utils.formatEther(balanceBefore.sub(balanceAfter)), ethers.utils.formatEther(claimable));
-        expect(balanceAfter.sub(balanceBefore)).to.eq(claimable);
+        const timeElapsed = (await ethers.provider.getBlock("latest")).timestamp - startTime;
+        const total = expectedVestedTotal(timeElapsed, investment, pools);
+        expect(balanceAfter.sub(balanceBefore)).to.eq(total);
         expect(await distribution.claimableTokens(accounts[0].address)).to.equal(big(0));
       });
 
@@ -167,13 +163,7 @@ describe("TokenDistribution", function () {
       });
 
       it("Calculate reported vested amount if over vested time", async () => {
-        claimable = await testInvestAndVest(
-          accounts[0],
-          720,
-          [30_000, 30_000, 30_000],
-          [30_000, 30_000, 30_000],
-          startTime,
-        );
+        claimable = await testInvestAndVest(accounts[0], 720, investment, pools, startTime);
         expect(await distribution.vestedTokens(accounts[0].address))
           .to.eq(await distribution.claimableTokens(accounts[0].address))
           .to.eq(claimable);
@@ -193,23 +183,20 @@ describe("TokenDistribution", function () {
     describe("Third step sector [75,000 - 150,000]", () => {
       let claimable: BigNumber;
       const days = 10;
+      const investment = [25_000, 25_000, 25_000];
+      const pools = [80_000, 80_000, 80_000];
       it("return correct total reported amount based on vesting", async () => {
         startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
-        claimable = await testInvestAndVest(
-          accounts[0],
-          days,
-          [25_000, 25_000, 25_000],
-          [80_000, 80_000, 80_000],
-          startTime,
-        );
+        claimable = await testInvestAndVest(accounts[0], days, investment, pools, startTime);
       });
 
       it("Mint the correct tokens that are claimable", async () => {
         const balanceBefore = await workToken.balanceOf(accounts[0].address);
         await claimTokens(distribution);
-        // await timeTravel(-2, network);
         const balanceAfter = await workToken.balanceOf(accounts[0].address);
-        expect(balanceAfter.sub(balanceBefore)).to.eq(claimable);
+        const timeElapsed = (await ethers.provider.getBlock("latest")).timestamp - startTime;
+        const total = expectedVestedTotal(timeElapsed, investment, pools);
+        expect(balanceAfter.sub(balanceBefore)).to.eq(total);
         expect(await distribution.claimableTokens(accounts[0].address)).to.equal(big(0));
       });
 
@@ -222,13 +209,7 @@ describe("TokenDistribution", function () {
       });
 
       it("Calculate reported vested amount if over vested time", async () => {
-        claimable = await testInvestAndVest(
-          accounts[0],
-          720,
-          [25_000, 25_000, 25_000],
-          [80_000, 80_000, 80_000],
-          startTime,
-        );
+        claimable = await testInvestAndVest(accounts[0], 720, investment, pools, startTime);
         expect(await distribution.vestedTokens(accounts[0].address))
           .to.eq(await distribution.claimableTokens(accounts[0].address))
           .to.eq(claimable);
@@ -247,22 +228,16 @@ describe("TokenDistribution", function () {
 
     describe("Fourth step sector [150,000 - 250,000]", () => {
       let claimable: BigNumber;
-
+      const investment = [10_000, 10_000, 10_000];
+      const pools = [190_000, 190_000, 190_000];
       it("Return correct total reported amount based on vesting", async () => {
         startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
-        claimable = await testInvestAndVest(
-          accounts[0],
-          10,
-          [10_000, 10_000, 10_000],
-          [190_000, 190_000, 190_000],
-          startTime,
-        );
+        claimable = await testInvestAndVest(accounts[0], 10, investment, pools, startTime);
       });
 
       it("Mint the correct tokens that are claimable", async () => {
         const balanceBefore = await workToken.balanceOf(accounts[0].address);
         await claimTokens(distribution);
-        // await timeTravel(-2, network);
         const balanceAfter = await workToken.balanceOf(accounts[0].address);
         expect(balanceAfter.sub(balanceBefore)).to.eq(claimable);
         expect(await distribution.claimableTokens(accounts[0].address)).to.equal(big(0));
@@ -277,13 +252,7 @@ describe("TokenDistribution", function () {
       });
 
       it("Calculate reported vested amount if over vested time", async () => {
-        claimable = await testInvestAndVest(
-          accounts[0],
-          730,
-          [10_000, 10_000, 10_000],
-          [190_000, 190_000, 190_000],
-          startTime,
-        );
+        claimable = await testInvestAndVest(accounts[0], 730, investment, pools, startTime);
         expect(await distribution.vestedTokens(accounts[0].address))
           .to.eq(await distribution.claimableTokens(accounts[0].address))
           .to.eq(claimable);
