@@ -680,6 +680,12 @@ describe("GenesisNft", () => {
     let nftMinter8: SignerWithAddress;
     let nftMinter9: SignerWithAddress;
 
+    let nftId1: number;
+    let nftId2: number;
+    let nftId3: number;
+
+    let currentMonth: number;
+
     before(async () => {
       nftMinter7 = accounts[7];
       nftMinter8 = accounts[8];
@@ -688,7 +694,7 @@ describe("GenesisNft", () => {
     });
 
     it("Set up NFT 1", async () => {
-      await mintNft(network, nft, workToken, nftMinter7, 0, 0, chainId);
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter7, 0, 0, chainId));
     });
 
     it("Pre-condition check, the current month is 0, the token id shares and total shares are equal, to the shares of tokenId 1", async () => {
@@ -700,7 +706,7 @@ describe("GenesisNft", () => {
 
     it("10 days later, tokenId 2 is minted and received by the nftMinter8", async () => {
       await mineDays(10, network);
-      await mintNft(network, nft, workToken, nftMinter8, 0, 0, chainId);
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter8, 0, 0, chainId));
     });
 
     it("The updateShares is updated correctly, the current month is 0, the shares of id 1 and 2 are equal and total shares are equal to the shares of 1 + 2", async () => {
@@ -755,6 +761,75 @@ describe("GenesisNft", () => {
       await nft.connect(nftMinter7).destroyNft(1);
       expect(await nft.getCurrentMonth()).to.be.equal(7);
       expect((await nft.getTotals(7))._totalShares).to.be.equal(big(51));
+    });
+
+    it("calling stake should increase shares of the nft, if you are not max level", async () => {
+      const nftSharesBefore = await nft.getShares(nftId3);
+      await approveToken(network, workToken, nftMinter9, nft.address);
+      await nft.connect(nftMinter9).stake(nftId3, amount(6580));
+      const nftSharesAfter = await nft.getShares(nftId3);
+      expect(nftSharesAfter).to.be.gt(nftSharesBefore);
+    });
+
+    it("calling stake should not increase shares of the nft, if you are already at max level.", async () => {
+      const levelAfter = await nft.getLevel(nftId3);
+      expect(levelAfter).to.be.equal(10);
+      const nftSharesBefore = await nft.getShares(nftId3);
+      await approveToken(network, workToken, nftMinter9, nft.address);
+      await nft.connect(nftMinter9).stake(nftId3, amount(2000));
+      const nftSharesAfter = await nft.getShares(nftId3);
+      expect(nftSharesAfter).to.be.equal(nftSharesBefore);
+    });
+
+    it("calling unstake should not decrease shares of the nft", async () => {
+      const nftSharesBefore = await nft.getShares(nftId3);
+      await nft.connect(nftMinter9).unstake(nftId3, amount(1000));
+      const nftSharesAfter = await nft.getShares(nftId3);
+      expect(nftSharesAfter).to.be.equal(nftSharesBefore);
+    });
+
+    it("calling evolveTier should increase shares of the nft when it changes your lvl", async () => {
+      const nftSharesBefore = await nft.getShares(nftId3);
+      const nftLevelBefore = await nft.getLevel(nftId3);
+      await nft.connect(nftMinter9).evolveTier(nftId3);
+      const nftSharesAfter = await nft.getShares(nftId3);
+      const nftLevelAfter = await nft.getLevel(nftId3);
+      expect(nftLevelAfter).to.be.gt(nftLevelBefore);
+      expect(nftSharesAfter).to.be.gt(nftSharesBefore);
+    });
+
+    it("calling stake should increase shares total, if you are not max level", async () => {
+      currentMonth = await nft.getCurrentMonth();
+      const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
+      await approveToken(network, workToken, nftMinter9, nft.address);
+      await nft.connect(nftMinter9).stake(nftId3, amount(11000));
+      const totalSharesAfter = (await nft.getTotals(currentMonth))._totalShares;
+      expect(totalSharesAfter).to.be.gt(totalSharesBefore);
+    });
+    it("stake should not increase shares total, if you are already at max level.", async () => {
+      const levelAfter = await nft.getLevel(nftId3);
+      expect(levelAfter).to.be.equal(20);
+      const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
+      await approveToken(network, workToken, nftMinter9, nft.address);
+      await nft.connect(nftMinter9).stake(nftId3, amount(2000));
+      const totalSharesAfter = (await nft.getTotals(currentMonth))._totalShares;
+      expect(totalSharesAfter).to.be.equal(totalSharesBefore);
+    });
+    it("calling unstake should not decrease shares total", async () => {
+      const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
+      await nft.connect(nftMinter9).unstake(nftId3, amount(2000));
+      const totalSharesAfter = (await nft.getTotals(currentMonth))._totalShares;
+      expect(totalSharesAfter).to.be.equal(totalSharesBefore);
+    });
+    it("calling evolveTier should increase shares total of the nft when it changes your lvl", async () => {
+      const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
+      const nftLevelBefore = await nft.getLevel(nftId3);
+      await nft.connect(nftMinter9).evolveTier(nftId3);
+      const totalSharesAfter = (await nft.getTotals(currentMonth))._totalShares;
+      const nftLevelAfter = await nft.getLevel(nftId3);
+
+      expect(nftLevelAfter).to.be.gt(nftLevelBefore);
+      expect(totalSharesAfter).to.be.gt(totalSharesBefore);
     });
   });
 

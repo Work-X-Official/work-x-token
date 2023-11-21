@@ -11,24 +11,26 @@ import "hardhat/console.sol";
 contract TokenDistribution is Ownable {
     WorkToken public immutable workToken;
 
-    uint256 public startTime;
-    uint256 public constant VESTING_PERIOD1 = 547.5 days;
-    uint256 public constant VESTING_PERIOD2 = 365 days;
-    uint256 public constant VESTING_PERIOD3 = 273.75 days;
-    uint256 public constant VESTING_PERIOD3_CLIFF = 27.375 days;
+    uint128 public startTime;
+    uint128 public constant VESTING_PERIOD1 = 547.5 days;
+    uint128 public constant VESTING_PERIOD2 = 365 days;
+    uint128 public constant VESTING_PERIOD3 = 273.75 days;
+    uint128 public constant VESTING_PERIOD3_CLIFF = 27.375 days;
+    uint128 constant ONE_E18 = 10 ** 18;
+    uint128 constant ONE_E17 = 10 ** 17;
 
-    event ClaimTokens(address beneficiary, uint256 amount);
+    event ClaimTokens(address indexed beneficiary, uint256 amount);
 
     struct Balance {
         uint32 totalBought;
         uint32 bought1;
         uint32 bought2;
         uint32 bought3;
-        uint256 totalClaimed;
+        uint128 totalClaimed;
     }
     mapping(address => Balance) public accountBalance;
 
-    constructor(address _tokenAddress, uint256 _startTime) {
+    constructor(address _tokenAddress, uint128 _startTime) {
         workToken = WorkToken(_tokenAddress);
         startTime = _startTime;
     }
@@ -39,12 +41,11 @@ contract TokenDistribution is Ownable {
 
     function claimTokens() external {
         require(block.timestamp >= startTime, "TokenDistribution: The distribution hasn't started yet");
-        uint256 availableTokens = _claimableTokens(msg.sender);
+        uint128 availableTokens = _claimableTokens(msg.sender);
         require(availableTokens > 0, "TokenDistribution: You don't have any tokens to claim");
         Balance storage _balance = accountBalance[msg.sender];
-        _balance.totalClaimed = _balance.totalClaimed + availableTokens;
+        _balance.totalClaimed += availableTokens;
         workToken.mint(msg.sender, availableTokens);
-
         emit ClaimTokens(msg.sender, availableTokens);
     }
 
@@ -52,7 +53,7 @@ contract TokenDistribution is Ownable {
      **** ONLY OWNER
      ****/
 
-    function startDistribution(uint256 _startTime) external onlyOwner {
+    function startDistribution(uint128 _startTime) external onlyOwner {
         require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
         startTime = _startTime;
     }
@@ -65,13 +66,13 @@ contract TokenDistribution is Ownable {
         uint32[] calldata totalClaimed
     ) external onlyOwner {
         require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
-        for (uint8 w = 0; w < wallet.length; w++) {
+        for (uint256 w = 0; w < wallet.length; w++) {
             accountBalance[wallet[w]] = Balance(
                 amount1[w] + amount2[w] + amount3[w],
                 amount1[w],
                 amount2[w],
                 amount3[w],
-                uint256(totalClaimed[w]) * 10 ** 18
+                uint128(totalClaimed[w]) * 10 ** 18
             );
         }
     }
@@ -98,29 +99,30 @@ contract TokenDistribution is Ownable {
         external
         view
         returns (
-            uint256 _totalBought,
-            uint256 _totalClaimed,
-            uint256 _claimable,
-            uint256 _vested,
-            uint256 _lastClaimDate
+            uint128 _totalBought,
+            uint128 _totalClaimed,
+            uint128 _claimable,
+            uint128 _vested,
+            uint128 _lastClaimDate
         )
     {
         Balance memory _balance = accountBalance[_account];
-        _totalBought = uint256(_balance.totalBought) * 10 ** 18;
+        _totalBought = uint128(_balance.totalBought) * ONE_E18;
         _totalClaimed = _balance.totalClaimed;
         _claimable = _claimableTokens(_account);
         _vested = _vestedTokens(_account);
         _lastClaimDate = lastClaimDate(_account);
     }
 
-    function lastClaimDate(address _account) public view returns (uint256) {
+    function lastClaimDate(address _account) public view returns (uint128) {
         if (block.timestamp < startTime) return 0;
         Balance memory _balance = accountBalance[_account];
         if (_balance.totalClaimed == 0) return 0;
-        uint256 periodLargest = 0;
+        uint128 periodLargest = 0;
         periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD1, _balance.totalClaimed, _balance.bought1);
         periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD2, _balance.totalClaimed, _balance.bought2);
         periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD3, _balance.totalClaimed, _balance.bought3);
+        if (periodLargest == 0) return 0;
         return startTime + periodLargest;
     }
 
@@ -129,23 +131,23 @@ contract TokenDistribution is Ownable {
      ****/
 
     function _getLargestPeriod(
-        uint256 _periodLargest,
-        uint256 _period,
-        uint256 _claimed,
+        uint128 _periodLargest,
+        uint128 _period,
+        uint128 _claimed,
         uint32 _bought
-    ) private view returns (uint256 periodLargest) {
-        uint256 timeElapsed = block.timestamp - startTime;
+    ) private view returns (uint128 periodLargest) {
+        uint128 timeElapsed = uint128(block.timestamp) - startTime;
         if (timeElapsed > _period) {
             if (_period > _periodLargest) periodLargest = _period;
         } else {
-            uint256 tmpPeriod = ((_period * _claimed) / uint256(_bought)) * timeElapsed * _period;
+            uint128 tmpPeriod = ((_period * _claimed) / uint128(_bought)) * timeElapsed * _period;
             if (tmpPeriod > _periodLargest) periodLargest = tmpPeriod;
         }
     }
 
-    function _claimableTokens(address _account) private view returns (uint256 claimableAmount) {
-        uint256 vestedAmount = _vestedTokens(_account);
-        uint256 claimed = accountBalance[_account].totalClaimed;
+    function _claimableTokens(address _account) private view returns (uint128 claimableAmount) {
+        uint128 vestedAmount = _vestedTokens(_account);
+        uint128 claimed = accountBalance[_account].totalClaimed;
         if (vestedAmount <= claimed) {
             claimableAmount = 0;
         } else {
@@ -153,28 +155,28 @@ contract TokenDistribution is Ownable {
         }
     }
 
-    function _vestedTokens(address _account) private view returns (uint256 vestedAmount) {
+    function _vestedTokens(address _account) private view returns (uint128 vestedAmount) {
         if (block.timestamp < startTime) return 0;
         Balance memory _balance = accountBalance[_account];
-        uint256 timeElapsed = block.timestamp - startTime;
+        uint128 timeElapsed = uint128(block.timestamp) - startTime;
 
         if (timeElapsed >= VESTING_PERIOD1) {
-            vestedAmount += uint256(_balance.bought1) * 10 ** 18;
+            vestedAmount += uint128(_balance.bought1) * ONE_E18;
         } else {
-            vestedAmount += (_balance.bought1 * timeElapsed * 10 ** 18) / VESTING_PERIOD1;
+            vestedAmount += (_balance.bought1 * timeElapsed * ONE_E18) / VESTING_PERIOD1;
         }
         if (timeElapsed >= VESTING_PERIOD2) {
-            vestedAmount += uint256(_balance.bought2) * 10 ** 18;
+            vestedAmount += uint128(_balance.bought2) * ONE_E18;
         } else {
-            vestedAmount += (_balance.bought2 * timeElapsed * 10 ** 18) / VESTING_PERIOD2;
+            vestedAmount += (_balance.bought2 * timeElapsed * ONE_E18) / VESTING_PERIOD2;
         }
         if (timeElapsed >= VESTING_PERIOD3) {
-            vestedAmount += uint256(_balance.bought3) * 10 ** 18;
+            vestedAmount += uint128(_balance.bought3) * ONE_E18;
         } else {
             if (timeElapsed < VESTING_PERIOD3_CLIFF) {
-                vestedAmount += (uint256(_balance.bought3) * 10 ** 17);
+                vestedAmount += (uint128(_balance.bought3) * ONE_E17);
             } else {
-                vestedAmount += (_balance.bought3 * timeElapsed * 10 ** 18) / VESTING_PERIOD3;
+                vestedAmount += (_balance.bought3 * timeElapsed * ONE_E18) / VESTING_PERIOD3;
             }
         }
     }
