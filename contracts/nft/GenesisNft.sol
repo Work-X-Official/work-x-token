@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.22;
+
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -14,8 +15,6 @@ import "base64-sol/base64.sol";
 
 import "./GenesisNftData.sol";
 import "./../sale/TokenDistribution.sol";
-
-import "hardhat/console.sol";
 
 contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     bytes32 public constant SIGNER_ROLE = keccak256("SIGNER_ROLE");

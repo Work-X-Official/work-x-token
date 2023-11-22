@@ -918,7 +918,7 @@ describe.only("GenesisNft", () => {
 
   /*****************************************************************************
    * The following tests are commented out because they test private functions *
-   *****************************************************************************/
+
   describe("Private Functions: Update monthly staking balances for a tokenId", async () => {
     let nftMinter1: SignerWithAddress;
 
@@ -1021,4 +1021,5 @@ describe.only("GenesisNft", () => {
       expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
     });
   });
+     *****************************************************************************/
 });
