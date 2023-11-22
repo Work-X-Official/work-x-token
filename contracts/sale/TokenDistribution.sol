@@ -70,7 +70,7 @@ contract TokenDistribution is Ownable {
                 amount1[w],
                 amount2[w],
                 amount3[w],
-                uint128(totalClaimed[w]) * 10 ** 18
+                uint128(totalClaimed[w]) * ONE_E18
             );
         }
     }

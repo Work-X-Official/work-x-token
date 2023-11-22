@@ -211,10 +211,10 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     }
 
     /****
-     **** INTERNAL WRITE
+     **** private WRITE
      ****/
 
-    function _updateShares(uint256 _tokenId, bool _isIncreasingShares) internal {
+    function _updateShares(uint256 _tokenId, bool _isIncreasingShares) private {
         uint8 currentMonth = getCurrentMonth();
         uint32 nftSharesOld = getShares(_tokenId);
         uint32 totalSharesCurrentMonth = _getTotalShares(currentMonth);
@@ -230,7 +230,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         }
     }
 
-    function _setInitial(uint256 _tokenId, uint128 _amountToStake) internal {
+    function _setInitial(uint256 _tokenId, uint128 _amountToStake) private {
         uint16 tier = nftData.getLevel(getStaked(_tokenId)) / 10;
         NftInfo storage _nft = nft[_tokenId];
         _nft.tier = tier;
@@ -251,7 +251,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         emit Evolve(_tokenId, tier);
     }
 
-    function _evolveTier(uint256 _tokenId) internal {
+    function _evolveTier(uint256 _tokenId) private {
         uint16 tier = nftData.getLevel(getStaked(_tokenId)) / 10;
         NftInfo storage _nft = nft[_tokenId];
         _nft.tier = tier;
@@ -259,20 +259,20 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         emit Evolve(_tokenId, tier);
     }
 
-    function _stake(uint256 _tokenId, uint128 _amount) internal {
+    function _stake(uint256 _tokenId, uint128 _amount) private {
         _updateMonthly(_tokenId, true, _amount, getCurrentMonth());
         _updateShares(_tokenId, true);
         token.transferFrom(msg.sender, address(this), _amount);
         emit Stake(_tokenId, _amount);
     }
 
-    function _refundTokens(uint256 _amount) internal {
+    function _refundTokens(uint256 _amount) private {
         uint256 amount = token.balanceOf(address(this));
         require(amount >= _amount, "GenesisNft: Not enough $WORK tokens in the contract");
         token.transfer(msg.sender, _amount);
     }
 
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint128 _amount, uint8 _month) public {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint128 _amount, uint8 _month) private {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
@@ -482,10 +482,10 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     }
 
     /****
-     **** INTERNAL VIEW
+     **** private VIEW
      ****/
 
-    function _getTotalShares(uint8 _month) internal view returns (uint32 sharesTotal) {
+    function _getTotalShares(uint8 _month) private view returns (uint32 sharesTotal) {
         sharesTotal = monthlyTotal[_month].totalShares;
         if (_month > 0 && sharesTotal == 0) {
             uint8 i = _month - 1;
@@ -503,7 +503,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         }
     }
 
-    function _calculateShares(uint16 _nftLevel) internal pure returns (uint16) {
+    function _calculateShares(uint16 _nftLevel) private pure returns (uint16) {
         if (_nftLevel == 80) return 320;
         uint24 totalLevelCost = 525;
         uint16 currentLevelIteration = 1;
@@ -522,7 +522,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         uint64 _lockPeriod,
         string calldata _imageUri,
         bytes32 _encodedAttributes
-    ) internal view returns (bytes32) {
+    ) private view returns (bytes32) {
         return
             _hashTypedDataV4(
                 keccak256(
@@ -543,7 +543,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
             );
     }
 
-    function _verify(bytes32 _digest, bytes memory _signature, bytes32 _role) internal view returns (bool) {
+    function _verify(bytes32 _digest, bytes memory _signature, bytes32 _role) private view returns (bool) {
         return hasRole(_role, ECDSA.recover(_digest, _signature));
     }
 }
