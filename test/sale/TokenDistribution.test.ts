@@ -18,7 +18,7 @@ import {
   VESTING_LENGHT_SEED_MONTHS,
 } from "../../tasks/constants/sale.constants";
 
-describe.only("TokenDistribution", function () {
+describe("TokenDistribution", function () {
   let distribution: TokenDistribution;
   let accounts: SignerWithAddress[];
   let workToken: WorkToken;

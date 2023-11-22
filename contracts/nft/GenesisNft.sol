@@ -25,10 +25,10 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     WorkToken public immutable token;
 
     uint128 constant ONE_E18 = 10 ** 18;
+    uint8 constant BASE_STAKE = 50;
     uint8 constant TYPE_GUARANTEED = 0;
     uint8 constant TYPE_FCFS = 1;
     uint8 constant TYPE_INVESTOR = 2;
-    uint8 constant BASE_STAKE = 50;
     uint16 constant DAILY_STAKING_ALLOWANCE = 294;
     uint16 constant COUNT_GUARANTEED = 350;
     uint16 constant COUNT_FCFS = 150;
@@ -82,6 +82,20 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     }
 
     /****
+     **** PUBLIC WRITE
+     ****/
+
+    function stake(uint256 _tokenId, uint128 _amount) public nonReentrant {
+        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
+        uint128 stakedAmount = getStaked(_tokenId);
+        if (nftData.getLevel(stakedAmount) < 80) {
+            uint256 allowance = getStakingAllowance(_tokenId, stakedAmount);
+            require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
+        }
+        _stake(_tokenId, _amount);
+    }
+
+    /****
      **** EXTERNAL WRITE
      ****/
 
@@ -97,7 +111,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         bytes calldata _signature
     ) external nonReentrant {
         require(accountMinted[_account] == 0, "GenesisNft: This account already minted an NFT");
-        //TODO: write a test for this
         bytes32 digest = _hashMint(
             _account,
             _voucherId,
@@ -166,18 +179,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         _refundTokens(stakedAmount);
     }
 
-    function stake(uint256 _tokenId, uint128 _amount) external nonReentrant {
-        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        uint256 allowance = getStakingAllowance(_tokenId);
-        require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
-        _stake(_tokenId, _amount);
-    }
-
     function stakeAndEvolve(uint256 _tokenId, uint128 _amount) external nonReentrant {
-        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        uint256 allowance = getStakingAllowance(_tokenId);
-        require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
-        _stake(_tokenId, _amount);
+        stake(_tokenId, _amount);
         _evolveTier(_tokenId);
     }
 
@@ -237,8 +240,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
 
         uint8 _currentMonth = getCurrentMonth();
 
-        for (uint8 i = 0; i <= _currentMonth; i++) {
-            NftTotalMonth storage totalMonthly = monthlyTotal[i];
+        for (uint256 i = 0; i <= _currentMonth; i++) {
+            NftTotalMonth storage totalMonthly = monthlyTotal[uint8(i)];
             totalMonthly.minimumStaked += _amountToStake;
             totalMonthly.totalStaked += _amountToStake;
             if (totalMonthly.totalShares > 0 || i == 0) {
@@ -270,30 +273,33 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         token.transfer(msg.sender, _amount);
     }
 
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint128 _amount, uint8 _month) internal {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint128 _amount, uint8 _month) public {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
-        for (uint8 i = _month + 1; i >= 1; --i) {
-            NftInfoMonth memory _nftMonth = _nft.monthly[i - 1];
+        for (uint256 i = _month + 1; i >= 1; --i) {
+            NftInfoMonth memory _nftMonth = _nft.monthly[uint8(i - 1)];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1 || i == 1) {
                 if (_isIncreasingStake) {
                     _nftMonthToSet.staked = _nftMonth.staked + _amount;
                     if (i < _month + 1) {
-                        _nftMonthToSet.minimumStaked = _nftMonth.minimumStaked;
-                    } else {
                         _nftMonthToSet.minimumStaked = _nftMonth.staked;
+                    } else {
+                        _nftMonthToSet.minimumStaked = _nftMonth.minimumStaked;
                     }
                 } else {
                     if (_nftMonth.staked >= _amount) {
                         _nftMonthToSet.staked = _nftMonth.staked - _amount;
-                        if (_nftMonthToSet.staked < _nftMonth.minimumStaked) {
+                        uint128 _minimumToCheck = i < _month + 1 ? _nftMonth.staked : _nftMonth.minimumStaked;
+                        if (_nftMonthToSet.staked < _minimumToCheck) {
                             _nftMonthToSet.minimumStaked = _nftMonthToSet.staked;
                         } else {
-                            _nftMonthToSet.minimumStaked = _nftMonth.minimumStaked;
+                            if (i < _month + 1) {
+                                _nftMonthToSet.minimumStaked = _nftMonth.staked;
+                            } else {
+                                _nftMonthToSet.minimumStaked = _nftMonth.minimumStaked;
+                            }
                         }
-                        // TODO: set this here, after shares calculation is included in this function
-                        // _nftMonthToSet.hasWithdrawn = 1;
                     } else {
                         revert("GenesisNft: You are trying to unstake more than the total staked in this nft!");
                     }
@@ -336,13 +342,17 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         return super.supportsInterface(_interfaceId);
     }
 
-    function getStakingAllowance(uint256 _tokenId) public view returns (uint128 stakingAllowance) {
+    function getStakingAllowance(uint256 _tokenId, uint128 _staked) public view returns (uint128 stakingAllowance) {
         if (tokenDistribution.startTime() > block.timestamp) return 0;
-        stakingAllowance =
-            ((((((uint128(block.timestamp) - tokenDistribution.startTime()) / 1 days) * DAILY_STAKING_ALLOWANCE)) +
-                DAILY_STAKING_ALLOWANCE) * ONE_E18) +
-            nft[_tokenId].stakedAtMint -
-            getStaked(_tokenId);
+
+        uint128 accumulatedAllowance = (((
+            (((uint128(block.timestamp) - tokenDistribution.startTime()) / 1 days) * DAILY_STAKING_ALLOWANCE)
+        ) + DAILY_STAKING_ALLOWANCE) * ONE_E18);
+        if (accumulatedAllowance + nft[_tokenId].stakedAtMint > _staked) {
+            stakingAllowance = accumulatedAllowance + nft[_tokenId].stakedAtMint - _staked;
+        } else {
+            return 0;
+        }
     }
 
     function getLevel(uint256 _tokenId) public view returns (uint16) {
@@ -436,29 +446,40 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     )
         external
         view
-        returns (uint128 staked, uint128 stakingAllowance, uint16 shares, uint16 level, uint16 tier, uint64 lockPeriod)
+        returns (
+            uint128 _staked,
+            uint128 _stakingAllowance,
+            uint16 _shares,
+            uint16 _level,
+            uint16 _tier,
+            uint64 _lockPeriod
+        )
     {
         NftInfo storage _nft = nft[_tokenId];
-        for (uint8 i = getCurrentMonth() + 1; i >= 1; i--) {
-            NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
-            if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1 || i == 1) {
-                staked = _nftMonth.staked;
-                shares = _nftMonth.shares;
+        for (uint256 i = getCurrentMonth() + 1; i >= 1; --i) {
+            NftInfoMonth storage _nftMonth = _nft.monthly[uint8(i - 1)];
+            if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1) {
+                _staked = _nftMonth.staked;
+                _shares = _nftMonth.shares;
+                break;
             }
         }
-        stakingAllowance = getStakingAllowance(_tokenId);
-        level = getLevel(_tokenId);
-        tier = _nft.tier;
-        lockPeriod = _nft.lockPeriod;
+        _stakingAllowance = getStakingAllowance(_tokenId, _staked);
+        _level = getLevel(_tokenId);
+        _tier = _nft.tier;
+        _lockPeriod = _nft.lockPeriod;
+        return (_staked, _stakingAllowance, _shares, _level, _tier, _lockPeriod);
     }
 
     function getNftInfoAtMonth(
         uint256 _tokenId,
         uint8 _month
     ) external view returns (uint256 shares, uint256 staked, uint256 minimumStaked) {
-        shares = nft[_tokenId].monthly[_month].shares;
-        staked = nft[_tokenId].monthly[_month].staked;
-        minimumStaked = nft[_tokenId].monthly[_month].minimumStaked;
+        NftInfo storage _nft = nft[_tokenId];
+        NftInfoMonth storage _nftMonth = _nft.monthly[_month];
+        shares = _nftMonth.shares;
+        staked = _nftMonth.staked;
+        minimumStaked = _nftMonth.minimumStaked;
     }
 
     /****
