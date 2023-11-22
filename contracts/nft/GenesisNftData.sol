@@ -3,6 +3,7 @@ pragma solidity ^0.8.22;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GenesisNftData is Ownable {
+    uint128 constant ONE_E18 = 10 ** 18;
     mapping(string => string) private typeToName;
     mapping(string => string) private typeToDescription;
     mapping(string => string) private typeToImageURI;
@@ -98,14 +99,14 @@ contract GenesisNftData is Ownable {
         initProfessionOptions();
     }
 
-    function getLevel(uint256 _staked) public view returns (uint16) {
+    function getLevel(uint128 _staked) public view returns (uint16) {
         for (uint256 s1 = 1; s1 <= 4; s1++) {
-            if (_staked < uint256(levels[s1 * 20 - 1]) * 10 ** 18) {
+            if (_staked < uint128(levels[s1 * 20 - 1]) * ONE_E18) {
                 for (uint256 s2 = 1; s2 <= 4; s2++) {
-                    if (_staked <= uint256(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * 10 ** 18) {
+                    if (_staked <= uint128(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * ONE_E18) {
                         uint256 ls = (s1 - 1) * 20 + (s2 - 1) * 5;
                         for (uint256 level = ls; level <= ls + 4; level++) {
-                            if (_staked < uint256(levels[level]) * 10 ** 18) {
+                            if (_staked < uint128(levels[level]) * ONE_E18) {
                                 return uint16(level);
                             }
                         }
@@ -116,7 +117,7 @@ contract GenesisNftData is Ownable {
         return 80;
     }
 
-    function getLevelCapped(uint256 _staked, uint16 _tier) public view returns (uint16) {
+    function getLevelCapped(uint128 _staked, uint16 _tier) public view returns (uint16) {
         uint16 level = getLevel(_staked);
         if ((_tier + 1) * 10 < level) {
             return (_tier + 1) * 10;
@@ -124,19 +125,19 @@ contract GenesisNftData is Ownable {
         return level;
     }
 
-    function getTokensRequiredForLevel(uint16 _level) public view returns (uint256) {
+    function getTokensRequiredForLevel(uint16 _level) public view returns (uint128) {
         require(_level <= levels.length, "Level must be less than or equal to max level");
-        return uint256(levels[_level - 1]) * 10 ** 18;
+        return uint128(levels[_level - 1]) * ONE_E18;
     }
 
-    function getTokensRequiredForTier(uint24 _tier) public view returns (uint256) {
+    function getTokensRequiredForTier(uint24 _tier) public view returns (uint128) {
         if (_tier == 0) {
             return 0;
         }
         if (_tier * 10 <= levels.length) {
-            return uint256(levels[(_tier * 10) - 1]) * 10 ** 18;
+            return uint128(levels[(_tier * 10) - 1]) * ONE_E18;
         } else {
-            return uint256(levels[levels.length - 1]) * 10 ** 18;
+            return uint128(levels[levels.length - 1]) * ONE_E18;
         }
     }
 

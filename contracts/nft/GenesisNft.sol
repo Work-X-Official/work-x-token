@@ -277,28 +277,23 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         for (uint8 i = _month + 1; i >= 1; --i) {
             NftInfoMonth memory _nftMonth = _nft.monthly[i - 1];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1 || i == 1) {
-                uint128 stakedDelta;
                 if (_isIncreasingStake) {
+                    _nftMonthToSet.staked = _nftMonth.staked + _amount;
                     if (i < _month + 1) {
                         _nftMonthToSet.minimumStaked = _nftMonth.minimumStaked;
                     } else {
                         _nftMonthToSet.minimumStaked = _nftMonth.staked;
                     }
-                    _nftMonthToSet.staked = _nftMonth.staked + _amount;
                 } else {
                     if (_nftMonth.staked >= _amount) {
                         _nftMonthToSet.staked = _nftMonth.staked - _amount;
-                        stakedDelta = _nftMonth.staked - _nftMonth.minimumStaked;
-                        if (stakedDelta < _amount) {
-                            if (stakedDelta > 0) {
-                                _nftMonthToSet.minimumStaked = _nftMonth.minimumStaked - (_amount - stakedDelta);
-                            } else {
-                                _nftMonthToSet.minimumStaked = 0;
-                            }
+                        if (_nftMonthToSet.staked < _nftMonth.minimumStaked) {
+                            _nftMonthToSet.minimumStaked = _nftMonthToSet.staked;
                         } else {
                             _nftMonthToSet.minimumStaked = _nftMonth.minimumStaked;
                         }
-                        _nftMonthToSet.hasWithdrawn = 1;
+                        // TODO: set this here, after shares calculation is included in this function
+                        // _nftMonthToSet.hasWithdrawn = 1;
                     } else {
                         revert("GenesisNft: You are trying to unstake more than the total staked in this nft!");
                     }
@@ -310,14 +305,16 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
                     if (_monthlyTotal.totalStaked > 0 || _monthlyTotal.hasWithdrawn == 1 || ii == 1) {
                         if (_isIncreasingStake) {
                             _totalToSet.totalStaked = _monthlyTotal.totalStaked + _amount;
-                            _totalToSet.minimumStaked = _monthlyTotal.totalStaked;
+                            if (ii < _month + 1) {
+                                _totalToSet.minimumStaked = _monthlyTotal.totalStaked;
+                            }
                         } else {
                             if (_monthlyTotal.totalStaked >= _amount) {
                                 _totalToSet.totalStaked = _monthlyTotal.totalStaked - _amount;
-                                if (_monthlyTotal.minimumStaked >= stakedDelta) {
-                                    _totalToSet.minimumStaked = _monthlyTotal.minimumStaked - stakedDelta;
+                                if (_totalToSet.totalStaked < _monthlyTotal.minimumStaked) {
+                                    _totalToSet.minimumStaked = _totalToSet.totalStaked;
                                 } else {
-                                    revert("GenesisNft: You are trying to unstake more than the total staked!");
+                                    _totalToSet.minimumStaked = _monthlyTotal.minimumStaked;
                                 }
                             } else {
                                 revert("GenesisNft: You are trying to unstake more than the amount staked!");
