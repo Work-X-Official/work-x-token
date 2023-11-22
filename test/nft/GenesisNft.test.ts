@@ -39,7 +39,7 @@ chai.use(solidity);
  * - [x] Test new locktime calculation
  */
 
-describe.only("GenesisNft", () => {
+describe("GenesisNft", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
   let signerImpersonated: SignerWithAddress;
@@ -917,7 +917,8 @@ describe.only("GenesisNft", () => {
   };
 
   /*****************************************************************************
-   * The following tests are commented out because they test private functions *
+   * The following tests are commented out because they test _updateMonthly    *
+   * If you want to use them uncomment them and make _updateMonthly public     *
 
   describe("Private Functions: Update monthly staking balances for a tokenId", async () => {
     let nftMinter1: SignerWithAddress;
@@ -1019,6 +1020,99 @@ describe.only("GenesisNft", () => {
       const nftInfoMonth = await nft.getNftInfoAtMonth(nftId1, 4);
       expect(nftInfoMonth.staked).to.be.equal(amount(0));
       expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
+    });
+  });
+
+  describe("Private Functions: Update monthly staking balances, total and minimum", async () => {
+    let nftMinter1: SignerWithAddress;
+    let nftId1: number;
+
+    before(async () => {
+      nftMinter1 = accounts[1];
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 9;
+      await regenerateTokenDistribution(startTime);
+      await regenerateNft();
+      ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 1000, 0, chainId));
+    });
+
+    it("Totals, Increase in month 0, minimum stays initial staking amount and current staked adds amount", async () => {
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, true, amount(1000), 0);
+      const totals = await nft.getTotals(0);
+      expect(totals._totalBalance).to.be.equal(amount(2000));
+      expect(totals._minimumBalance).to.be.equal(amount(1000));
+    });
+
+    it("Totals, Decrease in month 0, minimum stays initial staking amount and current staked decreases amount", async () => {
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(500), 0);
+      const totals = await nft.getTotals(0);
+      expect(totals._totalBalance).to.be.equal(amount(1500));
+      expect(totals._minimumBalance).to.be.equal(amount(1000));
+    });
+
+    it("Totals, In month 1, start with an increase, minimum should be the last value from month 0, and tokens should increase", async () => {
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, true, amount(1000), 1);
+      const totals = await nft.getTotals(1);
+      expect(totals._totalBalance).to.be.equal(amount(2500));
+      expect(totals._minimumBalance).to.be.equal(amount(1500));
+
+      const totalsPrev = await nft.getTotals(0);
+      expect(totals._minimumBalance).to.be.equal(totalsPrev._totalBalance);
+    });
+
+    it("Totals, In month 1, perform a lot of differen increase and decreases and check if the staked and minimum is correct", async () => {
+      let totals = await nft.getTotals(1);
+      expect(totals._totalBalance).to.be.equal(amount(2500));
+      expect(totals._minimumBalance).to.be.equal(amount(1500));
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, true, amount(1000), 1);
+
+      totals = await nft.getTotals(1);
+      expect(totals._totalBalance).to.be.equal(amount(3500));
+      expect(totals._minimumBalance).to.be.equal(amount(1500));
+
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(750), 1);
+      totals = await nft.getTotals(1);
+      expect(totals._totalBalance).to.be.equal(amount(2750));
+      expect(totals._minimumBalance).to.be.equal(amount(1500));
+
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(750), 1);
+      totals = await nft.getTotals(1);
+      expect(totals._totalBalance).to.be.equal(amount(2000));
+      expect(totals._minimumBalance).to.be.equal(amount(1500));
+
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, true, amount(2000), 1);
+      totals = await nft.getTotals(1);
+      expect(totals._totalBalance).to.be.equal(amount(4000));
+
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(3000), 1);
+      totals = await nft.getTotals(1);
+      expect(totals._minimumBalance).to.be.equal(amount(1000));
+    });
+
+    it("Totals, In month 2, Start with a decrease and both minimum and staked should both be the same new lower value", async () => {
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(500), 2);
+      const totals = await nft.getTotals(2);
+      expect(totals._totalBalance).to.be.equal(amount(500));
+      expect(totals._minimumBalance).to.be.equal(amount(500));
+    });
+
+    it("Totals, In month 2, increase after initial decrease, the staked should increase and the minimum should stay the same", async () => {
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, true, amount(1000), 2);
+      const totals = await nft.getTotals(2);
+      expect(totals._totalBalance).to.be.equal(amount(1500));
+      expect(totals._minimumBalance).to.be.equal(amount(500));
+    });
+
+    it("Totals, Skip two months and in month 4, we start with a decrease of 500 to see if it works with skipped months", async () => {
+      await nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(500), 4);
+      const totals = await nft.getTotals(4);
+      expect(totals._totalBalance).to.be.equal(amount(1000));
+      expect(totals._minimumBalance).to.be.equal(amount(1000));
+    });
+
+    it("Totals, In month 4, try to decrease more than the current balance, it should revert", async () => {
+      await expect(nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(2000), 4)).to.be.revertedWith(
+        "GenesisNft: You are trying to unstake more than the total staked in this nft!",
+      );
     });
   });
      *****************************************************************************/

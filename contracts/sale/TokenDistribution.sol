@@ -93,58 +93,17 @@ contract TokenDistribution is Ownable {
 
     function balance(
         address _account
-    )
-        external
-        view
-        returns (
-            uint128 _totalBought,
-            uint128 _totalClaimed,
-            uint128 _claimable,
-            uint128 _vested,
-            uint128 _lastClaimDate
-        )
-    {
+    ) external view returns (uint128 _totalBought, uint128 _totalClaimed, uint128 _claimable, uint128 _vested) {
         Balance memory _balance = accountBalance[_account];
         _totalBought = uint128(_balance.totalBought) * ONE_E18;
         _totalClaimed = _balance.totalClaimed;
         _claimable = _claimableTokens(_account);
         _vested = _vestedTokens(_account);
-        _lastClaimDate = lastClaimDate(_account);
-    }
-
-    function lastClaimDate(address _account) public view returns (uint128) {
-        if (block.timestamp < startTime) return 0;
-        Balance memory _balance = accountBalance[_account];
-        if (_balance.totalClaimed == 0) return 0;
-        uint128 periodLargest = 0;
-        periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD1, _balance.totalClaimed, _balance.bought1);
-        periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD2, _balance.totalClaimed, _balance.bought2);
-        periodLargest = _getLargestPeriod(periodLargest, VESTING_PERIOD3, _balance.totalClaimed, _balance.bought3);
-        if (periodLargest == 0) return 0;
-        return startTime + periodLargest;
     }
 
     /****
      **** PRIVATE VIEW
      ****/
-
-    function _getLargestPeriod(
-        uint128 _periodLargest,
-        uint128 _period,
-        uint128 _claimed,
-        uint32 _bought
-    ) private view returns (uint128) {
-        if (_bought > 0) {
-            uint128 timeElapsed = uint128(block.timestamp) - startTime;
-            if (timeElapsed > _period) {
-                if (_period > _periodLargest) return _period;
-            } else {
-                uint128 tmpPeriod = ((_period * _claimed) / uint128(_bought)) * timeElapsed * _period;
-                if (tmpPeriod > _periodLargest) return tmpPeriod;
-            }
-        }
-        return _periodLargest;
-    }
 
     function _claimableTokens(address _account) private view returns (uint128 claimableAmount) {
         uint128 vestedAmount = _vestedTokens(_account);

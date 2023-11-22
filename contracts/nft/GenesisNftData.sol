@@ -3,6 +3,8 @@
 pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "base64-sol/base64.sol";
 
 contract GenesisNftData is Ownable {
     uint128 constant ONE_E18 = 10 ** 18;
@@ -197,5 +199,82 @@ contract GenesisNftData is Ownable {
         professionOptions["08"] = "Influencer";
         professionOptions["09"] = "Security Researcher";
         professionOptions["10"] = "Sales";
+    }
+
+    function tokenUriTraits(
+        uint16 _level,
+        uint16 _tier,
+        uint128 _staked,
+        uint16 _shares,
+        string calldata _encodedAttributes,
+        uint256 _unlockTime,
+        string calldata _imageUri
+    ) public view returns (string memory) {
+        string[3] memory attributes = decodeAttributes(_encodedAttributes);
+
+        string memory combinedStr2 = string(
+            abi.encodePacked('", "attributes":', '[{"trait_type": "level",', '"value":', Strings.toString(_level))
+        );
+
+        string memory combinedStr3 = string(
+            abi.encodePacked(
+                '},{"trait_type": "tier",',
+                '"value":',
+                Strings.toString(_tier),
+                '},{"trait_type": "work tokens staked",',
+                '"value":',
+                Strings.toString(_staked / ONE_E18)
+            )
+        );
+
+        string memory combinedStr4 = string(
+            abi.encodePacked(
+                '},{"trait_type": "sex",',
+                '"value":"',
+                attributes[0],
+                '"},{"trait_type": "skin",',
+                '"value":"',
+                attributes[1],
+                '"},{"trait_type": "profession",',
+                '"value":"',
+                attributes[2],
+                '"},'
+            )
+        );
+
+        string memory combinedStr5 = string(
+            abi.encodePacked(
+                '{"display_type": "boost_number", "trait_type": "staking multiplier",',
+                '"value":',
+                Strings.toString(_shares),
+                '},{"display_type": "date", "trait_type": "tokens locked until",',
+                '"value":',
+                Strings.toString(_unlockTime),
+                "}]",
+                "}"
+            )
+        );
+
+        string memory info = string(
+            abi.encodePacked(
+                '{"name":"Work X Genesis NFT", "description":"This Work X Genesis NFT was earned by being an early Work X adopter.", "image":"',
+                _imageUri
+            )
+        );
+
+        return
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            abi.encodePacked(
+                                info,
+                                string(abi.encodePacked(combinedStr2, combinedStr3, combinedStr4, combinedStr5))
+                            )
+                        )
+                    )
+                )
+            );
     }
 }
