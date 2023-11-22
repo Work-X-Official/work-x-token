@@ -28,7 +28,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     uint8 constant TYPE_GUARANTEED = 0;
     uint8 constant TYPE_FCFS = 1;
     uint8 constant TYPE_INVESTOR = 2;
-    uint8 constant TYPE_FCFSF = 3;
     uint8 constant BASE_STAKE = 50;
     uint16 constant DAILY_STAKING_ALLOWANCE = 294;
     uint16 constant COUNT_GUARANTEED = 350;
@@ -122,11 +121,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
             require(
                 nftIdCounter < COUNT_GUARANTEED + COUNT_FCFS + COUNT_INVESTOR - 1,
                 "GenesisNft: No more early contributor spots."
-            );
-        } else if (_type == TYPE_FCFSF) {
-            require(
-                nftIdCounter < COUNT_GUARANTEED + COUNT_FCFS + COUNT_INVESTOR - 1,
-                "GenesisNft: No more first-come first-serve spots."
             );
         } else {
             revert("GenesisNft: All NFT's have been minted");
