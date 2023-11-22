@@ -39,7 +39,7 @@ chai.use(solidity);
  * - [x] Test new locktime calculation
  */
 
-describe.only("GenesisNft", () => {
+describe("GenesisNft", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
   let signerImpersonated: SignerWithAddress;
