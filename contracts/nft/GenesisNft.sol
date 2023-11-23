@@ -199,6 +199,12 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         _refundTokens(stakedAmount);
     }
 
+    /**
+     * @notice The stakeAndEvolve function calls the stake function and afterwards evolves the NFT to the a higher tier if applicable.
+     * @dev The tokenURI is dynamically generated, it will be based on the type and level and many other variables and is then formatted.
+     * @param _tokenId The id of the nft.
+     * @param _amount a string which is the tokenURI of an nft.
+     **/
     function stakeAndEvolve(uint256 _tokenId, uint128 _amount) external nonReentrant {
         stake(_tokenId, _amount);
         _evolveTier(_tokenId);

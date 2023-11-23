@@ -13,13 +13,16 @@ task("work:mint")
     const workToken = (await hre.ethers.getContractFactory("WorkToken")).attach(
       WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
     );
-    const currentBalance = await workToken.balanceOf(to);
 
     console.log("╔══════════════════════════════════════════════════════════════════════");
     console.log("║ On '" + hre.network.name + "'");
     console.log("║ WorkToken contract:", workToken.address);
-    console.log("║ Account that will receive tokens: ", minter.address);
+    console.log("║ Account that will receive tokens: ", to.address);
+    const currentBalance = await workToken.balanceOf(to);
     console.log("║ Previous $WORK balance of the account:", hre.ethers.utils.formatEther(currentBalance));
+    const grantRole = await workToken.grantRole(await workToken.MINTER_ROLE(), minter.address);
+    await grantRole.wait();
+    console.log("║ The minter role has been assigned to the minter account");
     console.log("║ The minter is minting " + amount + " tokens to " + to);
     console.log("║ minting...");
     console.log("║ waiting for confirmation...");

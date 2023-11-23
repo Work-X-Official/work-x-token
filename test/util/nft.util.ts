@@ -10,7 +10,7 @@ import { Investment, calculateAmountBoughtTotal, calculateBuyMoreTokenBalance } 
 import { MIN_TOKEN_STAKING, VESTING_LENGHT_BUY_MORE_MONTHS } from "../../tasks/constants/sale.constants";
 import { avgMonthsVest, maxLockLength } from "./distribution.util";
 
-interface nftIds {
+interface NftIds {
   nftId: number;
   voucherId: number;
 }
@@ -22,8 +22,9 @@ export const mintNft = async (
   account: SignerWithAddress,
   stakingAmount: number,
   lockPeriod: number,
+  type: number,
   chainId: number,
-): Promise<nftIds> => {
+): Promise<NftIds> => {
   const voucher = await nftMintVoucherGenerateLocal(
     account.address,
     stakingAmount,
@@ -31,6 +32,7 @@ export const mintNft = async (
     chainId,
     nft.address,
     lockPeriod,
+    type,
   );
 
   const tokenId = (await nft.nftIdCounter()) + 1;
@@ -42,7 +44,7 @@ export const mintNft = async (
         .mintNft(
           account.address,
           voucher.voucherId,
-          0,
+          type,
           voucher.lockPeriod,
           amount(stakingAmount),
           voucher.imageUri,
@@ -88,13 +90,14 @@ export const nftMintVoucherGenerateLocal = async (
   chainId: number,
   nftContractAddress: string,
   lockPeriod: number,
+  type: number,
 ): Promise<Voucher> => {
   const encodedAttributes = encodeAttributes(chosenAttributes);
   const voucherId = Math.floor(Math.random() * 10000);
   const imageUri = "https://content.workx.io/images/metamask_gold.png";
   const signature = await createSignatureMint(
     voucherId,
-    0,
+    type,
     walletAddress,
     amount(stake),
     lockPeriod,
@@ -210,3 +213,21 @@ export function nftLockTimeByStake(stakingAmount: number, investment: Investment
     return 0;
   }
 }
+
+export const mintNftMany = async (
+  network: Network,
+  nft: GenesisNft,
+  workToken: WorkToken,
+  accounts: SignerWithAddress[],
+  nftMintQuantity: number,
+  type: number,
+  chainId: number,
+): Promise<NftIds[]> => {
+  const nftIds: NftIds[] = [];
+  const nftCountCurrent = await nft.nftIdCounter();
+  for (let i = 0; i < nftMintQuantity; i++) {
+    const nftId = await mintNft(network, nft, workToken, accounts[i + nftCountCurrent], 0, 0, type, chainId);
+    nftIds.push(nftId);
+  }
+  return nftIds;
+};
