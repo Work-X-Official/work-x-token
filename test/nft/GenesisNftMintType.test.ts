@@ -14,7 +14,7 @@ chai.use(solidity);
 
 // To use these test it is necessary to set number of accounts in hardhat config to minimum 350
 
-describe.only("GenesisNftMintType", () => {
+describe("GenesisNftMintType", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
   let signerImpersonated: SignerWithAddress;

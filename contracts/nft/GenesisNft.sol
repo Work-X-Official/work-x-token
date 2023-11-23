@@ -156,19 +156,28 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         nftIdCounter += 1;
         _safeMint(_account, nftIdCounter);
 
-        NftInfoMonth memory _info;
-        _info.staked = _amountToStake;
-        _info.minimumStaked = _amountToStake;
-
         NftInfo storage _nft = nft[nftIdCounter];
         _nft.voucherId = _voucherId;
         _nft.encodedAttributes = _encodedAttributes;
         _nft.imageUri = _imageUri;
         _nft.lockPeriod = _lockPeriod;
         _nft.stakedAtMint = _amountToStake;
+        uint16 level = nftData.getLevel(_amountToStake);
+        _nft.tier = level / 10;
+
+        NftInfoMonth memory _info;
+        _info.staked = _amountToStake;
+        _info.minimumStaked = _amountToStake;
+        _info.shares = _calculateShares(level) + BASE_STAKE;
         _nft.monthly[0] = _info;
 
-        _setInitial(nftIdCounter, _amountToStake);
+        NftTotalMonth storage totalMonthly = monthlyTotal[0];
+        totalMonthly.minimumStaked += _amountToStake;
+        totalMonthly.totalStaked += _amountToStake;
+        totalMonthly.totalShares += _info.shares;
+
+        emit Evolve(nftIdCounter, _nft.tier);
+
         token.mint(address(this), _amountToStake);
     }
 
@@ -210,6 +219,13 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         _evolveTier(_tokenId);
     }
 
+    /**
+     * @notice The unstake function unstakes an amount of tokens from the NFT with a specific tokenId
+     * @dev You can only unstake tokens after the lockPeriod has passed, and even then you can not unstake more than the minimum amount of tokens that is required to make the NFT level 10 in the current tier.
+     * If an NFT evolves to the next tier it has to reach level 10 first and only the tokens that are above the minimum amount of tokens required to reach level 10 in the current tier can be unstaked. We call this unstakable amount "Surplus"
+     * @param _tokenId The id of the nft that will receive the tokens.
+     * @param _amount The amount of tokens that will be staked.
+     **/
     function unstake(uint256 _tokenId, uint128 _amount) external nonReentrant {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
         require(
@@ -241,6 +257,13 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
      **** private WRITE
      ****/
 
+    /**
+     * @notice The _updateShares function updates the shares of an NFT, it needs to calculate the shares amount when an NFT changes level, or tier, or when it is destroyed.
+     * @dev It calculates the new amount of shares of an nft, and then updates both the total, and NFT specific shares amounts.
+     *  Note that unstaking does never change shares because the level can not decrease, only destroying an NFT does.
+     * @param _tokenId The id of the nft of which the shares will be updated.
+     * @param _isIncreasingShares True if we have to add shares, false if we need to subtract shares.
+     **/
     function _updateShares(uint256 _tokenId, bool _isIncreasingShares) private {
         uint8 currentMonth = getCurrentMonth();
         uint32 nftSharesOld = getShares(_tokenId);
@@ -257,27 +280,11 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         }
     }
 
-    function _setInitial(uint256 _tokenId, uint128 _amountToStake) private {
-        uint16 tier = nftData.getLevel(getStaked(_tokenId)) / 10;
-        NftInfo storage _nft = nft[_tokenId];
-        _nft.tier = tier;
-        NftInfoMonth storage _nftMonth = _nft.monthly[0];
-        _nftMonth.shares = calculateTokenIdShares(_tokenId);
-
-        uint8 _currentMonth = getCurrentMonth();
-
-        for (uint256 i = 0; i <= _currentMonth; i++) {
-            NftTotalMonth storage totalMonthly = monthlyTotal[uint8(i)];
-            totalMonthly.minimumStaked += _amountToStake;
-            totalMonthly.totalStaked += _amountToStake;
-            if (totalMonthly.totalShares > 0 || i == 0) {
-                totalMonthly.totalShares += _nftMonth.shares;
-            }
-        }
-
-        emit Evolve(_tokenId, tier);
-    }
-
+    /**
+     * @notice Increases the tier of an nft.
+     * @dev It recalculates the tier of an NFT and set it, als the amount of shares is updated as we might jump several tiers/levels at once.
+     * @param _tokenId The id of the nft.
+     **/
     function _evolveTier(uint256 _tokenId) private {
         uint16 tier = nftData.getLevel(getStaked(_tokenId)) / 10;
         NftInfo storage _nft = nft[_tokenId];
@@ -286,6 +293,15 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         emit Evolve(_tokenId, tier);
     }
 
+    /**
+     * @notice The _stake function stakes an amount of tokens into an nft of the owner.
+     * @dev The amount that can be staked for a specific tokenId builds up over time. You can only stake up to this allowance and you need own enough tokens.
+     *      The _updateMonthly function is called to update the monthly totals and the monthly totals of the NFT.
+     *      The _updateShares function is called to update the shares totals and the shares of the NFT.
+     *      The token.transferFrom function is called to transfer the tokens from the sender to the contract.
+     * @param _tokenId The id of the nft.
+     * @param _amount The amount that will be staked.
+     **/
     function _stake(uint256 _tokenId, uint128 _amount) private {
         _updateMonthly(_tokenId, true, _amount, getCurrentMonth());
         _updateShares(_tokenId, true);
@@ -293,12 +309,25 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         emit Stake(_tokenId, _amount);
     }
 
+    /**
+     * @notice Send $WORK tokens from the nft contract to the owner.
+     * @dev The contract needs to have enough funds.
+     * @param _amount The amount of tokens that will be unstaked and send back to the owner of the NFT
+     **/
     function _refundTokens(uint256 _amount) private {
         uint256 amount = token.balanceOf(address(this));
         require(amount >= _amount, "GenesisNft: Not enough $WORK tokens in the contract");
         token.transfer(msg.sender, _amount);
     }
 
+    /**
+     * @notice _updateMonthly updates the monthly balance of an nft, as well as the global totals.
+     * @dev Important: For - Loop through the previous months and to find the last non-zero value for nft.monthly Because you might have tokens in a month, but if you did not stake/unstake in that month, the value for that month will be never set (0).
+     * @param _tokenId The id of the nft.
+     * @param _isIncreasingStake Whether the amount of tokens staked is increasing or decreasing.
+     * @param _amount The amount of tokens staked.
+     * @param _amount The month at which we are looking.
+     **/
     function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint128 _amount, uint8 _month) private {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
@@ -331,9 +360,9 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
                     }
                 }
 
-                for (uint8 ii = _month + 1; ii >= 1; --ii) {
+                for (uint256 ii = _month + 1; ii >= 1; --ii) {
                     // Update monthly totals
-                    NftTotalMonth memory _monthlyTotal = monthlyTotal[ii - 1];
+                    NftTotalMonth memory _monthlyTotal = monthlyTotal[uint8(ii - 1)];
                     if (_monthlyTotal.totalStaked > 0 || ii == 1) {
                         if (_isIncreasingStake) {
                             _totalToSet.totalStaked = _monthlyTotal.totalStaked + _amount;
@@ -371,10 +400,21 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
      **** PUBLIC VIEW
      ****/
 
+    /**
+     * @notice It overrides the same function from two parent contracts, ERC721 and AccessControl
+     * @dev This is an implementation detail to ensure the GenesisNft contract conforms to the ERC721 standard and provides compatibility with other contracts and applications that use this standard.
+     **/
     function supportsInterface(bytes4 _interfaceId) public view virtual override(ERC721, AccessControl) returns (bool) {
         return super.supportsInterface(_interfaceId);
     }
 
+    /**
+     * @notice How much tokens you are allowed to stake into a specific tokenID.
+     * @dev It finds the allowance for each of the past month (30days) how much tokens you are allowed to stake each day based on the level in each current day.
+     *  After it checks how much you have staked already this month and subtracts that.
+     * @param _tokenId The id of the nft for which you want to know the total allowance.
+     * @return stakingAllowance The total amount of tokens you are currently allowed to stake.
+     **/
     function getStakingAllowance(uint256 _tokenId, uint128 _staked) public view returns (uint128 stakingAllowance) {
         if (tokenDistribution.startTime() > block.timestamp) return 0;
 
