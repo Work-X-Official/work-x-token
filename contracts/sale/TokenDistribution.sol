@@ -5,6 +5,12 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../work/WorkToken.sol";
 
+/**
+ * @title The Work X $WORK TokenDistribution contract
+ * @author Daniel de Witte
+ * @notice The contract used to distribute the $WORK tokens according to a vesting schedule.
+ * @dev There are 3 rounds, with different vesting periods. The 3rd round has a direct unlock of 10%.
+ **/
 contract TokenDistribution is Ownable {
     WorkToken public immutable workToken;
 
@@ -28,7 +34,12 @@ contract TokenDistribution is Ownable {
     }
     mapping(address => Balance) public accountBalance;
 
+    /**
+     * @notice The constructor sets the startTime to a point in the future, this is when the distribution starts.
+     * @dev A reference to the work token is made.
+     **/
     constructor(address _tokenAddress, uint128 _startTime) {
+        require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
         workToken = WorkToken(_tokenAddress);
         startTime = _startTime;
     }
@@ -37,6 +48,10 @@ contract TokenDistribution is Ownable {
      **** EXTERNAL WRITE
      ****/
 
+    /**
+     * @notice The claimTokens function claims the amount of tokens a user has vested given the time that has past since distribution start minus how much they have previously claimed.
+     * @dev The WorkToken contract is used to mint the tokens directly towards the claimer.
+     **/
     function claimTokens() external {
         require(block.timestamp >= startTime, "TokenDistribution: The distribution hasn't started yet");
         uint128 availableTokens = _claimableTokens(msg.sender);
@@ -51,11 +66,26 @@ contract TokenDistribution is Ownable {
      **** ONLY OWNER
      ****/
 
+    /**
+     * @notice The startDistribution function starts the distribution in the future, this can not be changed after the distribution has started.
+     * @dev The WorkToken contract is used to mint the tokens directly towards the claimer.
+     * @param _startTime The amount of tokens that will be minted.
+     **/
     function startDistribution(uint128 _startTime) external onlyOwner {
         require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
+        require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
         startTime = _startTime;
     }
 
+    /**
+     * @notice The startDistribution function starts the distribution in the future, this can not be changed after the distribution has started.
+     * @dev The WorkToken contract is used to mint the tokens directly towards the claimer.
+     * @param wallet An array containing the wallets of the accounts that can vest.
+     * @param amount1 An array containing the amount each accounts sourced from sale round 1.
+     * @param amount2 An array containing the amount each accounts sourced from sale round 2.
+     * @param amount3 An array containing the amount each accounts sourced from sale round 3.
+     * @param totalClaimed An array containing the preclaimed amount for each accounts (the unvested tokens they staked into the NFT).
+     **/
     function setWalletClaimable(
         address[] calldata wallet,
         uint32[] calldata amount1,
@@ -79,18 +109,34 @@ contract TokenDistribution is Ownable {
      **** EXTERNAL VIEW
      ****/
 
+    /**
+     * @notice The claimableTokens function returns the claimable tokens for an account.
+     * @param _account The account for which the claimable token amount will be returned.
+     **/
     function claimableTokens(address _account) external view returns (uint128) {
         return _claimableTokens(_account);
     }
 
+    /**
+     * @notice The claimedTokens function returns the claimed tokens for an account.
+     * @param _account The account for which the claimed token amount will be returned.
+     **/
     function claimedTokens(address _account) external view returns (uint128) {
         return accountBalance[_account].totalClaimed;
     }
 
+    /**
+     * @notice The vestedTokens function returns the vested tokens for an account.
+     * @param _account The account for which the vested token amount will be returned.
+     **/
     function vestedTokens(address _account) external view returns (uint128) {
         return _vestedTokens(_account);
     }
 
+    /**
+     * @notice The balance function returns an aggregate of vesting and claiming data for an account.
+     * @param _account The account for which the aggregated data will be returned.
+     **/
     function balance(
         address _account
     ) external view returns (uint128 _totalBought, uint128 _totalClaimed, uint128 _claimable, uint128 _vested) {
@@ -105,6 +151,11 @@ contract TokenDistribution is Ownable {
      **** PRIVATE VIEW
      ****/
 
+    /**
+     * @notice The _claimableTokens function calculates the amount of tokens that are claimable for an account.
+     * @dev The amount of tokens that are claimable is the amount of vested tokens minus the amount of tokens that have already been claimed.
+     * @param _account The account for which the claimable tokens are calculated.
+     **/
     function _claimableTokens(address _account) private view returns (uint128 claimableAmount) {
         uint128 vestedAmount = _vestedTokens(_account);
         uint128 claimed = accountBalance[_account].totalClaimed;
@@ -115,6 +166,11 @@ contract TokenDistribution is Ownable {
         }
     }
 
+    /**
+     * @notice The _vestedTokens function calculates the amount of tokens that have been vested for an account.
+     * @dev The amount of tokens that are vested is calculated by taking the amount of tokens that are bought in each round and multiplying it by the percentage of the vesting period that has passed.
+     * @param _account The account for which the vested tokens are calculated.
+     **/
     function _vestedTokens(address _account) private view returns (uint128 vestedAmount) {
         if (block.timestamp < startTime) return 0;
         Balance memory _balance = accountBalance[_account];
