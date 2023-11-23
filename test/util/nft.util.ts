@@ -138,9 +138,9 @@ function createSignatureMint(
 
   const types = {
     NFT: [
-      { name: "voucherId", type: "uint16" },
-      { name: "type", type: "uint16" },
-      { name: "lockPeriod", type: "uint64" },
+      { name: "voucherId", type: "uint256" },
+      { name: "type", type: "uint256" },
+      { name: "lockPeriod", type: "uint256" },
       { name: "account", type: "address" },
       { name: "amountToStake", type: "uint256" },
       { name: "imageUri", type: "string" },

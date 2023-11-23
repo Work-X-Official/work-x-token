@@ -39,7 +39,7 @@ chai.use(solidity);
  * - [x] Test new locktime calculation
  */
 
-describe.only("GenesisNft", () => {
+describe("GenesisNft", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
   let signerImpersonated: SignerWithAddress;
@@ -245,7 +245,7 @@ describe.only("GenesisNft", () => {
       expect(await nft.getStaked(nftId1)).to.equal(big(0));
       // the multiplier for level 0 is 0.1, but we used it times 10 to get rid of the decimals
       // The base multiplier is 2 * 10, so the total multiplier is 2.1
-      const shares = await nft.calculateTokenIdShares(nftId1);
+      const shares = await nft.calculateShares(nftId1);
       expect(shares).to.be.equal(51);
       await mineDays(10, network);
       await nft.connect(nftMinter1).stake(nftId1, amount(2500));
@@ -264,7 +264,7 @@ describe.only("GenesisNft", () => {
       // There should be now 2500+3075=5575 #oftokensStaked in token 1.
       expect(await nft.getLevel(nftId1)).to.be.equal(big(9));
       // Get the multiplier for this token with calculateTokenIdShares it should be 11 (1.1 *10 to get rid of the fraction) for level 9,
-      expect(await nft.calculateTokenIdShares(nftId1)).to.be.equal(big(61));
+      expect(await nft.calculateShares(nftId1)).to.be.equal(big(61));
     });
 
     it("Test increasing Tier", async () => {
@@ -321,6 +321,11 @@ describe.only("GenesisNft", () => {
     let ownerNft2: SignerWithAddress;
     let ownerNft3: SignerWithAddress;
     let nftId2: number;
+    let nftId3: number;
+
+    let lockPeriod2: number;
+    let lockPeriod3: number;
+
     before(async () => {
       ownerNft2 = accounts[1];
       ownerNft3 = accounts[2];
@@ -330,12 +335,16 @@ describe.only("GenesisNft", () => {
       await regenerateNft();
 
       await mintNft(network, nft, workToken, nftMinter1, 158075, 0, 0, chainId);
-      const lockPeriod = monthsToSeconds(nftLockTimeByStake(5000, seed1kInv));
-      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, ownerNft2, 5000, lockPeriod, 0, chainId));
+      lockPeriod2 = monthsToSeconds(nftLockTimeByStake(5000, seed1kInv));
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, ownerNft2, 5000, lockPeriod2, 0, chainId));
       await mineDays(11, network);
       await nft.connect(ownerNft2).stake(nftId2, amount(3075));
       expect(await nft.getStaked(nftId2)).to.equal(amount(8075));
-      await mintNft(network, nft, workToken, ownerNft3, 0, 0, 0, chainId);
+      lockPeriod3 = monthsToSeconds(nftLockTimeByStake(6000, seed1kInv));
+      ({ nftId: nftId3 } = await mintNft(network, nft, workToken, ownerNft3, 6000, lockPeriod3, 0, chainId));
+    });
+    it("Check Nft 3 has staked more than Nft 2, while having the same investment, so it is earlier destroyable", async () => {
+      expect(lockPeriod3 < lockPeriod2).to.be.true;
     });
 
     it("Destroying NFT you are not the owner of", async () => {
@@ -354,39 +363,72 @@ describe.only("GenesisNft", () => {
       await expectToRevert(nft.destroyNft(nftId2), "GenesisNft: You are not the owner of this NFT!");
     });
 
-    it("Try destroying NFT within time lock and expect revert", async () => {
-      await approveGenesisNft(network, nft, nftId2, accounts[1], nft.address);
+    it("Try destroying Nft 2 right before end lock period and expect revert", async () => {
+      // The full period is 547.5 days, so we mine from day 11 to day 547, almost destroyable.
+      await mineDays(536, network);
+      expect(lockPeriod2).to.be.equal(monthsToSeconds(18));
+      const currentTimeStamp = (await ethers.provider.getBlock("latest")).timestamp;
+      const startTime = await distribution.startTime();
+      const lockedUntil = Number(startTime.add(lockPeriod2));
+      expect(currentTimeStamp).to.be.lt(lockedUntil);
       await expectToRevert(
-        nft.connect(accounts[1]).destroyNft(nftId2),
+        nft.connect(ownerNft2).destroyNft(nftId2),
         "GenesisNft: The NFT is still time-locked, so you can not destroy it yet",
       );
     });
 
-    it("Destroy NFT and fix tokens", async () => {
-      await approveGenesisNft(network, nft, nftId2, accounts[1], nft.address);
-      expect(await nft.ownerOf(nftId2)).to.equal(accounts[1].address);
-      // In total the amount staked in the contract is 158075 + 8075 = 166150
-      const workTokenBalance = await balanceOf(workToken, accounts[1].address);
-      // mine some more because they are a lot longer locked now with the lockfunctions, how long this in the future we have to mine depends on the locktime, this is tested in the distribution functions
-      await mineDays(600, network);
-      await nft.connect(accounts[1]).destroyNft(nftId2);
+    it("Try destroying callStatic Nft 3 after 547 days, you staked more so you would already be destroyable", async () => {
+      const currentTimeStamp = (await ethers.provider.getBlock("latest")).timestamp;
+      const startTime = await distribution.startTime();
+      const lockedUntil = Number(startTime.add(lockPeriod3));
+      expect(currentTimeStamp).to.be.gt(lockedUntil);
+      await nft.connect(ownerNft3).callStatic.destroyNft(nftId3);
+    });
+
+    it("Mine one more day and now lockperiod of Nft 2 is passed", async () => {
+      await mineDays(1, network);
+      const currentTimeStamp = (await ethers.provider.getBlock("latest")).timestamp;
+      const startTime = await distribution.startTime();
+      const lockedUntil = Number(startTime.add(lockPeriod2));
+      expect(currentTimeStamp).to.be.gt(lockedUntil);
+    });
+
+    it("Destroy Nft 2 and refund tokens", async () => {
+      expect(await nft.ownerOf(nftId2)).to.equal(ownerNft2.address);
+      // In total the amount staked in the contract is 158075 + 6000 + 8075 = 172150
+      const workTokenBalance = await balanceOf(workToken, ownerNft2.address);
+      await nft.connect(ownerNft2).destroyNft(nftId2);
       await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
       expect(await nft.getStaked(nftId2)).to.equal(big(0));
-      // what is left in the contract is: 166150-8075= 158075
+      // what is left in the contract is: 172150-8075 = 164075
+      expect(await balanceOf(workToken, nft.address)).to.equal(amount(164075));
+      expect(await balanceOf(workToken, ownerNft2.address)).to.equal(workTokenBalance.add(amount(8075)));
+    });
+
+    it("Destroy Nft 3 and refund tokens", async () => {
+      expect(await nft.ownerOf(nftId3)).to.equal(ownerNft3.address);
+      // In total the amount staked in the contract is 172150-8075 = 164075
+      const workTokenBalance = await balanceOf(workToken, ownerNft3.address);
+      await nft.connect(ownerNft3).destroyNft(nftId3);
+      await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
+      expect(await nft.getStaked(nftId3)).to.equal(big(0));
+      // what is left in the contract is: 164075-6000 = 164075
       expect(await balanceOf(workToken, nft.address)).to.equal(amount(158075));
-      expect(await balanceOf(workToken, accounts[1].address)).to.equal(workTokenBalance.add(amount(8075)));
+      expect(await balanceOf(workToken, ownerNft3.address)).to.equal(workTokenBalance.add(amount(6000)));
     });
 
-    // test if the nft is destroyed. and make sure you that calling destroy again will revert.
     it("Make sure you cannot destroy it again", async () => {
-      await expectToRevert(nft.connect(accounts[1]).destroyNft(nftId2), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft2).destroyNft(nftId2), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft3).destroyNft(nftId3), "ERC721: invalid token ID");
     });
 
-    // make sure that after destroying you cannot call unstake anymore.
     it("Make sure you cannot unstake anymore after destroying", async () => {
-      await expectToRevert(nft.connect(accounts[1]).unstake(nftId2, 0), "ERC721: invalid token ID");
-      await expectToRevert(nft.connect(accounts[1]).unstake(nftId2, 1), "ERC721: invalid token ID");
-      await expectToRevert(nft.connect(accounts[1]).unstake(nftId2, amount(250)), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft2).unstake(nftId2, 0), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft2).unstake(nftId2, 1), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft2).unstake(nftId2, amount(250)), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft3).unstake(nftId3, 0), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft3).unstake(nftId3, 1), "ERC721: invalid token ID");
+      await expectToRevert(nft.connect(ownerNft3).unstake(nftId3, amount(250)), "ERC721: invalid token ID");
     });
   });
 
@@ -817,7 +859,7 @@ describe.only("GenesisNft", () => {
     });
 
     it("Calling stake should increase shares total, if you are not max level", async () => {
-      currentMonth = await nft.getCurrentMonth();
+      currentMonth = (await nft.getCurrentMonth()).toNumber();
       const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
       await approveToken(network, workToken, nftMinter1, nft.address);
       await nft.connect(nftMinter1).stake(nftId4, amount(11000));

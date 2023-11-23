@@ -14,13 +14,13 @@ import "../work/WorkToken.sol";
 contract TokenDistribution is Ownable {
     WorkToken public immutable workToken;
 
+    uint256 constant ONE_E18 = 10 ** 18;
+    uint256 constant ONE_E17 = 10 ** 17;
+
     uint64 public constant VESTING_PERIOD1 = 547.5 days;
     uint64 public constant VESTING_PERIOD2 = 365 days;
     uint64 public constant VESTING_PERIOD3 = 273.75 days;
     uint64 public constant VESTING_PERIOD3_DIRECT_UNLOCK = 27.375 days;
-    uint128 constant ONE_E18 = 10 ** 18;
-    uint128 constant ONE_E17 = 10 ** 17;
-
     uint128 public startTime;
 
     event ClaimTokens(address indexed beneficiary, uint256 amount);
@@ -38,10 +38,10 @@ contract TokenDistribution is Ownable {
      * @notice The constructor sets the startTime to a point in the future, this is when the distribution starts.
      * @dev A reference to the work token is made.
      **/
-    constructor(address _tokenAddress, uint128 _startTime) {
+    constructor(address _tokenAddress, uint256 _startTime) {
         require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
         workToken = WorkToken(_tokenAddress);
-        startTime = _startTime;
+        startTime = uint128(_startTime);
     }
 
     /****
@@ -54,10 +54,10 @@ contract TokenDistribution is Ownable {
      **/
     function claimTokens() external {
         require(block.timestamp >= startTime, "TokenDistribution: The distribution hasn't started yet");
-        uint128 availableTokens = _claimableTokens(msg.sender);
+        uint256 availableTokens = _claimableTokens(msg.sender);
         require(availableTokens > 0, "TokenDistribution: You don't have any tokens to claim");
         Balance storage _balance = accountBalance[msg.sender];
-        _balance.totalClaimed += availableTokens;
+        _balance.totalClaimed += uint128(availableTokens);
         workToken.mint(msg.sender, availableTokens);
         emit ClaimTokens(msg.sender, availableTokens);
     }
@@ -71,10 +71,10 @@ contract TokenDistribution is Ownable {
      * @dev The WorkToken contract is used to mint the tokens directly towards the claimer.
      * @param _startTime The amount of tokens that will be minted.
      **/
-    function startDistribution(uint128 _startTime) external onlyOwner {
+    function startDistribution(uint256 _startTime) external onlyOwner {
         require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
         require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
-        startTime = _startTime;
+        startTime = uint128(_startTime);
     }
 
     /**
@@ -100,7 +100,7 @@ contract TokenDistribution is Ownable {
                 amount1[w],
                 amount2[w],
                 amount3[w],
-                uint128(totalClaimed[w]) * ONE_E18
+                uint128(totalClaimed[w] * ONE_E18)
             );
         }
     }
@@ -113,7 +113,7 @@ contract TokenDistribution is Ownable {
      * @notice The claimableTokens function returns the claimable tokens for an account.
      * @param _account The account for which the claimable token amount will be returned.
      **/
-    function claimableTokens(address _account) external view returns (uint128) {
+    function claimableTokens(address _account) external view returns (uint256) {
         return _claimableTokens(_account);
     }
 
@@ -121,7 +121,7 @@ contract TokenDistribution is Ownable {
      * @notice The claimedTokens function returns the claimed tokens for an account.
      * @param _account The account for which the claimed token amount will be returned.
      **/
-    function claimedTokens(address _account) external view returns (uint128) {
+    function claimedTokens(address _account) external view returns (uint256) {
         return accountBalance[_account].totalClaimed;
     }
 
@@ -129,7 +129,7 @@ contract TokenDistribution is Ownable {
      * @notice The vestedTokens function returns the vested tokens for an account.
      * @param _account The account for which the vested token amount will be returned.
      **/
-    function vestedTokens(address _account) external view returns (uint128) {
+    function vestedTokens(address _account) external view returns (uint256) {
         return _vestedTokens(_account);
     }
 
@@ -139,9 +139,9 @@ contract TokenDistribution is Ownable {
      **/
     function balance(
         address _account
-    ) external view returns (uint128 _totalBought, uint128 _totalClaimed, uint128 _claimable, uint128 _vested) {
+    ) external view returns (uint256 _totalBought, uint256 _totalClaimed, uint256 _claimable, uint256 _vested) {
         Balance memory _balance = accountBalance[_account];
-        _totalBought = uint128(_balance.totalBought) * ONE_E18;
+        _totalBought = _balance.totalBought * ONE_E18;
         _totalClaimed = _balance.totalClaimed;
         _claimable = _claimableTokens(_account);
         _vested = _vestedTokens(_account);
@@ -156,9 +156,9 @@ contract TokenDistribution is Ownable {
      * @dev The amount of tokens that are claimable is the amount of vested tokens minus the amount of tokens that have already been claimed.
      * @param _account The account for which the claimable tokens are calculated.
      **/
-    function _claimableTokens(address _account) private view returns (uint128 claimableAmount) {
-        uint128 vestedAmount = _vestedTokens(_account);
-        uint128 claimed = accountBalance[_account].totalClaimed;
+    function _claimableTokens(address _account) private view returns (uint256 claimableAmount) {
+        uint256 vestedAmount = _vestedTokens(_account);
+        uint256 claimed = accountBalance[_account].totalClaimed;
         if (vestedAmount <= claimed) {
             claimableAmount = 0;
         } else {
@@ -171,26 +171,26 @@ contract TokenDistribution is Ownable {
      * @dev The amount of tokens that are vested is calculated by taking the amount of tokens that are bought in each round and multiplying it by the percentage of the vesting period that has passed.
      * @param _account The account for which the vested tokens are calculated.
      **/
-    function _vestedTokens(address _account) private view returns (uint128 vestedAmount) {
+    function _vestedTokens(address _account) private view returns (uint256 vestedAmount) {
         if (block.timestamp < startTime) return 0;
         Balance memory _balance = accountBalance[_account];
-        uint128 timeElapsed = uint128(block.timestamp) - startTime;
+        uint256 timeElapsed = block.timestamp - startTime;
 
         if (timeElapsed >= VESTING_PERIOD1) {
-            vestedAmount += uint128(_balance.bought1) * ONE_E18;
+            vestedAmount += _balance.bought1 * ONE_E18;
         } else {
             vestedAmount += (_balance.bought1 * timeElapsed * ONE_E18) / VESTING_PERIOD1;
         }
         if (timeElapsed >= VESTING_PERIOD2) {
-            vestedAmount += uint128(_balance.bought2) * ONE_E18;
+            vestedAmount += _balance.bought2 * ONE_E18;
         } else {
             vestedAmount += (_balance.bought2 * timeElapsed * ONE_E18) / VESTING_PERIOD2;
         }
         if (timeElapsed >= VESTING_PERIOD3) {
-            vestedAmount += uint128(_balance.bought3) * ONE_E18;
+            vestedAmount += _balance.bought3 * ONE_E18;
         } else {
             if (timeElapsed < VESTING_PERIOD3_DIRECT_UNLOCK) {
-                vestedAmount += (uint128(_balance.bought3) * ONE_E17);
+                vestedAmount += _balance.bought3 * ONE_E17;
             } else {
                 vestedAmount += (_balance.bought3 * timeElapsed * ONE_E18) / VESTING_PERIOD3;
             }
