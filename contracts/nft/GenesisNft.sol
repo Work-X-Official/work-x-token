@@ -21,13 +21,13 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
 
     uint128 constant ONE_E18 = 10 ** 18;
     uint8 constant BASE_STAKE = 50;
-    uint8 constant TYPE_GUARANTEED = 0;
+    uint8 constant TYPE_GUAR = 0;
     uint8 constant TYPE_FCFS = 1;
-    uint8 constant TYPE_INVESTOR = 2;
+    uint8 constant TYPE_INV = 2;
     uint16 constant DAILY_STAKING_ALLOWANCE = 294;
-    uint16 constant COUNT_GUARANTEED = 350;
+    uint16 constant COUNT_GUAR = 350;
     uint16 constant COUNT_FCFS = 150;
-    uint16 constant COUNT_INVESTOR = 499;
+    uint16 constant COUNT_INV = 499;
     uint16 public nftIdCounter;
 
     mapping(address => uint16) public accountMinted;
@@ -117,18 +117,12 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         );
         require(_verify(digest, _signature, SIGNER_ROLE), "GenesisNft: Invalid signature");
 
-        if (_type == TYPE_GUARANTEED) {
-            require(nftIdCounter < COUNT_GUARANTEED - 1, "GenesisNft: No more guaranteed spots.");
+        if (_type == TYPE_GUAR) {
+            require(nftIdCounter < COUNT_GUAR, "GenesisNft: No more guaranteed spots.");
         } else if (_type == TYPE_FCFS) {
-            require(
-                nftIdCounter < COUNT_GUARANTEED + COUNT_FCFS - 1,
-                "GenesisNft: No more first-come first-serve spots."
-            );
-        } else if (_type == TYPE_INVESTOR) {
-            require(
-                nftIdCounter < COUNT_GUARANTEED + COUNT_FCFS + COUNT_INVESTOR - 1,
-                "GenesisNft: No more early contributor spots."
-            );
+            require(nftIdCounter < COUNT_GUAR + COUNT_FCFS, "GenesisNft: No more first-come first-serve spots.");
+        } else if (_type == TYPE_INV) {
+            require(nftIdCounter < COUNT_GUAR + COUNT_FCFS + COUNT_INV, "GenesisNft: No more early contributor spots.");
         } else {
             revert("GenesisNft: All NFT's have been minted");
         }
