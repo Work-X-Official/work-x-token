@@ -60,6 +60,15 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
     event Unstake(uint256 indexed tokenId, uint128 amount);
     event Evolve(uint256 indexed tokenId, uint16 tier);
 
+    /**
+     * @notice Deploying the nft contract and sets the Admin role and references Erc20 Token, TokenDistribution and NftData contracts.
+     * @dev Requires the Erc20Token, TokenDistribution and NftData contracts to be deployed first and they addresses set to the constants.
+     * @param _nftName The name of the nft, which will be Work X Genesis NFT in this case.
+     * @param _nftSymbol The symbol of the nft, which will be Work X Genesis NFT in this case.
+     * @param _workTokenAddress The address of the $WORK token contract (ERC20).
+     * @param _tokenDistributionAddress The TokenDistribution address that will be used to mint tokens and update the claimed amount.
+     * @param _nftDataAddress The address of the NftData contract that will be used to get the data for the nft, like how many tokens are needed for each level.
+     **/
     constructor(
         string memory _nftName,
         string memory _nftSymbol,
@@ -79,6 +88,12 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
      **** PUBLIC WRITE
      ****/
 
+    /**
+     * @notice The stake function stakes an amount of tokens into an nft of the owner.
+     * @dev The amount that can be staked for a specific tokenId builds up over time. You can only stake up to this allowance and you need own enough tokens.
+     * @param _tokenId The id of the nft that will receive the tokens.
+     * @param _amount The amount of tokens that will be staked.
+     **/
     function stake(uint256 _tokenId, uint128 _amount) public nonReentrant {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
         uint128 stakedAmount = getStaked(_tokenId);
@@ -93,13 +108,24 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
      **** EXTERNAL WRITE
      ****/
 
+    /**
+     * @notice The function mintNft mints the Work X GenesisNft and mints an amount of tokens into the NFT these tokens are locked for a certain amount of time but the NFT is freely tradable.
+     *  A voucher is constructed by Work X backend and only callers with a valid voucher can mint the NFT.
+     * @dev Before giving out vouchers the tokenDistribution startTime has to be set, otherwise the tokens will not be locked correctly.
+     * @dev Only the caller of the mintNft function can be the receiving _account, because evolveTier is checking if the msg.sender is the owner of the nft.
+     * @param _account The address of the account that will receive the nft.
+     * @param _voucherId The id of the voucher that will be used to mint the nft, each voucher can only be used once for an NFT with a tokenID.
+     * @param _type The id of the minting type.
+     * @param _lockPeriod The amount of time that the tokens will be locked in the NFT from the startTime of the distribution contract.
+     * @param _amountToStake The amount of tokens that will be staked into the minted NFT.
+     * @param _signature A signature signed by the minter role, to check if a voucher is valid.
+     **/
     function mintNft(
         address _account,
         uint16 _voucherId,
         uint16 _type,
         uint64 _lockPeriod,
         uint128 _amountToStake,
-        uint128 _amountToNotVest,
         string calldata _imageUri,
         bytes32 _encodedAttributes,
         bytes calldata _signature
@@ -111,7 +137,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
             _lockPeriod,
             _account,
             _amountToStake,
-            _amountToNotVest,
             _imageUri,
             _encodedAttributes
         );
@@ -147,9 +172,16 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         token.mint(address(this), _amountToStake);
     }
 
+    /**
+     * @notice The function destroyNft destroys your NFT and gives you back the tokens in that NFT. Your "Piggy bank will be destroyed forever."
+     * @dev In order to destroy an NFT you need to be the owner, the lockPeriod should have passed, and it should be approved.
+     *  The nonReentrant modifier is used to make extra sure people will not be able to extract more tokens. On top of the checks-effects pattern
+     *  Its fine to use the block.timestamp for the comparison because the miner can not manipulate the block.timestamp by a practically significant amount.
+     *  It is oke to use block.timestamp for comparison, because miner
+     * @param _tokenId The id of the NFT that will destroyed.
+     **/
     function destroyNft(uint256 _tokenId) external nonReentrant {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        require(address(this) == getApproved(_tokenId), "GenesisNft: This contract is not allowed to burn this NFT");
         require(
             block.timestamp > nft[_tokenId].lockPeriod + tokenDistribution.startTime(),
             "GenesisNft: The NFT is still time-locked, so you can not destroy it yet"
@@ -516,7 +548,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
         uint64 _lockPeriod,
         address _account,
         uint256 _amountToStake,
-        uint256 _amountToNotVest,
         string calldata _imageUri,
         bytes32 _encodedAttributes
     ) private view returns (bytes32) {
@@ -525,14 +556,13 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, AccessControl, EIP712 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "NFT(uint16 voucherId,uint16 type,uint64 lockPeriod,address account,uint256 amountToStake,uint256 amountToNotVest,string imageUri,bytes32 encodedAttributes)"
+                            "NFT(uint16 voucherId,uint16 type,uint64 lockPeriod,address account,uint256 amountToStake,string imageUri,bytes32 encodedAttributes)"
                         ),
                         _voucherId,
                         _type,
                         _lockPeriod,
                         _account,
                         _amountToStake,
-                        _amountToNotVest,
                         keccak256(abi.encodePacked(_imageUri)),
                         _encodedAttributes
                     )

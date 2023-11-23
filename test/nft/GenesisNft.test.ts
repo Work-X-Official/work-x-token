@@ -342,13 +342,6 @@ describe("GenesisNft", () => {
       await expectToRevert(nft.connect(ownerNft3).destroyNft(nftId2), "GenesisNft: You are not the owner of this NFT!");
     });
 
-    it("Destroying unapproved NFT", async () => {
-      await expectToRevert(
-        nft.connect(ownerNft2).destroyNft(nftId2),
-        "GenesisNft: This contract is not allowed to burn this NFT",
-      );
-    });
-
     it("Approving the NFT of another person", async () => {
       await expectToRevert(
         approveGenesisNft(network, nft, nftId2, signerImpersonated, nft.address),
@@ -628,7 +621,6 @@ describe("GenesisNft", () => {
       voucher = await nftMintVoucherGenerateLocal(
         ownerNft6.address,
         0,
-        0,
         ["Male", "Yellow", "Founder"],
         chainId,
         nft.address,
@@ -652,7 +644,6 @@ describe("GenesisNft", () => {
             voucher.voucherId,
             0,
             amount(0),
-            amount(0),
             voucher.lockPeriod,
             voucher.imageUri,
             ethers.utils.formatBytes32String(voucher.encodedAttributes),
@@ -674,7 +665,6 @@ describe("GenesisNft", () => {
             ownerNft6.address,
             voucher.voucherId,
             0,
-            amount(0),
             amount(0),
             voucher.lockPeriod,
             voucher.imageUri,
