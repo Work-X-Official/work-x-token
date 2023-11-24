@@ -1,6 +1,6 @@
 export const WORK_TOKEN_ADDRESSES = {
   goerli: "",
-  sepolia: "0x48e4b3c2b03590388a79718E2C7ac81d41938bD0",
+  sepolia: "0x38658CA8Dd79b19a221eD4D16341785fDfA663f8",
   hardhat: "",
   kovan: "",
   mainnet: "",

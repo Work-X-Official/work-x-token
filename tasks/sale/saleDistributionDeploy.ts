@@ -10,7 +10,7 @@ task("sale:distribution:deploy").setAction(async function (_, hre) {
   const workToken = (await hre.ethers.getContractFactory("WorkToken")).attach(
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
-  const startTime = (await hre.ethers.provider.getBlock("latest")).timestamp + 10;
+  const startTime = (await hre.ethers.provider.getBlock("latest")).timestamp + 80400;
   const tokenDistribution = await (
     await hre.ethers.getContractFactory("TokenDistribution")
   ).deploy(workToken.address, startTime);

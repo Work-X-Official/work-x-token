@@ -1,6 +1,6 @@
 export const TOKEN_DISTRIBUTION_ADDRESSES = {
   goerli: "",
-  sepolia: "0xf0Cf4BC0c797ce4B4Ac6F21eF0f9289bE8d730F5",
+  sepolia: "0xb4756Fa987E8322aBf5946495f6fBe3Ea59DD7D9",
   hardhat: "",
   kovan: "",
   mainnet: "",
