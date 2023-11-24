@@ -35,6 +35,7 @@ contract BuyMore {
      **/
     function buyMore(string memory tokenName, uint256 amount) public {
         _buyMore(tokenName, amount);
+        emit BoughtMore(msg.sender, amount);
     }
 
     /**
