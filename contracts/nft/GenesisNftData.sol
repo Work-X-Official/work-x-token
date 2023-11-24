@@ -8,9 +8,6 @@ import "base64-sol/base64.sol";
 
 contract GenesisNftData is Ownable {
     uint256 constant ONE_E18 = 10 ** 18;
-    mapping(string => string) private typeToName;
-    mapping(string => string) private typeToDescription;
-    mapping(string => string) private typeToImageURI;
     mapping(string => string) public genderOptions;
     mapping(string => string) public skinOptions;
     mapping(string => string) public professionOptions;

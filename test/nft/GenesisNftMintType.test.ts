@@ -12,9 +12,12 @@ config();
 
 chai.use(solidity);
 
-// To use these test it is necessary to set number of accounts in hardhat config to minimum 350
+/**
+ * To use these test it is necessary to set number of accounts in hardhat config to 1000
+ * These tests take a long time to run, so they are skipped by default
+ **/
 
-describe("GenesisNftMintType", () => {
+describe.skip("GenesisNftMintType", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
   let signerImpersonated: SignerWithAddress;
