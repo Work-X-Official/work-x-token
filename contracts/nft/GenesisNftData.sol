@@ -94,12 +94,21 @@ contract GenesisNftData is Ownable {
         152720
     ];
 
+    /**
+     * @dev The Constructor initialized the NFT options mappings.
+     **/
     constructor() {
         initGenderOptions();
         initSkinOptions();
         initProfessionOptions();
     }
 
+    /**
+     * @notice Returns the level of the NFT based on the amount of tokens staked.
+     * @dev Splits 80 into 4 seconds of 20, then splits 20 into 4 sections of 5, then loops over the remaining 5 to find the correct level from the XP array.
+     * @param _staked The amount of tokens staked.
+     * @return The level of the NFT.
+     **/
     function getLevel(uint256 _staked) public view returns (uint256) {
         for (uint256 s1 = 1; s1 <= 4; s1++) {
             if (_staked < uint256(levels[s1 * 20 - 1]) * ONE_E18) {
@@ -118,6 +127,13 @@ contract GenesisNftData is Ownable {
         return 80;
     }
 
+    /**
+     * @notice Returns the level of the NFT based on the amount of tokens staked capped by the tier.
+     * @dev Gets the level using getLevel, but then caps it based on the tier as the level does not increase if the tier is not evolved.
+     * @param _staked The amount of tokens staked.
+     * @param _tier The tier of the NFT.
+     * @return The level of the NFT.
+     **/
     function getLevelCapped(uint256 _staked, uint256 _tier) public view returns (uint256) {
         uint256 level = getLevel(_staked);
         if ((_tier + 1) * 10 < level) {
@@ -126,11 +142,23 @@ contract GenesisNftData is Ownable {
         return level;
     }
 
+    /**
+     * @notice Returns the amount of tokens required to reach a specific level.
+     * @dev Gets the tokens from the level array and multiplies it by 1e18.
+     * @param _level The level to get the tokens required for.
+     * @return The amount of tokens required to reach the level.
+     **/
     function getTokensRequiredForLevel(uint256 _level) public view returns (uint256) {
         require(_level <= levels.length, "Level must be less than or equal to max level");
         return levels[_level - 1] * ONE_E18;
     }
 
+    /**
+     * @notice Returns the amount of tokens required to reach a specific tier.
+     * @dev Gets the tokens from the level array and multiplies it by 1e18.
+     * @param _tier The tier to get the tokens required for.
+     * @return The amount of tokens required to reach the tier.
+     **/
     function getTokensRequiredForTier(uint256 _tier) public view returns (uint256) {
         if (_tier == 0) {
             return 0;
@@ -142,6 +170,11 @@ contract GenesisNftData is Ownable {
         }
     }
 
+    /**
+     * @notice splits a string into an array of 2 character strings.
+     * @param _str The string to split.
+     * @return The array of 2 character strings.
+     **/
     function split(string memory _str) public pure returns (string[] memory) {
         bytes memory bStr = bytes(_str);
         uint256 len = bStr.length;
@@ -156,6 +189,11 @@ contract GenesisNftData is Ownable {
         return res;
     }
 
+    /**
+     * @notice Decodes the attributes from the encoded attributes string.
+     * @param _encodedAttributes The encoded attributes string.
+     * @return attributeArray The array of attributes.
+     **/
     function decodeAttributes(
         string calldata _encodedAttributes
     ) public view returns (string[3] memory attributeArray) {
@@ -166,11 +204,17 @@ contract GenesisNftData is Ownable {
         return attributeArray;
     }
 
+    /**
+     * @notice initializes the genderOptions mapping
+     */
     function initGenderOptions() public {
         genderOptions["00"] = "Male";
         genderOptions["01"] = "Female";
     }
 
+    /**
+     * @notice initializes the skinOptions mapping
+     */
     function initSkinOptions() public {
         skinOptions["00"] = "Brown";
         skinOptions["01"] = "Yellow";
@@ -182,6 +226,9 @@ contract GenesisNftData is Ownable {
         skinOptions["07"] = "Caramel";
     }
 
+    /**
+     * @notice initializes the professionOptions mapping
+     */
     function initProfessionOptions() public {
         professionOptions["00"] = "Founder";
         professionOptions["01"] = "Sales";
@@ -196,6 +243,18 @@ contract GenesisNftData is Ownable {
         professionOptions["10"] = "Sales";
     }
 
+    /**
+     * @notice Returns the token URI for the Genesis NFT.
+     * @dev Returns the token URI for the Genesis NFT.
+     * @param _level The level of the NFT.
+     * @param _tier The tier of the NFT.
+     * @param _staked The amount of tokens staked.
+     * @param _shares The amount of shares.
+     * @param _encodedAttributes The encoded attributes string.
+     * @param _unlockTime The unlock time of the NFT.
+     * @param _imageUri The image URI of the NFT.
+     * @return The token URI for the Genesis NFT.
+     **/
     function tokenUriTraits(
         uint256 _level,
         uint256 _tier,
