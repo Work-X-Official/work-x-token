@@ -30,7 +30,7 @@ task("sale:distribution:deploy").setAction(async function (_, hre) {
   await hre.run("verify:verify", {
     contract: "contracts/sale/TokenDistribution.sol:TokenDistribution",
     address: tokenDistribution.address,
-    constructorArguments: [workToken.address],
+    constructorArguments: [workToken.address, startTime],
   });
   console.log("");
   console.log("║ $WORK Distribution contract has been verified.");

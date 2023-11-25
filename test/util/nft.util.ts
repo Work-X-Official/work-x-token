@@ -4,7 +4,6 @@ import { BigNumber, ethers } from "ethers";
 import { GenesisNft, WorkToken } from "../../typings";
 import { Network } from "hardhat/types/runtime";
 import { amount } from "./helpers.util";
-import { ATTRIBUTES } from "../constants";
 import { approveWorkToken } from "./worktoken.util";
 import { Investment, calculateAmountBoughtTotal, calculateBuyMoreTokenBalance } from "./sale.util";
 import { MIN_TOKEN_STAKING, VESTING_LENGHT_BUY_MORE_MONTHS } from "../../tasks/constants/sale.constants";
@@ -28,11 +27,10 @@ export const mintNft = async (
   const voucher = await nftMintVoucherGenerateLocal(
     account.address,
     stakingAmount,
-    ["Male", "Yellow", "Founder"],
-    chainId,
     nft.address,
     lockPeriod,
     type,
+    chainId,
   );
 
   const tokenId = (await nft.nftIdCounter()) + 1;
@@ -47,8 +45,6 @@ export const mintNft = async (
           type,
           voucher.lockPeriod,
           amount(stakingAmount),
-          voucher.imageUri,
-          ethers.utils.formatBytes32String(voucher.encodedAttributes),
           voucher.voucherSignature,
         ),
     )
@@ -78,41 +74,32 @@ export type Voucher = {
   amountToStake: number;
   amountToNotVest: number;
   lockPeriod: number;
-  imageUri: string;
-  encodedAttributes: string;
   voucherSignature: string;
 };
 
 export const nftMintVoucherGenerateLocal = async (
   walletAddress: string,
   stake: number,
-  chosenAttributes: string[],
-  chainId: number,
   nftContractAddress: string,
   lockPeriod: number,
   type: number,
+  chainId: number,
 ): Promise<Voucher> => {
-  const encodedAttributes = encodeAttributes(chosenAttributes);
   const voucherId = Math.floor(Math.random() * 10000);
-  const imageUri = "https://content.workx.io/images/metamask_gold.png";
   const signature = await createSignatureMint(
     voucherId,
     type,
     walletAddress,
     amount(stake),
     lockPeriod,
-    imageUri,
-    encodedAttributes,
-    chainId,
     nftContractAddress,
+    chainId,
   );
   const voucherObject = {
     voucherId: voucherId,
     walletAddress: walletAddress,
     amountToStake: stake,
     lockPeriod: lockPeriod,
-    imageUri: imageUri,
-    encodedAttributes: encodedAttributes,
     voucherSignature: signature,
   } as Voucher;
   return voucherObject;
@@ -124,10 +111,8 @@ function createSignatureMint(
   account: string,
   amountToStake: BigNumber,
   lockPeriod: number,
-  imageUri: string,
-  encodedAttributes: string,
-  chainId: number,
   nftContractAddress: string,
+  chainId: number,
 ): Promise<string> {
   const domain = {
     name: "Work X Genesis NFT",
@@ -143,8 +128,6 @@ function createSignatureMint(
       { name: "lockPeriod", type: "uint256" },
       { name: "account", type: "address" },
       { name: "amountToStake", type: "uint256" },
-      { name: "imageUri", type: "string" },
-      { name: "encodedAttributes", type: "bytes32" },
     ],
   };
 
@@ -154,9 +137,8 @@ function createSignatureMint(
     lockPeriod: lockPeriod,
     account: account,
     amountToStake: amountToStake,
-    imageUri: imageUri,
-    encodedAttributes: ethers.utils.formatBytes32String(encodedAttributes),
   };
+
   if (process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER === undefined) {
     throw new Error("Please set the PRIVATE_KEY_NFT_VOUCHER_SIGNER environment variable");
   }
@@ -164,19 +146,6 @@ function createSignatureMint(
   const signer = new ethers.Wallet(privateKey);
 
   return signer._signTypedData(domain, types, value);
-}
-
-function encodeAttributes(attributesValues: string[]): string {
-  const arrayOfIndices = [];
-  const attributeIndexofSexArray = ATTRIBUTES.sex.indexOf(attributesValues[0]);
-  arrayOfIndices.push(attributeIndexofSexArray);
-  const attributeIndexofSkinColorArray = ATTRIBUTES.skinColor.indexOf(attributesValues[1]);
-  arrayOfIndices.push(attributeIndexofSkinColorArray);
-  const attributeIndexofProfessionArray = ATTRIBUTES.profession.indexOf(attributesValues[2]);
-  arrayOfIndices.push(attributeIndexofProfessionArray);
-  const resultingArr = arrayOfIndices.map(num => num.toString().padStart(2, "0"));
-  const attributesString = resultingArr.join("");
-  return attributesString;
 }
 
 export const approveGenesisNft = async (

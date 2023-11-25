@@ -16,35 +16,35 @@ describe("GenesisNftData", () => {
     genesisNftData = await (await ethers.getContractFactory("GenesisNftData", accounts[0])).deploy();
   });
 
-  it("the mapping GenderOptions should be initialized", async () => {
-    const genderOption0 = await genesisNftData.genderOptions("00");
-    expect(genderOption0).to.equal("Male");
-    const genderOption1 = await genesisNftData.genderOptions("01");
-    expect(genderOption1).to.equal("Female");
-  });
+  // it("the mapping GenderOptions should be initialized", async () => {
+  //   const genderOption0 = await genesisNftData.genderOptions("00");
+  //   expect(genderOption0).to.equal("Male");
+  //   const genderOption1 = await genesisNftData.genderOptions("01");
+  //   expect(genderOption1).to.equal("Female");
+  // });
 
-  it("the mapping skinOptions should be initialized", async () => {
-    const skinOption0 = await genesisNftData.skinOptions("00");
-    expect(skinOption0).to.equal("Brown");
-  });
+  // it("the mapping skinOptions should be initialized", async () => {
+  //   const skinOption0 = await genesisNftData.skinOptions("00");
+  //   expect(skinOption0).to.equal("Brown");
+  // });
 
-  it("the function split should correctly split the string in two digits", async () => {
-    const stringToSplit = "00112233";
-    const result = await genesisNftData.split(stringToSplit);
-    expect(result[0]).to.equal("00");
-    expect(result[1]).to.equal("11");
-    expect(result[2]).to.equal("22");
-    expect(result[3]).to.equal("33");
-  });
+  // it("the function split should correctly split the string in two digits", async () => {
+  //   const stringToSplit = "00112233";
+  //   const result = await genesisNftData.split(stringToSplit);
+  //   expect(result[0]).to.equal("00");
+  //   expect(result[1]).to.equal("11");
+  //   expect(result[2]).to.equal("22");
+  //   expect(result[3]).to.equal("33");
+  // });
 
-  it("the decodeAttributes function should return the correct attributes", async () => {
-    const encodedAttributes = "010203";
-    const decodedAttributes = await genesisNftData.decodeAttributes(encodedAttributes);
-    expect(decodedAttributes.length).to.equal(3);
-    expect(decodedAttributes[0]).to.equal("Female");
-    expect(decodedAttributes[1]).to.equal("White");
-    expect(decodedAttributes[2]).to.equal("Graphics Designer");
-  });
+  // it("the decodeAttributes function should return the correct attributes", async () => {
+  //   const encodedAttributes = "010203";
+  //   const decodedAttributes = await genesisNftData.decodeAttributes(encodedAttributes);
+  //   expect(decodedAttributes.length).to.equal(3);
+  //   expect(decodedAttributes[0]).to.equal("Female");
+  //   expect(decodedAttributes[1]).to.equal("White");
+  //   expect(decodedAttributes[2]).to.equal("Graphics Designer");
+  // });
 
   it("The token amount corresponds to the correct level", async () => {
     expect(await genesisNftData.getLevel(amount(0))).to.be.equal(ethers.BigNumber.from(0));

@@ -1,6 +1,6 @@
 export const GENISIS_NFT_ADDRESSES = {
   goerli: "",
-  sepolia: "0xa2Cfb3717aEac0f93b513e70697d37c6CB9C3688",
+  sepolia: "0x1b1D7a33a2D9E847Eb816366b115e1817316FA8d",
   hardhat: "",
   kovan: "",
   mainnet: "",
@@ -17,7 +17,7 @@ export const GENISIS_NFT_ADDRESSES = {
 
 export const GENESIS_NFT_DATA_ADDRESSES = {
   goerli: "",
-  sepolia: "0xFB2dc53Babed59c7154c6BD36562cAbF2f06fEa1",
+  sepolia: "0x8bCe605fCE917C0c08B957D437bc1D83C08c32B2",
   hardhat: "",
   kovan: "",
   mainnet: "",

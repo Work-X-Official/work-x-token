@@ -68,10 +68,17 @@ describe.skip("GenesisNftMintType", () => {
     nftData = await (await ethers.getContractFactory("GenesisNftData", signerImpersonated)).deploy();
     nft = await (
       await ethers.getContractFactory("GenesisNft", signerImpersonated)
-    ).deploy("Work X Genesis NFT", "Work X Genesis NFT", workToken.address, distribution.address, nftData.address);
+    ).deploy(
+      "Work X Genesis NFT",
+      "Work X Genesis NFT",
+      workToken.address,
+      distribution.address,
+      nftData.address,
+      nftVoucherSigner.address,
+    );
     await nft.deployed();
-    await nft.grantRole(await nft.SIGNER_ROLE(), nftVoucherSigner.address);
     await workToken.grantRole(await workToken.MINTER_ROLE(), nft.address);
+    await distribution.grantRole(await distribution.NFT_ROLE(), nft.address);
     return nft;
   };
 
