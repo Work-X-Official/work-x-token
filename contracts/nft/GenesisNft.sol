@@ -205,7 +205,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             revert("GenesisNft: All NFT's have been minted");
         }
 
-        //tokenDistribution.setTotalClaimed(_account, _amountToStake);
+        tokenDistribution.setTotalClaimed(_account, _amountToStake);
 
         accountMinted[_account] = 1;
         nftIdCounter += 1;
