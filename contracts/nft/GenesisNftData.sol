@@ -237,7 +237,7 @@ contract GenesisNftData {
         string[11] memory attr = decodeAttributes(_encodedAttributes);
         string memory id = Strings.toString(_tokenId);
 
-        //TODO: use this as image before reveal https://content.workx.io/video/Work-X-Lockup.mp4
+        //TODO: use this as image, if before reveal (_startTime)  https://content.workx.io/video/Work-X-Lockup.mp4
         string memory part1 = string(
             abi.encodePacked(
                 '{"name":"Work X Genesis NFT", "description":"This Work X Genesis NFT was obtained by being an early Work X adopter.", "image":"',

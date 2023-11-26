@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TokenDistribution } from "../../typings";
+import { TokenDistribution, WorkToken } from "../../typings";
 import { Investment, vestingPeriod3Cliff, vestingPeriods, workBought } from "./sale.util";
 import { BigNumber } from "ethers";
 import { amount, big } from "./helpers.util";
@@ -8,6 +8,21 @@ import {
   VESTING_LENGHT_PRIVATE_MONTHS,
   VESTING_LENGHT_SEED_MONTHS,
 } from "../../tasks/constants/sale.constants";
+import { ethers } from "hardhat";
+
+export const regenerateTokenDistribution = async (
+  _startTime: number,
+  workToken: WorkToken,
+): Promise<TokenDistribution> => {
+  if (_startTime == null) {
+    _startTime = (await ethers.provider.getBlock("latest")).timestamp;
+  }
+  const distribution = (await (
+    await ethers.getContractFactory("TokenDistribution")
+  ).deploy(workToken.address, _startTime)) as TokenDistribution;
+  await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
+  return distribution;
+};
 
 export const startLater = async (blocks: number, distribution: TokenDistribution) => {
   await distribution.startDistribution((await distribution.startTime()).toNumber() + blocks + 1);

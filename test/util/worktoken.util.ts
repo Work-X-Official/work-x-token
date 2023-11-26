@@ -1,7 +1,22 @@
-import { BigNumber, Contract, ethers } from "ethers";
+import { BigNumber, Contract } from "ethers";
 import { ERC20, IERC20, WorkToken } from "../../typings";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Network } from "hardhat/types";
+import { ethers } from "hardhat";
+import { amount } from "./helpers.util";
+
+export const regenerateWorkToken = async (
+  accounts: SignerWithAddress[],
+  minter = accounts[0].address,
+): Promise<WorkToken> => {
+  const workToken = await (await ethers.getContractFactory("WorkToken")).deploy();
+  await workToken.grantRole(await workToken.MINTER_ROLE(), minter);
+  for (let i = 0; i < 10; i++) {
+    await workToken.mint(accounts[i].address, amount(250000));
+  }
+  await workToken.mint(accounts[3].address, amount(2000000));
+  return workToken;
+};
 
 export const approveWorkToken = async (
   network: Network,

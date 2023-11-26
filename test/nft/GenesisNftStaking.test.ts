@@ -1,14 +1,15 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
-import { WorkToken, GenesisNft, GenesisNftData, ERC20, TokenDistribution, GenesisNftAttributes } from "../../typings";
-import { getImpersonateAccounts, mineDays } from "../util/helpers.util";
+import { WorkToken, GenesisNft, ERC20, TokenDistribution } from "../../typings";
+import { expectToRevert, getImpersonateAccounts, mineDays } from "../util/helpers.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Wallet } from "ethers";
 import { amount } from "../util/helpers.util";
-import { mintNft } from "../util/nft.util";
-import { sendTokens } from "../util/worktoken.util";
+import { mintNft, regenerateNft } from "../util/nft.util";
+import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
+import { regenerateTokenDistribution } from "../util/distribution.util";
 
 config();
 
@@ -16,8 +17,6 @@ chai.use(solidity);
 
 describe("GenesisNftStaking", () => {
   let nft: GenesisNft;
-  let nftData: GenesisNftData;
-  let nftAttributes: GenesisNftAttributes;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
   let stablecoinDecimals: number;
@@ -58,10 +57,10 @@ describe("GenesisNftStaking", () => {
     nftVoucherSigner = new ethers.Wallet(process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER as string).connect(ethers.provider);
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
-    await regenerateWorkToken();
+    workToken = await regenerateWorkToken(accounts, accounts[0].address);
     const startTime = (await ethers.provider.getBlock("latest")).timestamp + 11;
-    await regenerateTokenDistribution(startTime);
-    await regenerateNft();
+    distribution = await regenerateTokenDistribution(startTime, workToken);
+    nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
     await distribution.setWalletClaimable([nftMinter3.address], [500], [0], [0], [0]);
     await distribution.setWalletClaimable([nftMinter4.address], [10000], [0], [0], [0]);
     await distribution.setWalletClaimable([nftMinter5.address], [100000], [0], [0], [0]);
@@ -494,44 +493,95 @@ describe("GenesisNftStaking", () => {
     expect((await nft.getNftInfoAtMonth(nftId5, 13)).minimumStaked).to.be.equal(amount(129000));
   });
 
-  const regenerateNft = async (): Promise<GenesisNft> => {
-    nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
-    nftData = await (
-      await ethers.getContractFactory("GenesisNftData", signerImpersonated)
-    ).deploy(nftAttributes.address);
-    nft = await (
-      await ethers.getContractFactory("GenesisNft", signerImpersonated)
-    ).deploy(
-      "Work X Genesis NFT",
-      "Work X Genesis NFT",
-      workToken.address,
-      distribution.address,
-      nftData.address,
-      nftVoucherSigner.address,
-    );
-    await nft.deployed();
-    await workToken.grantRole(await workToken.MINTER_ROLE(), nft.address);
-    await distribution.grantRole(await distribution.NFT_ROLE(), nft.address);
-    return nft;
-  };
+  describe("Test stakeAndEvolve", async () => {
+    let nftMinter1: SignerWithAddress;
+    let nftMinter2: SignerWithAddress;
+    let nftMinter3: SignerWithAddress;
+    let nftMinter4: SignerWithAddress;
 
-  const regenerateWorkToken = async (minter = accounts[0].address): Promise<boolean> => {
-    workToken = await (await ethers.getContractFactory("WorkToken")).deploy();
-    await workToken.grantRole(await workToken.MINTER_ROLE(), minter);
-    for (let i = 0; i < 10; i++) {
-      await workToken.mint(accounts[i].address, amount(250000));
-    }
-    await workToken.mint(accounts[3].address, amount(2000000));
-    return true;
-  };
+    let nftId1: number;
+    let nftId2: number;
+    let nftId3: number;
+    let nftId4: number;
 
-  const regenerateTokenDistribution = async (_startTime: number) => {
-    if (_startTime == null) {
-      _startTime = (await ethers.provider.getBlock("latest")).timestamp;
-    }
-    distribution = (await (
-      await ethers.getContractFactory("TokenDistribution")
-    ).deploy(workToken.address, _startTime)) as TokenDistribution;
-    await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
-  };
+    before(async () => {
+      nftMinter1 = accounts[3];
+      nftMinter2 = accounts[4];
+      nftMinter3 = accounts[5];
+      nftMinter4 = accounts[6];
+      workToken = await regenerateWorkToken(accounts, accounts[0].address);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
+      distribution = await regenerateTokenDistribution(startTime, workToken);
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
+      ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 0, 0, 0, chainId));
+      ({ nftId: nftId4 } = await mintNft(network, nft, workToken, nftMinter4, 155000, 0, 0, chainId));
+    });
+
+    it("Cannot call stakeAndEvolve if you are not the owner", async () => {
+      await expectToRevert(
+        nft.connect(nftMinter2).stakeAndEvolve(nftId1, amount(1000)),
+        "GenesisNft: You are not the owner of this NFT",
+      );
+    });
+    it("Cannot call stakeAndEvolve before the nft startTime (except level 80 people)", async () => {
+      await expectToRevert(
+        nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1)),
+        "GenesisNft: The amount you want to stake is more than the total allowance",
+      );
+      // go to nft Starttime
+      await mineDays(12, network);
+    });
+
+    it("StakeAndEvolve nftId1 at day 20 increase stake nftInfo is correct(did not evolve to tier 1)", async () => {
+      await mineDays(20, network);
+      const amount = ethers.utils.parseEther("5000");
+      await nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount);
+      expect(await nft.getStaked(nftId1)).to.be.equal(amount);
+      const nftInfo = await nft.getNftInfo(nftId1);
+      expect(nftInfo._staked).to.be.equal(amount);
+      expect(nftInfo._shares).to.be.equal(11 + 50);
+      expect(nftInfo._tier).to.be.equal(0);
+      expect(await nft.getLevel(nftId1)).to.be.equal(9);
+    });
+    it("StakeAndEvolve nftId2 at day 40 increase stake nftInfo is correct(did evolve to tier 1)", async () => {
+      await mineDays(20, network);
+      const amount = ethers.utils.parseEther("11000");
+      await nft.connect(nftMinter2).stakeAndEvolve(nftId2, amount);
+      expect(await nft.getStaked(nftId2)).to.be.equal(amount);
+      const nftInfo = await nft.getNftInfo(nftId2);
+      expect(nftInfo._staked).to.be.equal(amount);
+      expect(nftInfo._shares).to.be.equal(23 + 50);
+      expect(nftInfo._tier).to.be.equal(1);
+      expect(await nft.getLevel(nftId2)).to.be.equal(16);
+    });
+    it("StakeAndEvolve nftId3 at day 60, increase stake and nftInfo is correct, did evolve to tier 2", async () => {
+      await mineDays(20, network);
+      const amount = ethers.utils.parseEther("16000");
+      await nft.connect(nftMinter3).stakeAndEvolve(nftId3, amount);
+      expect(await nft.getStaked(nftId3)).to.be.equal(amount);
+      const nftInfo = await nft.getNftInfo(nftId3);
+      expect(nftInfo._staked).to.be.equal(amount);
+      expect(nftInfo._shares).to.be.equal(33 + 50);
+      expect(nftInfo._tier).to.be.equal(2);
+      expect(await nft.getLevel(nftId3)).to.be.equal(21);
+    });
+
+    it("StakeAndEvolve nftId4 is level 80, so can stakeAndEvolve unlimited but will not increase tier", async () => {
+      const amountMint = ethers.utils.parseEther("155000");
+      const amountStake = ethers.utils.parseEther("95000");
+      const nftInfoBefore = await nft.getNftInfo(nftId4);
+      expect(await nft.getLevel(nftId4)).to.be.equal(80);
+      expect(nftInfoBefore._staked).to.be.equal(amountMint);
+      expect(nftInfoBefore._shares).to.be.equal(320 + 50);
+      expect(nftInfoBefore._tier).to.be.equal(8);
+      await nft.connect(nftMinter4).stakeAndEvolve(nftId4, amountStake);
+      const nftInfoAfter = await nft.getNftInfo(nftId4);
+      expect(nftInfoAfter._staked).to.be.equal(amountMint.add(amountStake));
+      expect(nftInfoAfter._shares).to.be.equal(320 + 50);
+      expect(nftInfoAfter._tier).to.be.equal(8);
+      expect(await nft.getLevel(nftId4)).to.be.equal(80);
+    });
+  });
 });

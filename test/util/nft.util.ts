@@ -1,18 +1,45 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber, ethers } from "ethers";
-import { GenesisNft, WorkToken } from "../../typings";
+import { BigNumber } from "ethers";
+import { GenesisNft, TokenDistribution, WorkToken } from "../../typings";
 import { Network } from "hardhat/types/runtime";
 import { amount } from "./helpers.util";
 import { approveWorkToken } from "./worktoken.util";
 import { Investment, calculateAmountBoughtTotal, calculateBuyMoreTokenBalance } from "./sale.util";
 import { MIN_TOKEN_STAKING, VESTING_LENGHT_BUY_MORE_MONTHS } from "../../tasks/constants/sale.constants";
 import { avgMonthsVest, maxLockLength } from "./distribution.util";
+import { ethers } from "hardhat";
 
 interface NftIds {
   nftId: number;
   voucherId: number;
 }
+
+export const regenerateNft = async (
+  signerImpersonated: SignerWithAddress,
+  workToken: WorkToken,
+  distribution: TokenDistribution,
+  nftVoucherSigner: string,
+): Promise<GenesisNft> => {
+  const nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
+  const nftData = await (
+    await ethers.getContractFactory("GenesisNftData", signerImpersonated)
+  ).deploy(nftAttributes.address);
+  const nft = await (
+    await ethers.getContractFactory("GenesisNft", signerImpersonated)
+  ).deploy(
+    "Work X Genesis NFT",
+    "Work X Genesis NFT",
+    workToken.address,
+    distribution.address,
+    nftData.address,
+    nftVoucherSigner,
+  );
+  await nft.deployed();
+  await workToken.grantRole(await workToken.MINTER_ROLE(), nft.address);
+  await distribution.grantRole(await distribution.NFT_ROLE(), nft.address);
+  return nft;
+};
 
 export const mintNft = async (
   network: Network,

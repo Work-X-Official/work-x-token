@@ -1,26 +1,25 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
-import { WorkToken, GenesisNft, GenesisNftData, TokenDistribution, GenesisNftAttributes } from "../../typings";
+import { WorkToken, GenesisNft, TokenDistribution } from "../../typings";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Wallet } from "ethers";
-import { amount } from "../util/helpers.util";
-import { mintNftMany } from "../util/nft.util";
+import { mintNftMany, regenerateNft } from "../util/nft.util";
+import { regenerateWorkToken } from "../util/worktoken.util";
+import { regenerateTokenDistribution } from "../util/distribution.util";
 
 config();
 
 chai.use(solidity);
 
 /**
- * To use these test it is necessary to set number of accounts in hardhat config to 1000
- * These tests take a long time to run, so they are skipped by default
+ * IMPORTANT: To use these test it is necessary to set number of accounts in hardhat config to 1000
+ * These tests take a long time to run, so they are skipped by default, remove .skip to run them
  **/
 
 describe.skip("GenesisNftMintType", () => {
   let nft: GenesisNft;
-  let nftData: GenesisNftData;
-  let nftAttributes: GenesisNftAttributes;
   let signerImpersonated: SignerWithAddress;
 
   let accounts: SignerWithAddress[];
@@ -36,24 +35,25 @@ describe.skip("GenesisNftMintType", () => {
     if (!process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) throw new Error("NFT_MESSAGE_SIGNER_PRIVATE_KEY not set");
     nftVoucherSigner = new ethers.Wallet(process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER as string).connect(ethers.provider);
 
-    await regenerateWorkToken();
+    workToken = await regenerateWorkToken(accounts, accounts[0].address);
     const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
-    await regenerateTokenDistribution(startTime);
-    await regenerateNft();
+    distribution = await regenerateTokenDistribution(startTime, workToken);
+    nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
   });
 
   describe("Minting", async () => {
     let nftCount = 0;
+
     it("Mint all 349 nfts of type 0, so all but one", async () => {
       const quantity = 349;
       const type = 0;
       const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, type, chainId);
       nftCount += nftIds.length;
-
       const nftCountRead = await nft.nftIdCounter();
       expect(nftCountRead).to.equal(349);
       expect(nftCount).to.equal(349);
     }).timeout(1000000);
+
     it("Mint the last nft of type 0, so making the total 350", async () => {
       const quantity = 1;
       const type = 0;
@@ -64,44 +64,4 @@ describe.skip("GenesisNftMintType", () => {
       expect(nftCount).to.equal(350);
     });
   });
-
-  const regenerateNft = async (): Promise<GenesisNft> => {
-    nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
-    nftData = await (
-      await ethers.getContractFactory("GenesisNftData", signerImpersonated)
-    ).deploy(nftAttributes.address);
-    nft = await (
-      await ethers.getContractFactory("GenesisNft", signerImpersonated)
-    ).deploy(
-      "Work X Genesis NFT",
-      "Work X Genesis NFT",
-      workToken.address,
-      distribution.address,
-      nftData.address,
-      nftVoucherSigner.address,
-    );
-    await nft.deployed();
-    await workToken.grantRole(await workToken.MINTER_ROLE(), nft.address);
-    await distribution.grantRole(await distribution.NFT_ROLE(), nft.address);
-    return nft;
-  };
-
-  const regenerateWorkToken = async (minter = accounts[0].address): Promise<boolean> => {
-    workToken = await (await ethers.getContractFactory("WorkToken")).deploy();
-    await workToken.grantRole(await workToken.MINTER_ROLE(), minter);
-    for (let i = 0; i < 10; i++) {
-      await workToken.mint(accounts[i].address, amount(250000));
-    }
-    return true;
-  };
-
-  const regenerateTokenDistribution = async (_startTime: number) => {
-    if (_startTime == null) {
-      _startTime = (await ethers.provider.getBlock("latest")).timestamp;
-    }
-    distribution = (await (
-      await ethers.getContractFactory("TokenDistribution")
-    ).deploy(workToken.address, _startTime)) as TokenDistribution;
-    await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
-  };
 });
