@@ -106,7 +106,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       // gas: 20000000,
       accounts: {
-        count: 1000,
+        count: 10,
         mnemonic: mnemonic,
         accountsBalance: "100000000000000000000000000",
       },

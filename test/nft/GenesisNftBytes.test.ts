@@ -9,7 +9,7 @@ config();
 
 chai.use(solidity);
 
-describe("Byte Operations", () => {
+describe("GenesisNft Byte Operations", () => {
   let accounts: SignerWithAddress[];
   let nftData: GenesisNftData;
 
@@ -18,14 +18,29 @@ describe("Byte Operations", () => {
     nftData = await (await ethers.getContractFactory("GenesisNftData", accounts[0])).deploy();
   });
 
-  it("test splitBytes", async () => {
+  it("Test splitBytes", async () => {
     const result = await nftData.splitBytes(ethers.utils.formatBytes32String("0104051050000000000001"));
-    console.log(result);
-    //expect(result).to.equal([1, 4, 5, 10, 50, 0, 0, 0, 0, 0, 1]);
+    expect(result).to.eql([1, 4, 5, 10, 50, 0, 0, 0, 0, 0, 1]);
   });
 
-  it("test decodeAttributes", async () => {
+  it("Test decodeAttributes", async () => {
     const result = await nftData.decodeAttributes(ethers.utils.formatBytes32String("0104051030000000000001"));
-    console.log(result);
+    const attributes: string[] = [];
+    for (let i = 0; i < result.length; i++) {
+      attributes.push(ethers.utils.parseBytes32String(result[i]));
+    }
+    expect(attributes).to.eql([
+      "Female",
+      "Caramel",
+      "Community Moderator",
+      "Earring Silver-Pink",
+      "Mobile Office",
+      "Amber Blue",
+      "Black Hat",
+      "Full",
+      "Blush Ligh",
+      "Business Suit",
+      "A/B Testing",
+    ]);
   });
 });

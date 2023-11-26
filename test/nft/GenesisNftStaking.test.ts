@@ -58,10 +58,13 @@ describe("GenesisNftStaking", () => {
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
     await regenerateWorkToken();
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
     await regenerateTokenDistribution(startTime);
     await regenerateNft();
-
+    await distribution.setWalletClaimable([nftMinter3.address], [500], [0], [0], [0]);
+    await distribution.setWalletClaimable([nftMinter4.address], [10000], [0], [0], [0]);
+    await distribution.setWalletClaimable([nftMinter5.address], [100000], [0], [0], [0]);
+    await mineDays(12, network);
     ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
     ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
     ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 500, 0, 0, chainId));
@@ -69,7 +72,7 @@ describe("GenesisNftStaking", () => {
     ({ nftId: nftId5 } = await mintNft(network, nft, workToken, nftMinter5, 100000, 0, 0, chainId));
   });
 
-  it("On day 0, Check that the total for month 0 is oke and that all the total amounts are correct.", async () => {
+  it("On day 0, Check that the total for month 0 is oke and that all the total amounts are correct", async () => {
     const totals = await nft.getTotals(0);
     const totalExpected = amount(500 + 10000 + 100000);
     expect(totals._minimumBalance).to.be.equal(totalExpected);
@@ -291,7 +294,6 @@ describe("GenesisNftStaking", () => {
 
     const totals = await nft.getTotals(3);
     const minimumExpected = amount(5000 + 10000 + 7500 + 16000 + 110000);
-    console.log("minimumExpected", Number(ethers.utils.formatEther(minimumExpected)));
     const expectedTotal = amount(15000 + 20000 + 7500 + 16000 + 110000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);

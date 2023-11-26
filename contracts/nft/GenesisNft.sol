@@ -25,12 +25,13 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     uint16 constant COUNT_FCFS = 150;
     uint16 constant COUNT_INV = 499;
     uint16 public nftIdCounter;
+    uint8 public initCompleted = 0;
 
     uint128 constant ONE_E18 = 10 ** 18;
     uint128 public startTime;
 
-    string ipfsGateway = "https://ipfs.io/ipfs/";
-    string ipfsFolder = "QmQm674t1h2XrUxDmUGCKtbq7zickyApWt1wyYPJozizoS";
+    string imageBaseURI = "https://ipfs.io/ipfs/";
+    string imageFolder = "QmQm674t1h2XrUxDmUGCKtbq7zickyApWt1wyYPJozizoS";
     address voucherSigner;
 
     mapping(address => uint16) public accountMinted;
@@ -85,7 +86,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         tokenDistribution = TokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
         voucherSigner = _voucherSigner;
-        startTime = uint128(block.timestamp + 30 days);
+        startTime = uint128(block.timestamp + 12 days);
     }
 
     /****
@@ -97,7 +98,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _folder The folder that will be set.
      **/
     function setIpfsFolder(string calldata _folder) external onlyOwner {
-        ipfsFolder = _folder;
+        imageFolder = _folder;
     }
 
     /**
@@ -105,7 +106,27 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _gateway The gateway that will be set.
      **/
     function setIpfsGateway(string calldata _gateway) external onlyOwner {
-        ipfsGateway = _gateway;
+        imageBaseURI = _gateway;
+    }
+
+    /**
+     * @notice Sets initCompleted to 1
+     * @dev This is used to make sure that the attributes can not be changed after the init is completed.
+     **/
+    function setInitCompleted() external onlyOwner {
+        initCompleted = 1;
+    }
+
+    /**
+     * @notice Sets the attributes for a batch of NFTs.
+     * @param _tokenId The tokenId of the NFT.
+     * @param _encodedAttributes The 11 NFT attributes encoded in a bytes32.
+     **/
+    function setNftAttributes(uint256[] calldata _tokenId, bytes32[] calldata _encodedAttributes) external onlyOwner {
+        require(initCompleted == 0, "GenesisNft: The NFT attributes can not be changed after the init is completed");
+        for (uint256 id = 0; id < _tokenId.length; id++) {
+            nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
+        }
     }
 
     /**
@@ -302,9 +323,10 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         uint256 nftSharesOld = getShares(_tokenId);
         uint256 totalSharesCurrentMonth = _getTotalShares(currentMonth);
         NftTotalMonth storage _nftMonthTotal = monthlyTotal[uint8(currentMonth)];
-        NftInfoMonth storage _nftMonth = nft[_tokenId].monthly[uint8(currentMonth)];
+        NftInfo storage _nft = nft[_tokenId];
+        NftInfoMonth storage _nftMonth = _nft.monthly[uint8(currentMonth)];
         if (_isIncreasingShares) {
-            uint256 nftSharesNew = calculateShares(_tokenId);
+            uint256 nftSharesNew = _calculateShares(nftData.getLevelCapped(_nftMonth.staked, _nft.tier)) + BASE_STAKE;
             _nftMonth.shares = uint16(nftSharesNew);
             _nftMonthTotal.totalShares = uint32(totalSharesCurrentMonth + nftSharesNew - nftSharesOld);
         } else {
@@ -407,11 +429,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
                                 _minimumToCheck = ii < _month + 1
                                     ? _monthlyTotal.totalStaked
                                     : _monthlyTotal.minimumStaked;
-                                if (_minimumDecreased <= _minimumToCheck) {
-                                    _totalToSet.minimumStaked = uint128(_minimumToCheck - _minimumDecreased);
-                                } else {
-                                    _totalToSet.minimumStaked = uint128(_minimumToCheck);
-                                }
+                                _totalToSet.minimumStaked = uint128(_minimumToCheck - _minimumDecreased);
                             } else {
                                 revert("GenesisNft: You are trying to unstake more than the amount staked!");
                             }
@@ -500,17 +518,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             }
         }
         return 0;
-    }
-
-    /**
-     * @notice Calculate the shares of an NFT based on the level and tier of the NFT.
-     * @dev The result of this fuction is 10 times the actual shares, as the actual shares contain fractions.
-     *      Note that this does not actually set the calculated shares, it only returns the value.
-     * @param _tokenId The id of the NFT.
-     * @return The newly calculated shares of the NFT.
-     **/
-    function calculateShares(uint256 _tokenId) public view returns (uint256) {
-        return _calculateShares(nftData.getLevelCapped(getStaked(_tokenId), nft[_tokenId].tier)) + BASE_STAKE;
     }
 
     /****
@@ -748,7 +755,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
                 shares,
                 _nft.encodedAttributes,
                 _nft.lockPeriod + startTime,
-                string.concat(ipfsGateway, ipfsFolder, "/")
+                string.concat(imageBaseURI, imageFolder, "/")
             );
     }
 }
