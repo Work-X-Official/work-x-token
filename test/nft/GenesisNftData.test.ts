@@ -13,7 +13,10 @@ describe("GenesisNftData", () => {
 
   before(async () => {
     accounts = await ethers.getSigners();
-    genesisNftData = await (await ethers.getContractFactory("GenesisNftData", accounts[0])).deploy();
+    const nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", accounts[0])).deploy();
+    genesisNftData = await (
+      await ethers.getContractFactory("GenesisNftData", accounts[0])
+    ).deploy(nftAttributes.address);
   });
 
   // it("the mapping GenderOptions should be initialized", async () => {

@@ -4,192 +4,14 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "base64-sol/base64.sol";
-
+import "./GenesisNftAttributes.sol";
 import "hardhat/console.sol";
 
 contract GenesisNftData {
-    struct Options {
-        uint8[10] opt;
-    }
+    GenesisNftAttributes public immutable attributes;
+
     uint256 constant ONE_E18 = 10 ** 18;
 
-    bytes32[2] public gender = [bytes32("Male"), bytes32("Female")];
-    bytes32[7] public body = [
-        bytes32("Brown"),
-        bytes32("Yellow"),
-        bytes32("White"),
-        bytes32("Tan"),
-        bytes32("Caramel"),
-        bytes32("Red"),
-        bytes32("Black")
-    ];
-    bytes32[10] public profession = [
-        bytes32("Founder"),
-        bytes32("Sales"),
-        bytes32("Web3 Hacker"),
-        bytes32("Graphics Designer"),
-        bytes32("Tester"),
-        bytes32("Community Moderator"),
-        bytes32("Investor"),
-        bytes32("Marketeer"),
-        bytes32("Influencer"),
-        bytes32("Security Researcher")
-    ];
-    bytes32[21] public accessories = [
-        bytes32("None"),
-        bytes32("Airpods Pro"),
-        bytes32("Airpods"),
-        bytes32("Earbud"),
-        bytes32("Earring Blue"),
-        bytes32("Earring Gold"),
-        bytes32("Earring Green"),
-        bytes32("Earring Pink"),
-        bytes32("Earring Red"),
-        bytes32("Earring Silver-Blue"),
-        bytes32("Earring Silver-Pink"),
-        bytes32("Earring Silver"),
-        bytes32("Glasses Black"),
-        bytes32("Glasses Blue"),
-        bytes32("Glasses Bordeaux"),
-        bytes32("Glasses Gold"),
-        bytes32("Glasses Pink"),
-        bytes32("Google Glass"),
-        bytes32("Mardi Mask"),
-        bytes32("Sennheiser"),
-        bytes32("Vision Pro")
-    ];
-    bytes32[52] public background = [
-        bytes32("3D Printer"),
-        bytes32("Airplane Business Class"),
-        bytes32("Atelier"),
-        bytes32("Beach"),
-        bytes32("Blockchain Schematics"),
-        bytes32("Cabin In The Woods"),
-        bytes32("Co-working Space"),
-        bytes32("Coffeeshop"),
-        bytes32("Community Meetup"),
-        bytes32("Conference Booth"),
-        bytes32("Flip-over Board with Diagrams"),
-        bytes32("Garden Office"),
-        bytes32("Grand Conference"),
-        bytes32("Hackathon"),
-        bytes32("Hacker Desk"),
-        bytes32("Home Office"),
-        bytes32("Hotel Conference Room"),
-        bytes32("Hotel Lobby"),
-        bytes32("Library"),
-        bytes32("Linear Behongo"),
-        bytes32("Linear Crazy Orange"),
-        bytes32("Linear Earthly"),
-        bytes32("Linear Endless River"),
-        bytes32("Linear Hersheys"),
-        bytes32("Linear Metalic Toad"),
-        bytes32("Linear Predawn"),
-        bytes32("Linear Purple Bliss"),
-        bytes32("Linear Red Mist"),
-        bytes32("Linear Shore"),
-        bytes32("Meeting Room"),
-        bytes32("Mobile Office"),
-        bytes32("Modern Office Space"),
-        bytes32("Monitoring Room"),
-        bytes32("Office Desk"),
-        bytes32("Open Office Space"),
-        bytes32("Park"),
-        bytes32("Radial Aqua"),
-        bytes32("Radial Blue"),
-        bytes32("Radial Gold"),
-        bytes32("Radial Green"),
-        bytes32("Radial Grey"),
-        bytes32("Radial Mint"),
-        bytes32("Radial Pink"),
-        bytes32("Radial Purple"),
-        bytes32("Radial Red"),
-        bytes32("Radial Yellow"),
-        bytes32("Rooftop Terrace"),
-        bytes32("Sales Presentation"),
-        bytes32("Sunny Desk"),
-        bytes32("Trading Desk"),
-        bytes32("University Campus"),
-        bytes32("Yacht")
-    ];
-    bytes32[19] public eyes = [
-        bytes32("Amber Blue"),
-        bytes32("Amber Grey"),
-        bytes32("Amber"),
-        bytes32("Blue"),
-        bytes32("Bright Green"),
-        bytes32("Brown"),
-        bytes32("Dark Green"),
-        bytes32("Deep Blue"),
-        bytes32("Deep Brown"),
-        bytes32("Deep Green"),
-        bytes32("Gold"),
-        bytes32("Green-Brown"),
-        bytes32("Green-Blue"),
-        bytes32("Green"),
-        bytes32("Grey"),
-        bytes32("Hazel"),
-        bytes32("Sea Blue"),
-        bytes32("Starlake"),
-        bytes32("Steel-Blue")
-    ];
-    bytes32[34] public hair = [
-        bytes32("Black Hat"),
-        bytes32("Black"),
-        bytes32("Blonde Light"),
-        bytes32("Blonde Long"),
-        bytes32("Blonde Short"),
-        bytes32("Blonde"),
-        bytes32("Brown"),
-        bytes32("Cap Green"),
-        bytes32("Cap Grey"),
-        bytes32("Cap Hodl"),
-        bytes32("Cap Hype"),
-        bytes32("Cap KOL Green"),
-        bytes32("Cap KOL Pink"),
-        bytes32("Cap Orange"),
-        bytes32("Cap Pink"),
-        bytes32("Cap Red"),
-        bytes32("Cap Swag"),
-        bytes32("Cap Work X"),
-        bytes32("Dark Brown"),
-        bytes32("Grey"),
-        bytes32("Headphones"),
-        bytes32("Light Brown"),
-        bytes32("Light Orange"),
-        bytes32("Orange"),
-        bytes32("Pencil"),
-        bytes32("Purple"),
-        bytes32("Red Hat"),
-        bytes32("Red Long"),
-        bytes32("Red"),
-        bytes32("White Hat"),
-        bytes32("Anonymous"),
-        bytes32("Fire"),
-        bytes32("White"),
-        bytes32("VR Glasses")
-    ];
-    bytes32[7] public mouth = [
-        bytes32("Full"),
-        bytes32("Neutral"),
-        bytes32("Slight Smile"),
-        bytes32("Smile"),
-        bytes32("Thin Smile"),
-        bytes32("Thin"),
-        bytes32("Wide Smile")
-    ];
-    bytes32[8] public complexion = [
-        bytes32("Blush Ligh"),
-        bytes32("Blush Strong"),
-        bytes32("Clear"),
-        bytes32("Freckles Light"),
-        bytes32("Freckles Strong"),
-        bytes32("Beauty Spot Cheek"),
-        bytes32("Beauty Spot Eye"),
-        bytes32("Beauty Spot Lip")
-    ];
-    bytes32[8] public item = [bytes32("Business Suit")];
-    bytes32[8] public clothes = [bytes32("A/B Testing")];
     uint24[80] private levels = [
         525,
         1056,
@@ -273,6 +95,11 @@ contract GenesisNftData {
         152720
     ];
 
+    constructor(address _attributesAddress) {
+        require(_attributesAddress != address(0), "GenesisNftData: Invalid attributes address");
+        attributes = GenesisNftAttributes(_attributesAddress);
+    }
+
     /**
      * @notice Returns the level of the NFT based on the amount of tokens staked.
      * @dev Splits 80 into 4 seconds of 20, then splits 20 into 4 sections of 5, then loops over the remaining 5 to find the correct level from the XP array.
@@ -352,24 +179,36 @@ contract GenesisNftData {
         }
     }
 
+    function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
+        uint8 i = 0;
+        while (i < 32 && _bytes32[i] != 0) {
+            i++;
+        }
+        bytes memory bytesArray = new bytes(i);
+        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+            bytesArray[i] = _bytes32[i];
+        }
+        return string(bytesArray);
+    }
+
     /**
      * @notice Decodes the attributes from the encoded attributes bytes32.
      * @param _encodedAttributes The encoded attributes bytes.
      * @return _attributes The array of attributes.
      **/
-    function decodeAttributes(bytes32 _encodedAttributes) public view returns (bytes32[11] memory _attributes) {
+    function decodeAttributes(bytes32 _encodedAttributes) public view returns (string[11] memory _attributes) {
         uint8[11] memory i = this.splitBytes(abi.encode(_encodedAttributes));
-        _attributes[0] = gender[i[0]];
-        _attributes[1] = body[i[1]];
-        _attributes[2] = profession[i[2]];
-        _attributes[3] = accessories[i[3]];
-        _attributes[4] = background[i[4]];
-        _attributes[5] = eyes[i[5]];
-        _attributes[6] = hair[i[6]];
-        _attributes[7] = mouth[i[7]];
-        _attributes[8] = complexion[i[8]];
-        _attributes[9] = item[i[9]];
-        _attributes[10] = clothes[i[9]];
+        _attributes[0] = bytes32ToString(attributes.gender(i[0]));
+        _attributes[1] = bytes32ToString(attributes.body(i[1]));
+        _attributes[2] = bytes32ToString(attributes.profession(i[2]));
+        _attributes[3] = bytes32ToString(attributes.accessories(i[3]));
+        _attributes[4] = bytes32ToString(attributes.background(i[4]));
+        _attributes[5] = bytes32ToString(attributes.eyes(i[5]));
+        _attributes[6] = bytes32ToString(attributes.hair(i[6]));
+        _attributes[7] = bytes32ToString(attributes.mouth(i[7]));
+        _attributes[8] = bytes32ToString(attributes.complexion(i[8]));
+        _attributes[9] = bytes32ToString(attributes.item(i[9]));
+        _attributes[10] = bytes32ToString(attributes.clothes(i[10]));
     }
 
     /**
@@ -392,59 +231,60 @@ contract GenesisNftData {
         uint256 _shares,
         bytes32 _encodedAttributes,
         uint256 _unlockTime,
+        uint256 _startTime,
         string calldata _imageUri
     ) public view returns (string memory) {
-        bytes32[11] memory attributes = decodeAttributes(_encodedAttributes);
+        string[11] memory attr = decodeAttributes(_encodedAttributes);
         string memory id = Strings.toString(_tokenId);
 
-        string memory combinedStr2 = string(
-            abi.encodePacked('"attributes":', '[{"trait_type": "Level",', '"value":', Strings.toString(_level))
-        );
-
-        string memory combinedStr3 = string(
+        //TODO: use this as image before reveal https://content.workx.io/video/Work-X-Lockup.mp4
+        string memory part1 = string(
             abi.encodePacked(
-                '},{"trait_type": "Tier",',
-                '"value":',
-                Strings.toString(_tier),
-                '},{"trait_type": "$WORK Staked",',
-                '"value":',
-                Strings.toString(_staked / ONE_E18)
-            )
-        );
-
-        string memory combinedStr4 = string(
-            abi.encodePacked(
-                '},{"trait_type": "Gender",',
-                '"value":"',
-                attributes[0],
-                '"},{"trait_type": "Body",',
-                '"value":"',
-                attributes[1],
-                '"},{"trait_type": "Profession",',
-                '"value":"',
-                attributes[2],
-                '"},'
-            )
-        );
-
-        string memory combinedStr5 = string(
-            abi.encodePacked(
-                '{"display_type": "boost_number", "trait_type": "Shares",',
-                '"value":',
-                Strings.toString(_shares),
-                '},{"display_type": "date", "trait_type": "Tokens Unlock",',
-                '"value":',
-                Strings.toString(_unlockTime),
-                "}]",
-                "}"
-            )
-        );
-
-        string memory info = string(
-            abi.encodePacked(
-                '{"name":"Work X Genesis NFT", "description":"This Work X Genesis NFT was earned by being an early Work X adopter.", "image":"',
+                '{"name":"Work X Genesis NFT", "description":"This Work X Genesis NFT was obtained by being an early Work X adopter.", "image":"',
                 string.concat(_imageUri, id),
-                '", '
+                '.png","attributes": [{"trait_type":"Level","value":',
+                Strings.toString(_level),
+                '},{"trait_type":"Tier","value":',
+                Strings.toString(_tier),
+                '},{"trait_type":"$WORK Staked","value":',
+                Strings.toString(_staked / ONE_E18),
+                '},{"trait_type":"Gender","value":"',
+                attr[0],
+                '"},{"trait_type":"Body","value":"',
+                attr[1]
+            )
+        );
+
+        string memory part2 = string(
+            abi.encodePacked(
+                '"},{"trait_type":"Profession","value":"',
+                attr[2],
+                '"},{"trait_type":"Accessories","value":"',
+                attr[3],
+                '"},{"trait_type":"Background","value":"',
+                attr[4],
+                '"},{"trait_type":"Eyes","value":"',
+                attr[5],
+                '"},{"trait_type":"Hair","value":"',
+                attr[6],
+                '"},{"trait_type":"Mouth","value":"',
+                attr[7]
+            )
+        );
+
+        string memory part3 = string(
+            abi.encodePacked(
+                '"},{"trait_type":"Complexion","value":"',
+                attr[8],
+                '"},{"trait_type":"Item","value":"',
+                attr[9],
+                '"},{"trait_type":"Clothes","value":"',
+                attr[10],
+                '"},{"display_type": "boost_number", "trait_type": "Shares","value":',
+                Strings.toString(_shares),
+                '},{"display_type": "date", "trait_type": "Tokens Unlock","value":',
+                Strings.toString(_unlockTime),
+                "}]}"
             )
         );
 
@@ -452,14 +292,7 @@ contract GenesisNftData {
             string(
                 abi.encodePacked(
                     "data:application/json;base64,",
-                    Base64.encode(
-                        bytes(
-                            abi.encodePacked(
-                                info,
-                                string(abi.encodePacked(combinedStr2, combinedStr3, combinedStr4, combinedStr5))
-                            )
-                        )
-                    )
+                    Base64.encode(bytes(abi.encodePacked(part1, part2, part3)))
                 )
             );
     }

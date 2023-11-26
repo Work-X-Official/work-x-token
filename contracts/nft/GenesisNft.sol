@@ -30,8 +30,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     uint128 constant ONE_E18 = 10 ** 18;
     uint128 public startTime;
 
-    string imageBaseURI = "https://ipfs.io/ipfs/";
-    string imageFolder = "QmQm674t1h2XrUxDmUGCKtbq7zickyApWt1wyYPJozizoS";
+    string imageBaseURI = "https://plum-potential-tiglon-489.mypinata.cloud/ipfs/";
+    string imageFolder = "QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b";
     address voucherSigner;
 
     mapping(address => uint16) public accountMinted;
@@ -205,7 +205,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             revert("GenesisNft: All NFT's have been minted");
         }
 
-        tokenDistribution.setTotalClaimed(_account, _amountToStake);
+        //tokenDistribution.setTotalClaimed(_account, _amountToStake);
 
         accountMinted[_account] = 1;
         nftIdCounter += 1;
@@ -262,13 +262,18 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     }
 
     /**
-     * @notice The stakeAndEvolve function calls the stake function and afterwards evolves the NFT to the a higher tier if applicable.
-     * @dev The tokenURI is dynamically generated, it will be based on the type and level and many other variables and is then formatted.
+     * @notice The stakeAndEvolve function stakes tokens and afterwards evolves the NFT to the a higher tier if applicable.
      * @param _tokenId The id of the NFT.
      * @param _amount a string which is the tokenURI of an NFT.
      **/
     function stakeAndEvolve(uint256 _tokenId, uint256 _amount) external nonReentrant {
-        stake(_tokenId, _amount);
+        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
+        uint256 stakedAmount = getStaked(_tokenId);
+        if (nftData.getLevel(stakedAmount) < 80) {
+            uint256 allowance = getStakingAllowance(_tokenId, stakedAmount);
+            require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
+        }
+        _stake(_tokenId, _amount);
         _evolveTier(_tokenId);
     }
 
@@ -755,6 +760,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
                 shares,
                 _nft.encodedAttributes,
                 _nft.lockPeriod + startTime,
+                startTime,
                 string.concat(imageBaseURI, imageFolder, "/")
             );
     }

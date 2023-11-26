@@ -177,7 +177,7 @@ contract GenesisNftAttributes {
     ];
 
     bytes32[8] public complexion = [
-        bytes32("Blush Ligh"),
+        bytes32("Blush Light"),
         bytes32("Blush Strong"),
         bytes32("Clear"),
         bytes32("Freckles Light"),
@@ -187,7 +187,7 @@ contract GenesisNftAttributes {
         bytes32("Beauty Spot Lip")
     ];
 
-    bytes32[8] public item = [bytes32("Business Suit")];
+    bytes32[8] public item = [bytes32("A/B Testing")];
 
-    bytes32[8] public clothes = [bytes32("A/B Testing")];
+    bytes32[8] public clothes = [bytes32("Business Suit")];
 }

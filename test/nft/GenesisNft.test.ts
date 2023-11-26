@@ -1,7 +1,7 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
-import { WorkToken, GenesisNft, GenesisNftData, ERC20, TokenDistribution } from "../../typings";
+import { WorkToken, GenesisNft, GenesisNftData, ERC20, TokenDistribution, GenesisNftAttributes } from "../../typings";
 import { big, expectToRevert, getImpersonateAccounts, mineDays, monthsToSeconds } from "../util/helpers.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -35,6 +35,7 @@ chai.use(solidity);
 describe("GenesisNft", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
+  let nftAttributes: GenesisNftAttributes;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
   let stablecoinDecimals: number;
@@ -65,7 +66,7 @@ describe("GenesisNft", () => {
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
     await regenerateWorkToken();
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
     await regenerateTokenDistribution(startTime);
     await regenerateNft();
     await mineDays(12, network);
@@ -233,7 +234,6 @@ describe("GenesisNft", () => {
       // the multiplier for level 0 is 0.1, but we used it times 10 to get rid of the decimals
       // The base multiplier is 2 * 10, so the total multiplier is 2.1
       const currentMonth = await nft.getCurrentMonth();
-      console.log("currentMonth", currentMonth);
       const nftInfoMonth1 = await nft.getNftInfoAtMonth(nftId1, currentMonth);
       expect(nftInfoMonth1.shares).to.be.equal(51);
       await mineDays(10, network);
@@ -320,7 +320,7 @@ describe("GenesisNft", () => {
       ownerNft2 = accounts[1];
       ownerNft3 = accounts[2];
 
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 11;
       await regenerateTokenDistribution(startTime);
       await regenerateNft();
       await distribution.setWalletClaimable([nftMinter1.address], [158075], [0], [0], [0]);
@@ -431,7 +431,7 @@ describe("GenesisNft", () => {
     let nftId4: number;
     before(async () => {
       ownerNft4 = accounts[4];
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
       await regenerateTokenDistribution(startTime);
       await regenerateNft();
       await mineDays(12, network);
@@ -482,7 +482,7 @@ describe("GenesisNft", () => {
     let nftId5: number;
     before(async () => {
       ownerNft5 = accounts[5];
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 9;
       await regenerateTokenDistribution(startTime);
       await regenerateNft();
       await distribution.setWalletClaimable([ownerNft5.address], [251], [0], [0], [0]);
@@ -653,7 +653,7 @@ describe("GenesisNft", () => {
       ownerNft6 = accounts[6];
       ownerNft7 = accounts[7];
 
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
       await regenerateTokenDistribution(startTime);
       await regenerateNft();
       await mineDays(12, network);
@@ -677,6 +677,7 @@ describe("GenesisNft", () => {
         .withArgs(ethers.constants.AddressZero, ownerNft6.address, nftId6);
       expect(await nft.accountMinted(ownerNft6.address)).to.equal(1);
       const _nft = await nft.nft(nftId6);
+
       expect(_nft.voucherId).to.equal(voucher.voucherId);
     });
 
@@ -871,7 +872,7 @@ describe("GenesisNft", () => {
   describe("Update Shares, no mint in the first month and then mint", async () => {
     before(async () => {
       await regenerateWorkToken();
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
       await regenerateTokenDistribution(startTime);
       await regenerateNft();
       await mineDays(12, network);
@@ -895,7 +896,10 @@ describe("GenesisNft", () => {
   });
 
   const regenerateNft = async (): Promise<GenesisNft> => {
-    nftData = await (await ethers.getContractFactory("GenesisNftData", signerImpersonated)).deploy();
+    nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
+    nftData = await (
+      await ethers.getContractFactory("GenesisNftData", signerImpersonated)
+    ).deploy(nftAttributes.address);
     nft = await (
       await ethers.getContractFactory("GenesisNft", signerImpersonated)
     ).deploy(

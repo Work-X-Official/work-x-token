@@ -28,8 +28,10 @@ task("nft:deploy").setAction(async (_, hre) => {
   console.log("║ Deployer balance:", (await deployer.getBalance()).toString());
   console.log("║ On network:", hre.network.name);
   console.log("║");
-
-  const nftData = await (await hre.ethers.getContractFactory("GenesisNftData")).connect(deployer).deploy();
+  const nftAttributes = await (await hre.ethers.getContractFactory("GenesisNftAttributes", deployer)).deploy();
+  const nftData = await (await hre.ethers.getContractFactory("GenesisNftData"))
+    .connect(deployer)
+    .deploy(nftAttributes.address);
   await nftData.deployed();
 
   console.log("║ Deploying the data NFT contract, so that the GenesisNft contract can be deployed that uses this data");

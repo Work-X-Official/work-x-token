@@ -1,7 +1,7 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
-import { WorkToken, GenesisNft, GenesisNftData, TokenDistribution } from "../../typings";
+import { WorkToken, GenesisNft, GenesisNftData, TokenDistribution, GenesisNftAttributes } from "../../typings";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Wallet } from "ethers";
@@ -20,6 +20,7 @@ chai.use(solidity);
 describe.skip("GenesisNftMintType", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
+  let nftAttributes: GenesisNftAttributes;
   let signerImpersonated: SignerWithAddress;
 
   let accounts: SignerWithAddress[];
@@ -65,7 +66,10 @@ describe.skip("GenesisNftMintType", () => {
   });
 
   const regenerateNft = async (): Promise<GenesisNft> => {
-    nftData = await (await ethers.getContractFactory("GenesisNftData", signerImpersonated)).deploy();
+    nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
+    nftData = await (
+      await ethers.getContractFactory("GenesisNftData", signerImpersonated)
+    ).deploy(nftAttributes.address);
     nft = await (
       await ethers.getContractFactory("GenesisNft", signerImpersonated)
     ).deploy(

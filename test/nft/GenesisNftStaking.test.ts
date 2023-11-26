@@ -1,7 +1,7 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
-import { WorkToken, GenesisNft, GenesisNftData, ERC20, TokenDistribution } from "../../typings";
+import { WorkToken, GenesisNft, GenesisNftData, ERC20, TokenDistribution, GenesisNftAttributes } from "../../typings";
 import { getImpersonateAccounts, mineDays } from "../util/helpers.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -17,6 +17,7 @@ chai.use(solidity);
 describe("GenesisNftStaking", () => {
   let nft: GenesisNft;
   let nftData: GenesisNftData;
+  let nftAttributes: GenesisNftAttributes;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
   let stablecoinDecimals: number;
@@ -58,7 +59,7 @@ describe("GenesisNftStaking", () => {
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
     await regenerateWorkToken();
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 11;
     await regenerateTokenDistribution(startTime);
     await regenerateNft();
     await distribution.setWalletClaimable([nftMinter3.address], [500], [0], [0], [0]);
@@ -494,7 +495,10 @@ describe("GenesisNftStaking", () => {
   });
 
   const regenerateNft = async (): Promise<GenesisNft> => {
-    nftData = await (await ethers.getContractFactory("GenesisNftData", signerImpersonated)).deploy();
+    nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
+    nftData = await (
+      await ethers.getContractFactory("GenesisNftData", signerImpersonated)
+    ).deploy(nftAttributes.address);
     nft = await (
       await ethers.getContractFactory("GenesisNft", signerImpersonated)
     ).deploy(
