@@ -130,7 +130,7 @@ contract GenesisNftData {
      * @param _tier The tier of the NFT.
      * @return The level of the NFT.
      **/
-    function getLevelCapped(uint256 _staked, uint256 _tier) public view returns (uint256) {
+    function getLevelCapped(uint256 _staked, uint256 _tier) external view returns (uint256) {
         uint256 level = getLevel(_staked);
         if ((_tier + 1) * 10 < level) {
             return (_tier + 1) * 10;
@@ -139,12 +139,28 @@ contract GenesisNftData {
     }
 
     /**
+     * @notice Calculate the shares of an NFT based on the level.
+     * @dev The multiplier is rounded that is included in the calculation by adding a value and then later dividing, this is to avoid rounding errors.
+     * @param _nftLevel The level of the NFT.
+     * @return The shares of the NFT.
+     **/
+    function calculateShares(uint256 _nftLevel) external pure returns (uint256) {
+        if (_nftLevel == 80) return 320;
+        uint256 totalLevelCost = 525;
+        uint256 currentLevelIteration = 1;
+        for (currentLevelIteration = 1; currentLevelIteration <= _nftLevel; currentLevelIteration++) {
+            totalLevelCost += ((3 + (currentLevelIteration / 10)) * ((70 + currentLevelIteration) * 25)) / 10;
+        }
+        return ((totalLevelCost + (currentLevelIteration - 1) * 12) + 250) / 500;
+    }
+
+    /**
      * @notice Returns the amount of tokens required to reach a specific level.
      * @dev Gets the tokens from the level array and multiplies it by 1e18.
      * @param _level The level to get the tokens required for.
      * @return The amount of tokens required to reach the level.
      **/
-    function getTokensRequiredForLevel(uint256 _level) public view returns (uint256) {
+    function getTokensRequiredForLevel(uint256 _level) external view returns (uint256) {
         require(_level <= levels.length, "Level must be less than or equal to max level");
         return levels[_level - 1] * ONE_E18;
     }
@@ -155,7 +171,7 @@ contract GenesisNftData {
      * @param _tier The tier to get the tokens required for.
      * @return The amount of tokens required to reach the tier.
      **/
-    function getTokensRequiredForTier(uint256 _tier) public view returns (uint256) {
+    function getTokensRequiredForTier(uint256 _tier) external view returns (uint256) {
         if (_tier == 0) {
             return 0;
         }

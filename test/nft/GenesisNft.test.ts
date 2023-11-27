@@ -15,6 +15,8 @@ import {
   mintNft,
   nftMintVoucherGenerateLocal,
   regenerateNft,
+  getShares,
+  getVoucherSigner,
 } from "../util/nft.util";
 import {
   MIN_TOKEN_STAKING,
@@ -66,8 +68,7 @@ describe("GenesisNft", () => {
     nftMinter1 = accounts[3];
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
-    if (!process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) throw new Error("NFT_MESSAGE_SIGNER_PRIVATE_KEY not set");
-    nftVoucherSigner = new ethers.Wallet(process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER as string).connect(ethers.provider);
+    nftVoucherSigner = getVoucherSigner();
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
     workToken = await regenerateWorkToken(accounts, accounts[0].address);
@@ -238,14 +239,15 @@ describe("GenesisNft", () => {
       expect(nft1._staked).to.equal(big(0));
       // the multiplier for level 0 is 0.1, but we used it times 10 to get rid of the decimals
       // The base multiplier is 2 * 10, so the total multiplier is 2.1
-      const currentMonth = await nft.getCurrentMonth();
-      const nftInfoMonth1 = await nft.getNftInfoAtMonth(nftId1, currentMonth);
-      expect(nftInfoMonth1.shares).to.be.equal(51);
+
+      const nftInfoMonth1 = await nft.getNftInfo(nftId1);
+      expect(nftInfoMonth1._shares).to.be.equal(51);
       await mineDays(10, network);
       await nft.connect(nftMinter1).stake(nftId1, amount(2500));
-      expect(await nft.getTier(nftId1)).to.equal(big(0));
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(4));
-      expect(await nft.getStaked(nftId1)).to.equal(amount(2500));
+      const _nft = await nft.getNftInfo(nftId1);
+      expect(_nft._tier).to.equal(big(0));
+      expect(_nft._level).to.be.equal(big(4));
+      expect(_nft._staked).to.equal(amount(2500));
       const newContractERC20Balance = await balanceOf(workToken, nft.address);
       expect(newContractERC20Balance > oldcontractERC20Balance).to.be.true;
     });
@@ -256,36 +258,44 @@ describe("GenesisNft", () => {
       await mineDays(12, network);
       await nft.connect(nftMinter1).stake(nftId1, amount(3075));
       // There should be now 2500+3075=5575 #oftokensStaked in token 1.
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(9));
+      const _nft = await nft.getNftInfo(nftId1);
+      expect(_nft._level).to.be.equal(big(9));
       // Get the multiplier for this token with calculateTokenIdShares it should be 11 (1.1 *10 to get rid of the fraction) for level 9,
-      const nftInfoMonth = await nft.getNftInfoAtMonth(nftId1, await nft.getCurrentMonth());
-      expect(nftInfoMonth.shares).to.be.equal(big(61));
+      const nftInfoMonth = await nft.getNftInfo(nftId1);
+      expect(nftInfoMonth._shares).to.be.equal(big(61));
     });
 
     it("Test increasing Tier", async () => {
       // Only go to a higer level when increasing a Tier,
       await mineDays(978, network);
-      expect(await nft.getTier(nftId1)).to.equal(big(0));
+      const _nft1 = await nft.getNftInfo(nftId1);
+      expect(_nft1._tier).to.equal(big(0));
       await nft.connect(nftMinter1).stake(nftId1, amount(2500));
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(10));
+      const _nft2 = await nft.getNftInfo(nftId1);
+      expect(_nft2._level).to.be.equal(big(10));
       // Current amount is 5575 + 2500 = 8075
       await nft.connect(nftMinter1).evolveTier(nftId1);
-      expect(await nft.getTier(nftId1)).to.equal(big(1));
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(13));
+      const _nft3 = await nft.getNftInfo(nftId1);
+      expect(_nft3._tier).to.equal(big(1));
+      expect(_nft3._level).to.be.equal(big(13));
       // Current Amount is 5575 + 2500 + 25000 = 33075
       await nft.connect(nftMinter1).stake(nftId1, amount(25000));
-      expect(await nft.getTier(nftId1)).to.equal(big(1));
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(20));
+      const _nft4 = await nft.getNftInfo(nftId1);
+      expect(_nft4._tier).to.equal(big(1));
+      expect(_nft4._level).to.be.equal(big(20));
       await nft.connect(nftMinter1).evolveTier(nftId1);
-      expect(await nft.getTier(nftId1)).to.equal(big(3));
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(34));
+      const _nft5 = await nft.getNftInfo(nftId1);
+      expect(_nft5._tier).to.equal(big(3));
+      expect(_nft5._level).to.be.equal(big(34));
       // Current Amount is 5575 + 2500 + 25000 + 125000 = 158075
       await nft.connect(nftMinter1).stake(nftId1, amount(125000));
-      expect(await nft.getTier(nftId1)).to.equal(big(3));
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(40));
+      const _nft6 = await nft.getNftInfo(nftId1);
+      expect(_nft6._tier).to.equal(big(3));
+      expect(_nft6._level).to.be.equal(big(40));
       await nft.connect(nftMinter1).evolveTier(nftId1);
-      expect(await nft.getTier(nftId1)).to.equal(big(8));
-      expect(await nft.getLevel(nftId1)).to.be.equal(big(80));
+      const _nft7 = await nft.getNftInfo(nftId1);
+      expect(_nft7._tier).to.equal(big(8));
+      expect(_nft7._level).to.be.equal(big(80));
     });
 
     it("Test if getTotals returns all values correctly", async () => {
@@ -337,7 +347,7 @@ describe("GenesisNft", () => {
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, ownerNft2, 5000, lockPeriod2, 0, chainId));
       await mineDays(11, network);
       await nft.connect(ownerNft2).stake(nftId2, amount(3075));
-      expect(await nft.getStaked(nftId2)).to.equal(amount(8075));
+      expect((await nft.getStaked(nftId2, await nft.getCurrentMonth()))[0]).to.equal(amount(8075));
       lockPeriod3 = monthsToSeconds(nftLockTimeByStake(6000, seed1kInv));
       ({ nftId: nftId3 } = await mintNft(network, nft, workToken, ownerNft3, 6000, lockPeriod3, 0, chainId));
     });
@@ -398,7 +408,7 @@ describe("GenesisNft", () => {
       const workTokenBalance = await balanceOf(workToken, ownerNft2.address);
       await nft.connect(ownerNft2).destroyNft(nftId2);
       await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
-      expect(await nft.getStaked(nftId2)).to.equal(big(0));
+      expect((await nft.getStaked(nftId2, await nft.getCurrentMonth()))[0]).to.equal(big(0));
       // what is left in the contract is: 172150-8075 = 164075
       expect(await balanceOf(workToken, nft.address)).to.equal(amount(164075));
       expect(await balanceOf(workToken, ownerNft2.address)).to.equal(workTokenBalance.add(amount(8075)));
@@ -410,7 +420,7 @@ describe("GenesisNft", () => {
       const workTokenBalance = await balanceOf(workToken, ownerNft3.address);
       await nft.connect(ownerNft3).destroyNft(nftId3);
       await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
-      expect(await nft.getStaked(nftId3)).to.equal(big(0));
+      expect((await nft.getStaked(nftId3, await nft.getCurrentMonth()))[0]).to.equal(big(0));
       // what is left in the contract is: 164075-6000 = 164075
       expect(await balanceOf(workToken, nft.address)).to.equal(amount(158075));
       expect(await balanceOf(workToken, ownerNft3.address)).to.equal(workTokenBalance.add(amount(6000)));
@@ -465,20 +475,21 @@ describe("GenesisNft", () => {
       await mineDays(15, network);
 
       const _nftBefore = await nft.getNftInfo(nftId4);
-      expect(await nft.getStakingAllowance(nftId4, _nftBefore._staked)).to.equal(amount(15 * DAILY_STAKING_ALLOWANCE));
+      expect(_nftBefore._stakingAllowance).to.equal(amount(15 * DAILY_STAKING_ALLOWANCE));
       await nft.connect(ownerNft4).stake(nftId4, amount(10 * DAILY_STAKING_ALLOWANCE));
       const _nftAfter = await nft.getNftInfo(nftId4);
-      expect(await nft.getStakingAllowance(nftId4, _nftAfter._staked)).to.equal(amount(5 * DAILY_STAKING_ALLOWANCE));
-      expect(await nft.getLevel(nftId4)).to.equal(big(6));
+      expect(_nftAfter._stakingAllowance).to.equal(amount(5 * DAILY_STAKING_ALLOWANCE));
+      const _nft1 = await nft.getNftInfo(nftId4);
+      expect(_nft1._level).to.equal(big(6));
     });
 
     it("Now lvl 6, wait 5 days and the allowance has accumulated", async () => {
       await mineDays(5, network);
       const _nftBefore = await nft.getNftInfo(nftId4);
-      expect(await nft.getStakingAllowance(nftId4, _nftBefore._staked)).to.equal(amount(10 * DAILY_STAKING_ALLOWANCE));
+      expect(_nftBefore._stakingAllowance).to.equal(amount(10 * DAILY_STAKING_ALLOWANCE));
       await nft.connect(ownerNft4).stake(nftId4, amount(10 * DAILY_STAKING_ALLOWANCE));
       const _nftAfter = await nft.getNftInfo(nftId4);
-      expect(await nft.getStakingAllowance(nftId4, _nftAfter._staked)).to.equal(big(0));
+      expect(_nftAfter._stakingAllowance).to.equal(big(0));
     });
   });
 
@@ -518,7 +529,7 @@ describe("GenesisNft", () => {
     it("Fail to unstake exact maximum amount + 1 when the NFT is max level", async () => {
       // we will stake extra to become lvl 10 with 5580 staked tokens
       await nft.connect(ownerNft5).stake(nftId5, amount(5024));
-      expect(await nft.getStaked(nftId5)).to.equal(amount(6080));
+      expect((await nft.getStaked(nftId5, await nft.getCurrentMonth()))[0]).to.equal(amount(6080));
       // With 6080 tokens you are still lvl 10, so 6369 - 5580 = 789 tokens are allowed to unstake.
       // Fail to unstake 790 tokens.
       await expectToRevert(
@@ -528,11 +539,13 @@ describe("GenesisNft", () => {
     });
 
     it("Unstake maximum possible amount, which retains the max level", async () => {
-      expect(await nft.getLevel(nftId5)).to.eq(10);
-      expect(await nft.getStaked(nftId5)).to.equal(amount(6080));
+      const _nft1 = await nft.getNftInfo(nftId5);
+      expect(_nft1._level).to.eq(10);
+      expect(_nft1._staked).to.equal(amount(6080));
       await nft.connect(ownerNft5).unstake(nftId5, amount(500));
-      expect(await nft.getLevel(nftId5)).to.eq(10);
-      expect(await nft.getStaked(nftId5)).to.equal(amount(5580));
+      const _nft2 = await nft.getNftInfo(nftId5);
+      expect(_nft2._level).to.eq(10);
+      expect(_nft2._staked).to.equal(amount(5580));
       await expectToRevert(
         nft.connect(ownerNft5).unstake(nftId5, 1),
         "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
@@ -541,8 +554,9 @@ describe("GenesisNft", () => {
 
     // 4. upgrade Tier, go from level 10, to lvl zero.
     it("upgrade Tier, go from level 10, tier 0 to lvl 10 tier 1", async () => {
-      expect(await nft.getLevel(nftId5)).to.eq(10);
-      expect(await nft.getTier(nftId5)).to.eq(0);
+      const _nft1 = await nft.getNftInfo(nftId5);
+      expect(_nft1._level).to.eq(10);
+      expect(_nft1._tier).to.eq(0);
       await network.provider.send("evm_increaseTime", [1 * 86400]);
       await network.provider.send("evm_mine");
       await nft.connect(ownerNft5).stake(nftId5, amount(162));
@@ -550,8 +564,9 @@ describe("GenesisNft", () => {
       await nft.connect(ownerNft5).unstake(nftId5, amount(25));
       //staked 5717
       await nft.connect(ownerNft5).evolveTier(nftId5);
-      expect(await nft.getLevel(nftId5)).to.eq(10);
-      expect(await nft.getTier(nftId5)).to.eq(1);
+      const _nft2 = await nft.getNftInfo(nftId5);
+      expect(_nft2._level).to.eq(10);
+      expect(_nft2._tier).to.eq(1);
       await expectToRevert(
         nft.connect(ownerNft5).unstake(nftId5, amount(10)),
         "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
@@ -563,11 +578,11 @@ describe("GenesisNft", () => {
       // 30 * 80 = 2400, staking this
       await nft.connect(ownerNft5).connect(ownerNft5).stake(nftId5, amount(6000));
       // Now we have staked 2400+2290 = 4690
-      expect(await nft.getStaked(nftId5)).to.equal(amount(11717));
+      expect((await nft.getStaked(nftId5, await nft.getCurrentMonth()))[0]).to.equal(amount(11717));
       // 30 * 87 = 2610, staking this
       await nft.connect(ownerNft5).stake(nftId5, amount(6510));
       // Now we have staked 2290+2400+2610= 7300
-      expect(await nft.getStaked(nftId5)).to.equal(amount(18227));
+      expect((await nft.getStaked(nftId5, await nft.getCurrentMonth()))[0]).to.equal(amount(18227));
       // Now we are lvl 20, we need to keep 5615 to stay lvl 20, so we can unstake 7300-5615=1685
       // So unstaking 1686 will fail.
       await expectToRevert(
@@ -577,11 +592,13 @@ describe("GenesisNft", () => {
     });
 
     it("Unstake exact maximum amount, so you still stay in max level20", async () => {
-      expect(await nft.getLevel(nftId5)).to.eq(20);
-      expect(await nft.getStaked(nftId5)).to.equal(amount(18227));
+      const _nft1 = await nft.getNftInfo(nftId5);
+      expect(_nft1._level).to.eq(20);
+      expect(_nft1._staked).to.equal(amount(18227));
       await nft.connect(ownerNft5).unstake(nftId5, amount(4207));
-      expect(await nft.getLevel(nftId5)).to.eq(20);
-      expect(await nft.getStaked(nftId5)).to.equal(amount(14020));
+      const _nft2 = await nft.getNftInfo(nftId5);
+      expect(_nft2._level).to.eq(20);
+      expect(_nft2._staked).to.equal(amount(14020));
       await expectToRevert(
         nft.connect(ownerNft5).unstake(nftId5, 1),
         "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
@@ -589,11 +606,13 @@ describe("GenesisNft", () => {
     });
 
     it("Upgrade tier, you still stay in max level20, but go the next tier", async () => {
-      expect(await nft.getLevel(nftId5)).to.eq(20);
-      expect(await nft.getTier(nftId5)).to.eq(1);
+      const _nft1 = await nft.getNftInfo(nftId5);
+      expect(_nft1._level).to.eq(20);
+      expect(_nft1._tier).to.eq(1);
       await nft.connect(ownerNft5).evolveTier(nftId5);
-      expect(await nft.getLevel(nftId5)).to.eq(20);
-      expect(await nft.getTier(nftId5)).to.eq(2);
+      const _nft2 = await nft.getNftInfo(nftId5);
+      expect(_nft2._level).to.eq(20);
+      expect(_nft2._tier).to.eq(2);
       await expectToRevert(
         nft.connect(ownerNft5).unstake(nftId5, amount(10)),
         "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
@@ -603,12 +622,15 @@ describe("GenesisNft", () => {
     it("Stake more, upgrade tier to 7, failing to unstake exact maximum amount + 1 when you are lvl80", async () => {
       await nft.connect(ownerNft5).stake(nftId5, amount(125000));
       // increasing to the last tier
-      expect(await nft.getTier(nftId5)).to.eq(2);
+      const _nft1 = await nft.getNftInfo(nftId5);
+      expect(_nft1._tier).to.eq(2);
       await nft.connect(ownerNft5).evolveTier(nftId5);
-      expect(await nft.getTier(nftId5)).to.eq(7);
-      expect(await nft.getLevel(nftId5)).to.eq(76);
+      const _nft2 = await nft.getNftInfo(nftId5);
+      expect(_nft2._tier).to.eq(7);
+      expect(_nft2._level).to.eq(76);
       await nft.connect(ownerNft5).stake(nftId5, amount(14062));
-      expect(await nft.getStaked(nftId5)).to.equal(amount(153082));
+      const _nft3 = await nft.getNftInfo(nftId5);
+      expect(_nft3._staked).to.equal(amount(153082));
       // Now we have staked 14020 + 14062 + 125000 = 153082
       // Now we are lvl 80, we need to keep 152720 to stay lvl 80, so we can unstake 153082-152720=362
       // So unstaking 363 will fail.
@@ -619,19 +641,23 @@ describe("GenesisNft", () => {
     });
 
     it("Unstake maximum surplus, so the NFT will stay max level 80", async () => {
-      expect(await nft.getLevel(nftId5)).to.eq(80);
-      expect(await nft.getStaked(nftId5)).to.equal(amount(153082));
+      const _nft1 = await nft.getNftInfo(nftId5);
+      expect(_nft1._level).to.eq(80);
+      expect(_nft1._staked).to.equal(amount(153082));
       await nft.connect(ownerNft5).unstake(nftId5, amount(362));
-      expect(await nft.getLevel(nftId5)).to.eq(80);
-      expect(await nft.getStaked(nftId5)).to.equal(amount(152720));
+      const _nft2 = await nft.getNftInfo(nftId5);
+      expect(_nft2._level).to.eq(80);
+      expect(_nft2._staked).to.equal(amount(152720));
     });
 
     it("Upgrade the tier, while the NFT is max level 80", async () => {
-      expect(await nft.getLevel(nftId5)).to.eq(80);
-      expect(await nft.getTier(nftId5)).to.eq(7);
+      const _nft1 = await nft.getNftInfo(nftId5);
+      expect(_nft1._level).to.eq(80);
+      expect(_nft1._tier).to.eq(7);
       await nft.connect(ownerNft5).evolveTier(nftId5);
-      expect(await nft.getLevel(nftId5)).to.eq(80);
-      expect(await nft.getTier(nftId5)).to.eq(8);
+      const _nft2 = await nft.getNftInfo(nftId5);
+      expect(_nft2._level).to.eq(80);
+      expect(_nft2._tier).to.eq(8);
       await expectToRevert(
         nft.connect(ownerNft5).unstake(nftId5, 10),
         "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
@@ -640,10 +666,12 @@ describe("GenesisNft", () => {
 
     it("Do not go to a higher level when staking more in the last tier + lvl 80", async () => {
       await nft.connect(ownerNft5).stake(nftId5, amount(50000));
-      expect(await nft.getLevel(nftId5)).to.eq(80);
-      expect(await nft.getTier(nftId5)).to.eq(8);
+      const _nft3 = await nft.getNftInfo(nftId5);
+      expect(_nft3._level).to.eq(80);
+      expect(_nft3._tier).to.eq(8);
       await nft.connect(ownerNft5).evolveTier(nftId5);
-      expect(await nft.getTier(nftId5)).to.eq(8);
+      const _nft4 = await nft.getNftInfo(nftId5);
+      expect(_nft4._tier).to.eq(8);
     });
   });
 
@@ -730,20 +758,20 @@ describe("GenesisNft", () => {
 
     it("Pre-condition check, the current month is 0, the NFTs each have 51 shares, the total shares is correct", async () => {
       expect(await nft.getCurrentMonth()).to.be.equal(0);
-      expect(await nft.getShares(1)).to.be.equal(51);
-      expect(await nft.getShares(2)).to.be.equal(51);
-      expect(await nft.getShares(3)).to.be.equal(51);
-      expect(await nft.getShares(4)).to.be.equal(51);
+      expect(await getShares(1, nft)).to.be.equal(51);
+      expect(await getShares(2, nft)).to.be.equal(51);
+      expect(await getShares(3, nft)).to.be.equal(51);
+      expect(await getShares(4, nft)).to.be.equal(51);
       expect((await nft.getTotals(0))._totalShares).to.be.equal(51 + 51 + 51 + 51);
     });
 
     it("The updateShares is updated correctly, the current month is 0, the shares of id 1 and 2 are equal and total shares are equal to the shares of 1 + 2", async () => {
       await mineDays(10, network);
       expect(await nft.getCurrentMonth()).to.be.equal(0);
-      expect(await nft.getShares(1)).to.be.equal(big(51));
-      expect(await nft.getShares(2)).to.be.equal(big(51));
-      expect(await nft.getShares(3)).to.be.equal(big(51));
-      expect(await nft.getShares(4)).to.be.equal(big(51));
+      expect(await getShares(1, nft)).to.be.equal(big(51));
+      expect(await getShares(2, nft)).to.be.equal(big(51));
+      expect(await getShares(3, nft)).to.be.equal(big(51));
+      expect(await getShares(4, nft)).to.be.equal(big(51));
       expect((await nft.getTotals(0))._totalShares).to.be.equal(51 + 51 + 51 + 51);
     });
 
@@ -752,18 +780,18 @@ describe("GenesisNft", () => {
       expect(await nft.getCurrentMonth()).to.be.equal(1);
       await approveToken(network, workToken, nftMinter9, nft.address);
       await nft.connect(nftMinter9).stake(3, amount(10000));
-      expect(await nft.getShares(1)).to.be.equal(big(51));
-      expect(await nft.getShares(2)).to.be.equal(big(51));
-      expect(await nft.getShares(3)).to.be.equal(big(63));
-      expect(await nft.getShares(4)).to.be.equal(big(51));
+      expect(await getShares(1, nft)).to.be.equal(big(51));
+      expect(await getShares(2, nft)).to.be.equal(big(51));
+      expect(await getShares(3, nft)).to.be.equal(big(63));
+      expect(await getShares(4, nft)).to.be.equal(big(51));
       await mineDays(30, network);
       expect(await nft.getCurrentMonth()).to.be.equal(2);
       await approveToken(network, workToken, nftMinter7, nft.address);
       await nft.connect(nftMinter7).stake(1, amount(10000));
-      expect(await nft.getShares(1)).to.be.equal(big(63));
-      expect(await nft.getShares(2)).to.be.equal(big(51));
-      expect(await nft.getShares(3)).to.be.equal(big(63));
-      expect(await nft.getShares(4)).to.be.equal(big(51));
+      expect(await getShares(1, nft)).to.be.equal(big(63));
+      expect(await getShares(2, nft)).to.be.equal(big(51));
+      expect(await getShares(3, nft)).to.be.equal(big(63));
+      expect(await getShares(4, nft)).to.be.equal(big(51));
     });
 
     it("The total shares at month 2 is now 63 + 51 + 51", async () => {
@@ -782,9 +810,9 @@ describe("GenesisNft", () => {
 
       await nft.connect(nftMinter8).destroyNft(2);
       expect((await nft.getTotals(3))._totalShares).to.be.equal(63 + 63 + 51);
-      expect(await nft.getShares(1)).to.be.equal(big(63));
-      expect(await nft.getShares(2)).to.be.equal(big(0));
-      expect(await nft.getShares(3)).to.be.equal(big(63));
+      expect(await getShares(1, nft)).to.be.equal(big(63));
+      expect(await getShares(2, nft)).to.be.equal(big(0));
+      expect(await getShares(3, nft)).to.be.equal(big(63));
     });
 
     it("Two months later, the current month is 5, total remains the same (tests looping back)", async () => {
@@ -801,38 +829,35 @@ describe("GenesisNft", () => {
     });
 
     it("Calling stake should increase shares of the nft, if you are not max level", async () => {
-      const nftSharesBefore = await nft.getShares(nftId4);
+      const nftSharesBefore = await getShares(nftId4, nft);
       await approveToken(network, workToken, nftMinter1, nft.address);
       await nft.connect(nftMinter1).stake(nftId4, amount(6580));
-      const nftSharesAfter = await nft.getShares(nftId4);
+      const nftSharesAfter = await getShares(nftId4, nft);
       expect(nftSharesAfter).to.be.gt(nftSharesBefore);
     });
 
     it("Calling stake should not increase shares of the nft, if you are already at max level", async () => {
-      const levelAfter = await nft.getLevel(nftId4);
-      expect(levelAfter).to.be.equal(10);
-      const nftSharesBefore = await nft.getShares(nftId4);
+      const _nft1 = await nft.getNftInfo(nftId4);
+      expect(_nft1._level).to.be.equal(10);
       await approveToken(network, workToken, nftMinter1, nft.address);
       await nft.connect(nftMinter1).stake(nftId4, amount(2000));
-      const nftSharesAfter = await nft.getShares(nftId4);
-      expect(nftSharesAfter).to.be.equal(nftSharesBefore);
+      const _nft2 = await nft.getNftInfo(nftId4);
+      expect(_nft2._shares).to.be.equal(_nft1._shares);
     });
 
     it("Calling unstake should not decrease shares of the nft", async () => {
-      const nftSharesBefore = await nft.getShares(nftId4);
+      const nftSharesBefore = await getShares(nftId4, nft);
       await nft.connect(nftMinter1).unstake(nftId4, amount(1000));
-      const nftSharesAfter = await nft.getShares(nftId4);
+      const nftSharesAfter = await getShares(nftId4, nft);
       expect(nftSharesAfter).to.be.equal(nftSharesBefore);
     });
 
     it("Calling evolveTier should increase shares of the nft when it changes your lvl", async () => {
-      const nftSharesBefore = await nft.getShares(nftId4);
-      const nftLevelBefore = await nft.getLevel(nftId4);
+      const _nft1 = await nft.getNftInfo(nftId4);
       await nft.connect(nftMinter1).evolveTier(nftId4);
-      const nftSharesAfter = await nft.getShares(nftId4);
-      const nftLevelAfter = await nft.getLevel(nftId4);
-      expect(nftLevelAfter).to.be.gt(nftLevelBefore);
-      expect(nftSharesAfter).to.be.gt(nftSharesBefore);
+      const _nft2 = await nft.getNftInfo(nftId4);
+      expect(_nft2._level).to.be.gt(_nft1._level);
+      expect(_nft2._shares).to.be.gt(_nft1._shares);
     });
 
     it("Calling stake should increase shares total, if you are not max level", async () => {
@@ -845,8 +870,8 @@ describe("GenesisNft", () => {
     });
 
     it("Stake should not increase shares total, if you are already at max level.", async () => {
-      const levelAfter = await nft.getLevel(nftId4);
-      expect(levelAfter).to.be.equal(20);
+      const _nft1 = await nft.getNftInfo(nftId4);
+      expect(_nft1._level).to.be.equal(20);
       const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
       await approveToken(network, workToken, nftMinter1, nft.address);
       await nft.connect(nftMinter1).stake(nftId4, amount(2000));
@@ -863,12 +888,11 @@ describe("GenesisNft", () => {
 
     it("Calling evolveTier should increase shares total of the nft when it changes your lvl", async () => {
       const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
-      const nftLevelBefore = await nft.getLevel(nftId4);
+      const _nft1 = await nft.getNftInfo(nftId4);
       await nft.connect(nftMinter1).evolveTier(nftId4);
+      const _nft2 = await nft.getNftInfo(nftId4);
       const totalSharesAfter = (await nft.getTotals(currentMonth))._totalShares;
-      const nftLevelAfter = await nft.getLevel(nftId4);
-
-      expect(nftLevelAfter).to.be.gt(nftLevelBefore);
+      expect(_nft2._level).to.be.gt(_nft1._level);
       expect(totalSharesAfter).to.be.gt(totalSharesBefore);
     });
   });
@@ -892,7 +916,7 @@ describe("GenesisNft", () => {
       it("The updateShares is updated correctly, the current month is 2, the shares of id 1 51", async () => {
         expect(await nft.getCurrentMonth()).to.be.equal(2);
         // 1 for level 0 + 5 for base stake for investing 1k
-        expect(await nft.getShares(1)).to.be.equal(ethers.BigNumber.from(51));
+        expect(await getShares(1, nft)).to.be.equal(ethers.BigNumber.from(51));
         expect((await nft.getTotals(0))._totalShares).to.be.equal(ethers.BigNumber.from(51));
         expect((await nft.getTotals(1))._totalShares).to.be.equal(ethers.BigNumber.from(51));
         expect((await nft.getTotals(2))._totalShares).to.be.equal(ethers.BigNumber.from(51));
