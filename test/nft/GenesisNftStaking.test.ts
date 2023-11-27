@@ -510,8 +510,9 @@ describe("GenesisNftStaking", () => {
       nftMinter3 = accounts[5];
       nftMinter4 = accounts[6];
       workToken = await regenerateWorkToken(accounts, accounts[0].address);
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
       distribution = await regenerateTokenDistribution(startTime, workToken);
+      await distribution.setWalletClaimable([nftMinter4.address], [155000], [0], [0], [0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
