@@ -526,6 +526,7 @@ describe("GenesisNftStaking", () => {
         "GenesisNft: You are not the owner of this NFT",
       );
     });
+
     it("Cannot call stakeAndEvolve before the nft startTime (except level 80 people)", async () => {
       await expectToRevert(
         nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1)),
@@ -546,6 +547,7 @@ describe("GenesisNftStaking", () => {
       expect(nftInfo._tier).to.be.equal(0);
       expect(nftInfo._level).to.be.equal(9);
     });
+
     it("StakeAndEvolve nftId2 at day 40 increase stake nftInfo is correct(did evolve to tier 1)", async () => {
       await mineDays(20, network);
       const amount = ethers.utils.parseEther("11000");
@@ -557,6 +559,7 @@ describe("GenesisNftStaking", () => {
       expect(nftInfo._tier).to.be.equal(1);
       expect(nftInfo._level).to.be.equal(16);
     });
+
     it("StakeAndEvolve nftId3 at day 60, increase stake and nftInfo is correct, did evolve to tier 2", async () => {
       await mineDays(20, network);
       const amount = ethers.utils.parseEther("16000");
