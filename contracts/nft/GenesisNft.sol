@@ -479,7 +479,11 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         for (uint256 i = _month + 1; i >= 1; --i) {
             NftInfoMonth storage _nftMonth = _nft.monthly[uint8(i) - 1];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1) {
-                return (_nftMonth.staked, _nftMonth.minimumStaked);
+                if (i == _month + 1) {
+                    return (_nftMonth.staked, _nftMonth.minimumStaked);
+                } else {
+                    return (_nftMonth.staked, _nftMonth.staked);
+                }
             }
         }
         return (0, 0);

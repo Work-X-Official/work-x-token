@@ -149,7 +149,7 @@ contract GenesisNftData {
         uint256 totalLevelCost = 525;
         uint256 currentLevelIteration = 1;
         for (currentLevelIteration = 1; currentLevelIteration <= _nftLevel; currentLevelIteration++) {
-            totalLevelCost += ((3 + (currentLevelIteration / 10)) * ((70 + currentLevelIteration) * 25)) / 10;
+            totalLevelCost += ((3 + (currentLevelIteration / 10)) * (((70 + currentLevelIteration) * 25))) / 10;
         }
         return ((totalLevelCost + (currentLevelIteration - 1) * 12) + 250) / 500;
     }
