@@ -106,7 +106,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       // gas: 20000000,
       accounts: {
-        count: 1000,
+        count: 10,
         mnemonic: mnemonic,
         accountsBalance: "100000000000000000000000000",
       },
@@ -138,7 +138,7 @@ const config: HardhatUserConfig = {
       goerli: process.env.ETHERSCAN_API_KEY || "",
       sepolia: process.env.ETHERSCAN_API_KEY || "",
       bsc: process.env.BSCSCAN_API_KEY || "",
-      bscTest: process.env.BSCSCAN_API_KEY || "",
+      bscTestnet: process.env.BSCSCAN_API_KEY || "",
       polygon: process.env.POLYSCAN_API_KEY || "",
       polygonMumbai: process.env.POLYSCAN_API_KEY || "",
       avalanche: process.env.SNOWTRACE_API_KEY || "",

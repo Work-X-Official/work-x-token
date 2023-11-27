@@ -1,7 +1,7 @@
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
-import { TOKEN_DISTRIBUTION_ADDRESSES } from "../constants/tokenDistribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/saleDistribution.constants";
 import { WorkToken } from "../../typings";
 
 // deploys a contract and sets who can sign vouchers and set grants the token distribution contract the right to mint tokens, which is needed for the NFT mint.
@@ -13,7 +13,7 @@ task("nft:deploy").setAction(async (_, hre) => {
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
   const tokenDistributionAddress =
-    TOKEN_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof TOKEN_DISTRIBUTION_ADDRESSES];
+    SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES];
   const [deployer] = await hre.ethers.getSigners();
   let nftVoucherSigner;
   if (process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) {
@@ -28,8 +28,16 @@ task("nft:deploy").setAction(async (_, hre) => {
   console.log("║ Deployer balance:", (await deployer.getBalance()).toString());
   console.log("║ On network:", hre.network.name);
   console.log("║");
+  const nftAttributes = await (await hre.ethers.getContractFactory("GenesisNftAttributes", deployer)).deploy();
+  console.log(
+    "║ Deploying the GenesisNftAttributes contract, so that the GenesisNftData contract can be deployed that uses this data",
+  );
+  console.log("║ GenesisNftAttributes deployed to address:", nftAttributes.address);
+  console.log("║");
 
-  const nftData = await (await hre.ethers.getContractFactory("GenesisNftData")).connect(deployer).deploy();
+  const nftData = await (await hre.ethers.getContractFactory("GenesisNftData"))
+    .connect(deployer)
+    .deploy(nftAttributes.address);
   await nftData.deployed();
 
   console.log("║ Deploying the data NFT contract, so that the GenesisNft contract can be deployed that uses this data");
@@ -38,22 +46,23 @@ task("nft:deploy").setAction(async (_, hre) => {
 
   const nft = await (await hre.ethers.getContractFactory("GenesisNft"))
     .connect(deployer)
-    .deploy("Work X Genesis NFT", "Work X Genesis NFT", workToken.address, tokenDistributionAddress, nftData.address);
+    .deploy(
+      "Work X Genesis NFT",
+      "Work X Genesis NFT",
+      workToken.address,
+      tokenDistributionAddress,
+      nftData.address,
+      nftVoucherSigner.address,
+    );
 
   await nft.deployed();
-  await nft.deployTransaction.wait(5);
+  await nft.deployTransaction.wait();
 
   console.log("║ GenesisNft deployed to:", nft.address);
   console.log("║ On network:", hre.network.name);
   console.log("║ Owner: ", await nft.owner());
   console.log("║");
 
-  const grantRole = await nft.grantRole(await nft.SIGNER_ROLE(), nftVoucherSigner.address);
-  const receiptGrantRole = await grantRole.wait();
-  console.log("║ The NFT Voucher-Signer Role has been given to:");
-  console.log("║ " + nftVoucherSigner.address);
-  console.log("║ Tx: " + receiptGrantRole.transactionHash);
-  console.log("║");
   const roletx = await workToken.grantRole(await workToken.MINTER_ROLE(), nft.address);
   await roletx.wait();
 
@@ -67,6 +76,7 @@ task("nft:deploy").setAction(async (_, hre) => {
       workToken.address,
       tokenDistributionAddress,
       nftData.address,
+      nftVoucherSigner.address,
     ],
   });
   console.log("║");

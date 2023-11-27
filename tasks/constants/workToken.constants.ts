@@ -7,7 +7,7 @@ export const WORK_TOKEN_ADDRESSES = {
   rinkeby: "",
   ropsten: "",
   bsc: "",
-  bsctest: "",
+  bsctest: "0x64961754dA01E8cb545Bb9D953D95864007E9504",
   xinfin: "",
   apothem: "",
   polygon: "",

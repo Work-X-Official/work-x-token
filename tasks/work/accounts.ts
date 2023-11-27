@@ -1,13 +1,13 @@
 import { task } from "hardhat/config";
 import { TokenDistribution } from "../../typings";
-import { TOKEN_DISTRIBUTION_ADDRESSES } from "../constants/tokenDistribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/saleDistribution.constants";
 
 // yarn hardhat account:info --address 0x0 --network sepolia
 task("account:info", "Prints the list of accounts")
   .addParam("address", "address of the account")
   .setAction(async ({ address }, hre) => {
     const tokenDistribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-      TOKEN_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof TOKEN_DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
     );
 
     console.log("");

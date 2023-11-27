@@ -4,7 +4,7 @@ import { config } from "dotenv";
 import { BigNumber } from "ethers";
 import { ethers, network } from "hardhat";
 import { CONSTANTS } from "../constants";
-import { expectToRevert } from "../util/helpers.util";
+import { amount, expectToRevert } from "../util/helpers.util";
 import { BuyMore } from "../../typings";
 import { solidity } from "ethereum-waffle";
 import { approveToken, sendToken } from "../util/worktoken.util";
@@ -81,14 +81,26 @@ describe("BuyMore", function () {
       await regenerateBuyMore();
     });
 
-    it("invest 3 time and returned total balance is correct", async () => {
+    it("invest 3 times and the returned total balance is correct", async () => {
       await regenerateBuyMore();
       const token = await ethers.getContractAt("ERC20", CONSTANTS.BUSD);
       await approveToken(network, token, accounts[1], buyMore.address);
 
-      await buyMore.connect(accounts[1]).buyMore("BUSD", ethers.utils.parseUnits("1", CONSTANTS.BUSD_DECIMALS));
-      await buyMore.connect(accounts[1]).buyMore("BUSD", ethers.utils.parseUnits("2", CONSTANTS.BUSD_DECIMALS));
-      await buyMore.connect(accounts[1]).buyMore("BUSD", ethers.utils.parseUnits("3", CONSTANTS.BUSD_DECIMALS));
+      await expect(
+        await buyMore.connect(accounts[1]).buyMore("BUSD", ethers.utils.parseUnits("1", CONSTANTS.BUSD_DECIMALS)),
+      )
+        .to.emit(buyMore, "BoughtMore")
+        .withArgs(accounts[1].address, amount(1));
+      await expect(
+        await buyMore.connect(accounts[1]).buyMore("BUSD", ethers.utils.parseUnits("2", CONSTANTS.BUSD_DECIMALS)),
+      )
+        .to.emit(buyMore, "BoughtMore")
+        .withArgs(accounts[1].address, amount(2));
+      await expect(
+        await buyMore.connect(accounts[1]).buyMore("BUSD", ethers.utils.parseUnits("3", CONSTANTS.BUSD_DECIMALS)),
+      )
+        .to.emit(buyMore, "BoughtMore")
+        .withArgs(accounts[1].address, amount(3));
 
       const total = await buyMore.connect(accounts[1]).getTotalAllocation(accounts[1].address);
 

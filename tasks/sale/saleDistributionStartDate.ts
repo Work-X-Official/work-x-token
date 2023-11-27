@@ -1,13 +1,13 @@
 import { TokenDistribution } from "../../typings";
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
-import { TOKEN_DISTRIBUTION_ADDRESSES } from "../constants/tokenDistribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/saleDistribution.constants";
 
 // example: yarn hardhat sale:distribution:getstartdate --network sepolia
 
 task("sale:distribution:getstartdate", "Prints the startdate").setAction(async ({ _ }, hre) => {
   const tokenDistribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-    TOKEN_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof TOKEN_DISTRIBUTION_ADDRESSES],
+    SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
   );
   const startTime = Number((await tokenDistribution.startTime()).toString());
   const startTimeDate = new Date(startTime * 1000);
@@ -25,7 +25,7 @@ task("sale:distribution:startdate", "Sets the StartDate")
   .addParam("starttime", "Startime in Unix format")
   .setAction(async ({ starttime }, hre) => {
     const tokenDistribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-      TOKEN_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof TOKEN_DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
     );
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();

@@ -11,7 +11,9 @@ import "../work/WorkToken.sol";
  * @notice The contract used to distribute the $WORK tokens according to a vesting schedule.
  * @dev There are 3 rounds, with different vesting periods. The 3rd round has a direct unlock of 10%.
  **/
-contract TokenDistribution is Ownable {
+contract TokenDistribution is Ownable, AccessControl {
+    bytes32 public constant NFT_ROLE = keccak256("NFT_ROLE");
+
     WorkToken public immutable workToken;
 
     uint256 constant ONE_E18 = 10 ** 18;
@@ -40,6 +42,7 @@ contract TokenDistribution is Ownable {
      **/
     constructor(address _tokenAddress, uint256 _startTime) {
         require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         workToken = WorkToken(_tokenAddress);
         startTime = uint128(_startTime);
     }
@@ -60,6 +63,20 @@ contract TokenDistribution is Ownable {
         _balance.totalClaimed += uint128(availableTokens);
         workToken.mint(msg.sender, availableTokens);
         emit ClaimTokens(msg.sender, availableTokens);
+    }
+
+    /****
+     **** ONLY NFT
+     ****/
+
+    function setTotalClaimed(address wallet, uint256 totalClaimed) external onlyRole(NFT_ROLE) {
+        Balance storage _balance = accountBalance[wallet];
+        require(_balance.totalClaimed == 0, "TokenDistribution: You have previously claimed tokens");
+        require(
+            totalClaimed <= _balance.totalBought * ONE_E18,
+            "TokenDistribution: You can not claim more tokens than you bought"
+        );
+        _balance.totalClaimed = uint128(totalClaimed);
     }
 
     /****

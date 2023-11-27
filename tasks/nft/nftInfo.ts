@@ -20,15 +20,15 @@ task("nft:details", "Prints the details of a specific nft")
       const owner = await nft.ownerOf(id);
       console.log("║  Owner:", owner);
       const _nft = await nft.getNftInfo(id);
-      console.log("║  Level:", _nft.level);
-      console.log("║  Tier:", _nft.tier);
-      const staked = hre.ethers.utils.formatEther(_nft.staked);
+      console.log("║  Level:", _nft[3].toNumber());
+      console.log("║  Tier:", _nft[4].toNumber());
+      const staked = hre.ethers.utils.formatEther(_nft[0]);
       console.log("║  Staked:", staked);
-      const stakingAllowance = hre.ethers.utils.formatEther(_nft.stakingAllowance);
+      const stakingAllowance = hre.ethers.utils.formatEther(_nft[1]);
       console.log("║  Staking allowance:", stakingAllowance);
-      const shares = (await nft.getShares(id)) / 10;
+      const shares = _nft[2].toNumber() / 10;
       console.log("║  Shares:", shares);
-      console.log("║  Lock period:", _nft.lockPeriod.toNumber() + " seconds.");
+      console.log("║  Lock period:", _nft[5].toNumber() + " seconds.");
       console.log("╚══════════════════════════════════════════════════════════════════════");
     } catch (error) {
       throw new Error(`Retrieving information went wrong ${error}`);
