@@ -35,7 +35,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     address voucherSigner;
 
     mapping(address => uint16) public accountMinted;
-
     mapping(uint8 => NftTotalMonth) public monthlyTotal;
     struct NftTotalMonth {
         uint32 totalShares;
@@ -525,6 +524,33 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         return 0;
     }
 
+    /**
+     * @notice This function gets the tokenURI for this NFT.
+     * @dev The tokenURI is dynamically generated, it will be based on the type and level and many other variables and is then formatted.
+     * @param _tokenId The id of the NFT.
+     * @return _tokenUri a string which is the tokenURI of an NFT.
+     **/
+    function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenUri) {
+        require(_exists(_tokenId), "GenesisNft: URI query for nonexistent tokenId");
+        uint256 staked = getStaked(_tokenId);
+        uint256 shares = getShares(_tokenId);
+        uint256 level = nftData.getLevelCapped(staked, nft[_tokenId].tier);
+        NftInfo storage _nft = nft[_tokenId];
+
+        return
+            nftData.tokenUriTraits(
+                _tokenId,
+                level,
+                _nft.tier,
+                staked,
+                shares,
+                _nft.encodedAttributes,
+                _nft.lockPeriod + startTime,
+                startTime,
+                string.concat(imageBaseURI, imageFolder, "/")
+            );
+    }
+
     /****
      **** EXTERNAL VIEW
      ****/
@@ -736,32 +762,5 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      **/
     function _verify(bytes32 _digest, bytes memory _signature) private view returns (bool) {
         return ECDSA.recover(_digest, _signature) == voucherSigner;
-    }
-
-    /**
-     * @notice This function gets the tokenURI for this NFT.
-     * @dev The tokenURI is dynamically generated, it will be based on the type and level and many other variables and is then formatted.
-     * @param _tokenId The id of the NFT.
-     * @return _tokenUri a string which is the tokenURI of an NFT.
-     **/
-    function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenUri) {
-        require(_exists(_tokenId), "GenesisNft: URI query for nonexistent tokenId");
-        uint256 staked = getStaked(_tokenId);
-        uint256 shares = getShares(_tokenId);
-        uint256 level = nftData.getLevelCapped(staked, nft[_tokenId].tier);
-        NftInfo storage _nft = nft[_tokenId];
-
-        return
-            nftData.tokenUriTraits(
-                _tokenId,
-                level,
-                _nft.tier,
-                staked,
-                shares,
-                _nft.encodedAttributes,
-                _nft.lockPeriod + startTime,
-                startTime,
-                string.concat(imageBaseURI, imageFolder, "/")
-            );
     }
 }
