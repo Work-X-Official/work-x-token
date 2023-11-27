@@ -2,18 +2,16 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "base64-sol/base64.sol";
+import "./GenesisNftAttributes.sol";
+import "hardhat/console.sol";
 
-contract GenesisNftData is Ownable {
+contract GenesisNftData {
+    GenesisNftAttributes public immutable attributes;
+
     uint256 constant ONE_E18 = 10 ** 18;
-    mapping(string => string) private typeToName;
-    mapping(string => string) private typeToDescription;
-    mapping(string => string) private typeToImageURI;
-    mapping(string => string) public genderOptions;
-    mapping(string => string) public skinOptions;
-    mapping(string => string) public professionOptions;
+
     uint24[80] private levels = [
         525,
         1056,
@@ -97,12 +95,17 @@ contract GenesisNftData is Ownable {
         152720
     ];
 
-    constructor() {
-        initGenderOptions();
-        initSkinOptions();
-        initProfessionOptions();
+    constructor(address _attributesAddress) {
+        require(_attributesAddress != address(0), "GenesisNftData: Invalid attributes address");
+        attributes = GenesisNftAttributes(_attributesAddress);
     }
 
+    /**
+     * @notice Returns the level of the NFT based on the amount of tokens staked.
+     * @dev Splits 80 into 4 seconds of 20, then splits 20 into 4 sections of 5, then loops over the remaining 5 to find the correct level from the XP array.
+     * @param _staked The amount of tokens staked.
+     * @return The level of the NFT.
+     **/
     function getLevel(uint256 _staked) public view returns (uint256) {
         for (uint256 s1 = 1; s1 <= 4; s1++) {
             if (_staked < uint256(levels[s1 * 20 - 1]) * ONE_E18) {
@@ -121,6 +124,13 @@ contract GenesisNftData is Ownable {
         return 80;
     }
 
+    /**
+     * @notice Returns the level of the NFT based on the amount of tokens staked capped by the tier.
+     * @dev Gets the level using getLevel, but then caps it based on the tier as the level does not increase if the tier is not evolved.
+     * @param _staked The amount of tokens staked.
+     * @param _tier The tier of the NFT.
+     * @return The level of the NFT.
+     **/
     function getLevelCapped(uint256 _staked, uint256 _tier) public view returns (uint256) {
         uint256 level = getLevel(_staked);
         if ((_tier + 1) * 10 < level) {
@@ -129,11 +139,23 @@ contract GenesisNftData is Ownable {
         return level;
     }
 
+    /**
+     * @notice Returns the amount of tokens required to reach a specific level.
+     * @dev Gets the tokens from the level array and multiplies it by 1e18.
+     * @param _level The level to get the tokens required for.
+     * @return The amount of tokens required to reach the level.
+     **/
     function getTokensRequiredForLevel(uint256 _level) public view returns (uint256) {
         require(_level <= levels.length, "Level must be less than or equal to max level");
         return levels[_level - 1] * ONE_E18;
     }
 
+    /**
+     * @notice Returns the amount of tokens required to reach a specific tier.
+     * @dev Gets the tokens from the level array and multiplies it by 1e18.
+     * @param _tier The tier to get the tokens required for.
+     * @return The amount of tokens required to reach the tier.
+     **/
     function getTokensRequiredForTier(uint256 _tier) public view returns (uint256) {
         if (_tier == 0) {
             return 0;
@@ -145,118 +167,124 @@ contract GenesisNftData is Ownable {
         }
     }
 
-    function split(string memory _str) public pure returns (string[] memory) {
-        bytes memory bStr = bytes(_str);
-        uint256 len = bStr.length;
-        require(len % 2 == 0);
-        string[] memory res = new string[](len / 2);
-        for (uint256 i = 0; i < len / 2; i++) {
-            bytes memory b = new bytes(2);
-            b[0] = bStr[i * 2];
-            b[1] = bStr[i * 2 + 1];
-            res[i] = string(b);
+    /**
+     * @notice splits a bytes into an array of uint8's.
+     * @param _b The bytes to split.
+     * @return _res The array of uint8s's.
+     **/
+    function splitBytes(bytes memory _b) public pure returns (uint8[11] memory _res) {
+        for (uint256 i = 0; i < 11; i++) {
+            uint8 tmp = uint8(uint256(uint8(_b[i * 2])) * 10 + uint256(uint8(_b[i * 2 + 1])));
+            if (tmp > 15) _res[i] = tmp - 16;
         }
-        return res;
     }
 
-    function decodeAttributes(
-        string calldata _encodedAttributes
-    ) public view returns (string[3] memory attributeArray) {
-        string[] memory encodedAttributesArray = split(_encodedAttributes);
-        attributeArray[0] = genderOptions[encodedAttributesArray[0]];
-        attributeArray[1] = skinOptions[encodedAttributesArray[1]];
-        attributeArray[2] = professionOptions[encodedAttributesArray[2]];
-        return attributeArray;
+    function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
+        uint8 i = 0;
+        while (i < 32 && _bytes32[i] != 0) {
+            i++;
+        }
+        bytes memory bytesArray = new bytes(i);
+        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+            bytesArray[i] = _bytes32[i];
+        }
+        return string(bytesArray);
     }
 
-    function initGenderOptions() public {
-        genderOptions["00"] = "Male";
-        genderOptions["01"] = "Female";
+    /**
+     * @notice Decodes the attributes from the encoded attributes bytes32.
+     * @param _encodedAttributes The encoded attributes bytes.
+     * @return _attributes The array of attributes.
+     **/
+    function decodeAttributes(bytes32 _encodedAttributes) public view returns (string[11] memory _attributes) {
+        uint8[11] memory i = this.splitBytes(abi.encode(_encodedAttributes));
+        _attributes[0] = bytes32ToString(attributes.gender(i[0]));
+        _attributes[1] = bytes32ToString(attributes.body(i[1]));
+        _attributes[2] = bytes32ToString(attributes.profession(i[2]));
+        _attributes[3] = bytes32ToString(attributes.accessories(i[3]));
+        _attributes[4] = bytes32ToString(attributes.background(i[4]));
+        _attributes[5] = bytes32ToString(attributes.eyes(i[5]));
+        _attributes[6] = bytes32ToString(attributes.hair(i[6]));
+        _attributes[7] = bytes32ToString(attributes.mouth(i[7]));
+        _attributes[8] = bytes32ToString(attributes.complexion(i[8]));
+        _attributes[9] = bytes32ToString(attributes.item(i[9]));
+        _attributes[10] = bytes32ToString(attributes.clothes(i[10]));
     }
 
-    function initSkinOptions() public {
-        skinOptions["00"] = "Brown";
-        skinOptions["01"] = "Yellow";
-        skinOptions["02"] = "White";
-        skinOptions["03"] = "Tan";
-        skinOptions["04"] = "Caramel";
-        skinOptions["05"] = "Red";
-        skinOptions["06"] = "Black";
-        skinOptions["07"] = "Caramel";
-    }
-
-    function initProfessionOptions() public {
-        professionOptions["00"] = "Founder";
-        professionOptions["01"] = "Sales";
-        professionOptions["02"] = "Web3 Hacker";
-        professionOptions["03"] = "Graphics Designer";
-        professionOptions["04"] = "Tester";
-        professionOptions["05"] = "Community Moderator";
-        professionOptions["06"] = "Investor";
-        professionOptions["07"] = "Marketeer";
-        professionOptions["08"] = "Influencer";
-        professionOptions["09"] = "Security Researcher";
-        professionOptions["10"] = "Sales";
-    }
-
+    /**
+     * @notice Returns the token URI for the Genesis NFT.
+     * @dev Returns the token URI for the Genesis NFT.
+     * @param _level The level of the NFT.
+     * @param _tier The tier of the NFT.
+     * @param _staked The amount of tokens staked.
+     * @param _shares The amount of shares.
+     * @param _encodedAttributes The encoded attributes string.
+     * @param _unlockTime The unlock time of the NFT.
+     * @param _imageUri The image URI of the NFT.
+     * @return The token URI for the Genesis NFT.
+     **/
     function tokenUriTraits(
+        uint256 _tokenId,
         uint256 _level,
         uint256 _tier,
         uint256 _staked,
         uint256 _shares,
-        string calldata _encodedAttributes,
+        bytes32 _encodedAttributes,
         uint256 _unlockTime,
+        uint256 _startTime,
         string calldata _imageUri
     ) public view returns (string memory) {
-        string[3] memory attributes = decodeAttributes(_encodedAttributes);
+        string[11] memory attr = decodeAttributes(_encodedAttributes);
+        string memory id = Strings.toString(_tokenId);
 
-        string memory combinedStr2 = string(
-            abi.encodePacked('", "attributes":', '[{"trait_type": "level",', '"value":', Strings.toString(_level))
-        );
-
-        string memory combinedStr3 = string(
+        //TODO: use this as image, if before reveal (_startTime)  https://content.workx.io/video/Work-X-Lockup.mp4
+        string memory part1 = string(
             abi.encodePacked(
-                '},{"trait_type": "tier",',
-                '"value":',
+                '{"name":"Work X Genesis NFT", "description":"This Work X Genesis NFT was obtained by being an early Work X adopter.", "image":"',
+                string.concat(_imageUri, id),
+                '.png","attributes": [{"trait_type":"Level","value":',
+                Strings.toString(_level),
+                '},{"trait_type":"Tier","value":',
                 Strings.toString(_tier),
-                '},{"trait_type": "work tokens staked",',
-                '"value":',
-                Strings.toString(_staked / ONE_E18)
+                '},{"trait_type":"$WORK Staked","value":',
+                Strings.toString(_staked / ONE_E18),
+                '},{"trait_type":"Gender","value":"',
+                attr[0],
+                '"},{"trait_type":"Body","value":"',
+                attr[1]
             )
         );
 
-        string memory combinedStr4 = string(
+        string memory part2 = string(
             abi.encodePacked(
-                '},{"trait_type": "sex",',
-                '"value":"',
-                attributes[0],
-                '"},{"trait_type": "skin",',
-                '"value":"',
-                attributes[1],
-                '"},{"trait_type": "profession",',
-                '"value":"',
-                attributes[2],
-                '"},'
+                '"},{"trait_type":"Profession","value":"',
+                attr[2],
+                '"},{"trait_type":"Accessories","value":"',
+                attr[3],
+                '"},{"trait_type":"Background","value":"',
+                attr[4],
+                '"},{"trait_type":"Eyes","value":"',
+                attr[5],
+                '"},{"trait_type":"Hair","value":"',
+                attr[6],
+                '"},{"trait_type":"Mouth","value":"',
+                attr[7]
             )
         );
 
-        string memory combinedStr5 = string(
+        string memory part3 = string(
             abi.encodePacked(
-                '{"display_type": "boost_number", "trait_type": "staking multiplier",',
-                '"value":',
+                '"},{"trait_type":"Complexion","value":"',
+                attr[8],
+                '"},{"trait_type":"Item","value":"',
+                attr[9],
+                '"},{"trait_type":"Clothes","value":"',
+                attr[10],
+                '"},{"display_type": "boost_number", "trait_type": "Shares","value":',
                 Strings.toString(_shares),
-                '},{"display_type": "date", "trait_type": "tokens locked until",',
-                '"value":',
+                '},{"display_type": "date", "trait_type": "Tokens Unlock","value":',
                 Strings.toString(_unlockTime),
-                "}]",
-                "}"
-            )
-        );
-
-        string memory info = string(
-            abi.encodePacked(
-                '{"name":"Work X Genesis NFT", "description":"This Work X Genesis NFT was earned by being an early Work X adopter.", "image":"',
-                _imageUri
+                "}]}"
             )
         );
 
@@ -264,14 +292,7 @@ contract GenesisNftData is Ownable {
             string(
                 abi.encodePacked(
                     "data:application/json;base64,",
-                    Base64.encode(
-                        bytes(
-                            abi.encodePacked(
-                                info,
-                                string(abi.encodePacked(combinedStr2, combinedStr3, combinedStr4, combinedStr5))
-                            )
-                        )
-                    )
+                    Base64.encode(bytes(abi.encodePacked(part1, part2, part3)))
                 )
             );
     }

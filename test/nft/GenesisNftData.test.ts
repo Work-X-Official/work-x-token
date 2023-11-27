@@ -8,61 +8,56 @@ import { amount } from "../util/helpers.util";
 chai.use(solidity);
 
 describe("GenesisNftData", () => {
-  let genesisNftData: GenesisNftData;
+  let nftData: GenesisNftData;
   let accounts: SignerWithAddress[];
 
   before(async () => {
     accounts = await ethers.getSigners();
-    genesisNftData = await (await ethers.getContractFactory("GenesisNftData", accounts[0])).deploy();
+    const nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", accounts[0])).deploy();
+    nftData = await (await ethers.getContractFactory("GenesisNftData", accounts[0])).deploy(nftAttributes.address);
   });
 
-  it("the mapping GenderOptions should be initialized", async () => {
-    const genderOption0 = await genesisNftData.genderOptions("00");
-    expect(genderOption0).to.equal("Male");
-    const genderOption1 = await genesisNftData.genderOptions("01");
-    expect(genderOption1).to.equal("Female");
-  });
+  describe("Test Encoding", () => {
+    it("Test splitBytes", async () => {
+      const result = await nftData.splitBytes(ethers.utils.formatBytes32String("0104051050000000120901"));
+      expect(result).to.eql([1, 4, 5, 10, 50, 0, 0, 0, 12, 9, 1]);
+    });
 
-  it("the mapping skinOptions should be initialized", async () => {
-    const skinOption0 = await genesisNftData.skinOptions("00");
-    expect(skinOption0).to.equal("Brown");
-  });
-
-  it("the function split should correctly split the string in two digits", async () => {
-    const stringToSplit = "00112233";
-    const result = await genesisNftData.split(stringToSplit);
-    expect(result[0]).to.equal("00");
-    expect(result[1]).to.equal("11");
-    expect(result[2]).to.equal("22");
-    expect(result[3]).to.equal("33");
-  });
-
-  it("the decodeAttributes function should return the correct attributes", async () => {
-    const encodedAttributes = "010203";
-    const decodedAttributes = await genesisNftData.decodeAttributes(encodedAttributes);
-    expect(decodedAttributes.length).to.equal(3);
-    expect(decodedAttributes[0]).to.equal("Female");
-    expect(decodedAttributes[1]).to.equal("White");
-    expect(decodedAttributes[2]).to.equal("Graphics Designer");
+    it("Test decodeAttributes", async () => {
+      const attributes = await nftData.decodeAttributes(ethers.utils.formatBytes32String("0104051030000000000000"));
+      expect(attributes).to.eql([
+        "Female",
+        "Caramel",
+        "Community Moderator",
+        "Earring Silver-Pink",
+        "Mobile Office",
+        "Amber Blue",
+        "Black Hat",
+        "Full",
+        "Blush Light",
+        "A/B Testing",
+        "Business Suit",
+      ]);
+    });
   });
 
   it("The token amount corresponds to the correct level", async () => {
-    expect(await genesisNftData.getLevel(amount(0))).to.be.equal(ethers.BigNumber.from(0));
-    expect(await genesisNftData.getLevel(amount(550))).to.be.equal(ethers.BigNumber.from(1));
-    expect(await genesisNftData.getLevel(amount(1056))).to.be.equal(ethers.BigNumber.from(2));
-    expect(await genesisNftData.getLevel(amount(1125))).to.be.equal(ethers.BigNumber.from(2));
-    expect(await genesisNftData.getLevel(amount(25000))).to.be.equal(ethers.BigNumber.from(29));
-    expect(await genesisNftData.getLevel(amount(152975))).to.be.equal(ethers.BigNumber.from(80));
-    expect(await genesisNftData.getLevel(amount(175000))).to.be.equal(ethers.BigNumber.from(80));
+    expect(await nftData.getLevel(amount(0))).to.be.equal(ethers.BigNumber.from(0));
+    expect(await nftData.getLevel(amount(550))).to.be.equal(ethers.BigNumber.from(1));
+    expect(await nftData.getLevel(amount(1056))).to.be.equal(ethers.BigNumber.from(2));
+    expect(await nftData.getLevel(amount(1125))).to.be.equal(ethers.BigNumber.from(2));
+    expect(await nftData.getLevel(amount(25000))).to.be.equal(ethers.BigNumber.from(29));
+    expect(await nftData.getLevel(amount(152975))).to.be.equal(ethers.BigNumber.from(80));
+    expect(await nftData.getLevel(amount(175000))).to.be.equal(ethers.BigNumber.from(80));
   });
 
   it("The token amount corresponds to the correct capped level", async () => {
-    expect(await genesisNftData.getLevelCapped(amount(0), 0)).to.be.equal(ethers.BigNumber.from(0));
-    expect(await genesisNftData.getLevelCapped(amount(550), 0)).to.be.equal(ethers.BigNumber.from(1));
-    expect(await genesisNftData.getLevelCapped(amount(1056), 0)).to.be.equal(ethers.BigNumber.from(2));
-    expect(await genesisNftData.getLevelCapped(amount(1125), 0)).to.be.equal(ethers.BigNumber.from(2));
-    expect(await genesisNftData.getLevelCapped(amount(25000), 0)).to.be.equal(ethers.BigNumber.from(10));
-    expect(await genesisNftData.getLevelCapped(amount(152975), 5)).to.be.equal(ethers.BigNumber.from(60));
-    expect(await genesisNftData.getLevelCapped(amount(175000), 8)).to.be.equal(ethers.BigNumber.from(80));
+    expect(await nftData.getLevelCapped(amount(0), 0)).to.be.equal(ethers.BigNumber.from(0));
+    expect(await nftData.getLevelCapped(amount(550), 0)).to.be.equal(ethers.BigNumber.from(1));
+    expect(await nftData.getLevelCapped(amount(1056), 0)).to.be.equal(ethers.BigNumber.from(2));
+    expect(await nftData.getLevelCapped(amount(1125), 0)).to.be.equal(ethers.BigNumber.from(2));
+    expect(await nftData.getLevelCapped(amount(25000), 0)).to.be.equal(ethers.BigNumber.from(10));
+    expect(await nftData.getLevelCapped(amount(152975), 5)).to.be.equal(ethers.BigNumber.from(60));
+    expect(await nftData.getLevelCapped(amount(175000), 8)).to.be.equal(ethers.BigNumber.from(80));
   });
 });

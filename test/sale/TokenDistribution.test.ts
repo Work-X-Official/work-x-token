@@ -8,6 +8,7 @@ import {
   avgMonthsVest,
   claimTokens,
   expectedVestedTotal,
+  regenerateTokenDistribution,
   setClaimable,
   setClaimableByInvestment,
 } from "../util/distribution.util";
@@ -32,7 +33,7 @@ describe("TokenDistribution", function () {
   describe("Distribution Start", () => {
     before(async () => {
       startTime = (await ethers.provider.getBlock("latest")).timestamp + 60 * 60 * 48;
-      await regenerateTokenDistribution(startTime);
+      distribution = await regenerateTokenDistribution(startTime, workToken);
     });
 
     it("Should be possible to change the distribution startTime to a new one if block.timestamp is before old startTime", async () => {
@@ -75,7 +76,7 @@ describe("TokenDistribution", function () {
 
     it("Return 0 if no time has passed", async () => {
       startTime = (await ethers.provider.getBlock("latest")).timestamp + 4;
-      await regenerateTokenDistribution(startTime);
+      distribution = await regenerateTokenDistribution(startTime, workToken);
       await setClaimable(accounts[0], 0, "1000", distribution);
       expect(await distribution.claimableTokens(accounts[0].address)).to.equal(big(0));
     });
@@ -301,14 +302,6 @@ describe("TokenDistribution", function () {
     });
   });
 
-  const regenerateTokenDistribution = async (_startTime?: number) => {
-    if (_startTime == null) {
-      _startTime = (await ethers.provider.getBlock("latest")).timestamp;
-    }
-    distribution = await (await ethers.getContractFactory("TokenDistribution")).deploy(workToken.address, _startTime);
-    await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
-  };
-
   const testInvestAndVest = async (
     investor: SignerWithAddress,
     vestingTimeDays: number,
@@ -316,7 +309,7 @@ describe("TokenDistribution", function () {
     poolSizes: number[],
     startTime: number,
   ): Promise<BigNumber> => {
-    await regenerateTokenDistribution(startTime);
+    distribution = await regenerateTokenDistribution(startTime, workToken);
     await setClaimableByInvestment(investor.address, investment, poolSizes, distribution);
     await mineDays(vestingTimeDays, network);
     const timeElapsed = (await ethers.provider.getBlock("latest")).timestamp - startTime;
