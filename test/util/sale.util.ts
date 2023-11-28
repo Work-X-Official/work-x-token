@@ -1,5 +1,9 @@
+import { ethers } from "hardhat";
 import { BUY_MORE_PRICE } from "../../tasks/constants/sale.constants";
+import { BuyMore } from "../../typings";
+import { CONSTANTS } from "../constants";
 import { daysToSeconds } from "./helpers.util";
+import { BigNumber } from "ethers";
 
 export const vestingPeriods = [daysToSeconds(547.5), daysToSeconds(365), daysToSeconds(273.75)];
 export const vestingPeriod3Cliff = daysToSeconds(27.375);
@@ -126,4 +130,25 @@ export const calculateAmountBoughtTotal = (investment: Investment) => {
     totalTokensBought += calculateBuyMoreTokenBalance(buyMore);
   }
   return totalTokensBought;
+};
+
+export const regenerateBuyMore = async (
+  wallet = "0xaaaaD8F4c7c14eC33E5a7ec605D4608b5bB410fD",
+  tokenNames = ["BUSD"],
+  tokenAddresses = [CONSTANTS.BUSD],
+): Promise<BuyMore> => {
+  const factory = await ethers.getContractFactory("BuyMore");
+
+  const buyMore = (await factory.deploy(wallet, tokenNames, tokenAddresses)) as BuyMore;
+  await buyMore.deployed();
+  return buyMore;
+};
+
+export const targetDecimals: BigNumber = BigNumber.from(36);
+
+export const deNormalizeAmount = (
+  amount: BigNumber,
+  sourceDecimals: BigNumber = BigNumber.from(CONSTANTS.BUSD_DECIMALS),
+): BigNumber => {
+  return amount.div(BigNumber.from(10).pow(targetDecimals.sub(sourceDecimals)));
 };

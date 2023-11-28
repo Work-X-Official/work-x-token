@@ -158,9 +158,9 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      **/
     function stake(uint256 _tokenId, uint256 _amount) public nonReentrant {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        uint256 stakedAmount = getStaked(_tokenId);
+        (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
         if (nftData.getLevel(stakedAmount) < 80) {
-            uint256 allowance = getStakingAllowance(_tokenId, stakedAmount);
+            uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
             require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
         }
         _stake(_tokenId, _amount);
@@ -220,7 +220,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         NftInfoMonth memory _info;
         _info.staked = uint128(_amountToStake);
         _info.minimumStaked = uint128(_amountToStake);
-        _info.shares = uint16(_calculateShares(level)) + BASE_STAKE;
+        _info.shares = uint16(nftData.calculateShares(level)) + BASE_STAKE;
         _nft.monthly[0] = _info;
 
         NftTotalMonth storage totalMonthly = monthlyTotal[0];
@@ -247,9 +247,9 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             block.timestamp > nft[_tokenId].lockPeriod + startTime,
             "GenesisNft: The NFT is still time-locked, so you can not destroy it yet"
         );
-
-        uint256 stakedAmount = getStaked(_tokenId);
         uint256 currentMonth = getCurrentMonth();
+        (uint256 stakedAmount, ) = getStaked(_tokenId, currentMonth);
+
         _updateMonthly(_tokenId, false, stakedAmount, currentMonth);
         _updateShares(_tokenId, false);
 
@@ -267,9 +267,9 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      **/
     function stakeAndEvolve(uint256 _tokenId, uint256 _amount) external nonReentrant {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        uint256 stakedAmount = getStaked(_tokenId);
+        (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
         if (nftData.getLevel(stakedAmount) < 80) {
-            uint256 allowance = getStakingAllowance(_tokenId, stakedAmount);
+            uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
             require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
         }
         _stake(_tokenId, _amount);
@@ -290,13 +290,14 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             block.timestamp > _nft.lockPeriod + startTime,
             "GenesisNft: The NFT is still time-locked, so you cannot unstake"
         );
-        uint256 stakedAmount = getStaked(_tokenId);
+        uint256 currentMonth = getCurrentMonth();
+        (uint256 stakedAmount, ) = getStaked(_tokenId, currentMonth);
         uint256 tokensRequiredForMaxLevelInTier = nftData.getTokensRequiredForTier(_nft.tier + 1);
         require(
             tokensRequiredForMaxLevelInTier <= stakedAmount - _amount,
             "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier"
         );
-        uint256 currentMonth = getCurrentMonth();
+
         _updateMonthly(_tokenId, false, _amount, currentMonth);
 
         NftInfoMonth storage _nftMonth = _nft.monthly[uint8(currentMonth)];
@@ -324,13 +325,14 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      **/
     function _updateShares(uint256 _tokenId, bool _isIncreasingShares) private {
         uint256 currentMonth = getCurrentMonth();
-        uint256 nftSharesOld = getShares(_tokenId);
+        uint256 nftSharesOld = getShares(_tokenId, currentMonth);
         uint256 totalSharesCurrentMonth = _getTotalShares(currentMonth);
         NftTotalMonth storage _nftMonthTotal = monthlyTotal[uint8(currentMonth)];
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonth = _nft.monthly[uint8(currentMonth)];
         if (_isIncreasingShares) {
-            uint256 nftSharesNew = _calculateShares(nftData.getLevelCapped(_nftMonth.staked, _nft.tier)) + BASE_STAKE;
+            uint256 nftSharesNew = nftData.calculateShares(nftData.getLevelCapped(_nftMonth.staked, _nft.tier)) +
+                BASE_STAKE;
             _nftMonth.shares = uint16(nftSharesNew);
             _nftMonthTotal.totalShares = uint32(totalSharesCurrentMonth + nftSharesNew - nftSharesOld);
         } else {
@@ -345,7 +347,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _tokenId The id of the NFT.
      **/
     function _evolveTier(uint256 _tokenId) private {
-        uint256 tier = nftData.getLevel(getStaked(_tokenId)) / 10;
+        (uint256 staked, ) = getStaked(_tokenId, getCurrentMonth());
+        uint256 tier = nftData.getLevel(staked) / 10;
         NftInfo storage _nft = nft[_tokenId];
         _nft.tier = uint16(tier);
         _updateShares(_tokenId, true);
@@ -387,7 +390,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _amount The amount of tokens staked.
      * @param _amount The month at which we are looking.
      **/
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) public {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) private {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[uint8(_month)];
         NftTotalMonth storage _totalToSet = monthlyTotal[uint8(_month)];
@@ -451,35 +454,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      ****/
 
     /**
-     * @notice How much tokens you are allowed to stake into a specific tokenID.
-     * @dev It finds the allowance for each of the past month (30days) how much tokens you are allowed to stake each day based on the level in each current day.
-     *  After it checks how much you have staked already this month and subtracts that.
-     * @param _tokenId The id of the nft for which you want to know the total allowance.
-     * @return stakingAllowance The total amount of tokens you are currently allowed to stake.
-     **/
-    function getStakingAllowance(uint256 _tokenId, uint256 _staked) public view returns (uint256 stakingAllowance) {
-        if (startTime > block.timestamp) return 0;
-
-        uint256 accumulatedAllowance = ((((((block.timestamp - startTime) / 1 days) * DAILY_STAKING_ALLOWANCE)) +
-            DAILY_STAKING_ALLOWANCE) * ONE_E18);
-        if (accumulatedAllowance + nft[_tokenId].stakedAtMint > _staked) {
-            stakingAllowance = accumulatedAllowance + nft[_tokenId].stakedAtMint - _staked;
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * @notice Gets the level of the NFT. There are 8 tiers, each tier has 10 levels.
-     * @param _tokenId The id of the NFT.
-     * @return The level of the NFT in the range of 0-80.
-     **/
-    function getLevel(uint256 _tokenId) public view returns (uint256) {
-        require(super._exists(_tokenId), "GenesisNft: This token does not exists");
-        return nftData.getLevelCapped(getStaked(_tokenId), nft[_tokenId].tier);
-    }
-
-    /**
      * @notice Get the current month number since the reward period has started.
      * @return The current month.
      **/
@@ -492,30 +466,38 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     }
 
     /**
-     * @notice Get the currently staked tokens for a specific NFT.
+     * @notice Get the currently staked and minimumStaked tokens for a specific NFT at a specific month (looping back).
      * @param _tokenId The id of the NFT.
      * @return stakedAmount The amount of tokens staked in an NFT.
+     * @return stakedAmountMinimum The amountMinimum of tokens staked in an NFT.s
      **/
-    function getStaked(uint256 _tokenId) public view returns (uint256 stakedAmount) {
+    function getStaked(
+        uint256 _tokenId,
+        uint256 _month
+    ) public view returns (uint256 stakedAmount, uint256 stakedAmountMinimum) {
         NftInfo storage _nft = nft[_tokenId];
-        for (uint256 i = getCurrentMonth() + 1; i >= 1; --i) {
+        for (uint256 i = _month + 1; i >= 1; --i) {
             NftInfoMonth storage _nftMonth = _nft.monthly[uint8(i) - 1];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1) {
-                return _nftMonth.staked;
+                if (i == _month + 1) {
+                    return (_nftMonth.staked, _nftMonth.minimumStaked);
+                } else {
+                    return (_nftMonth.staked, _nftMonth.staked);
+                }
             }
         }
-        return 0;
+        return (0, 0);
     }
 
     /**
-     * @notice Get the current shares for a specific NFT.
+     * @notice Get the current shares for a specific NFT at a specific month (looping back).
      * @dev Loops from the current month back over the previous months to find the last time this NFT has been staked or unstaked
      * @param _tokenId The id of the NFT.
      * @return The shares of the NFT.
      **/
-    function getShares(uint256 _tokenId) public view returns (uint256) {
+    function getShares(uint256 _tokenId, uint256 _month) public view returns (uint256) {
         NftInfo storage _nft = nft[_tokenId];
-        for (uint256 i = getCurrentMonth() + 1; i >= 1; i--) {
+        for (uint256 i = _month + 1; i >= 1; i--) {
             NftInfoMonth storage _nftMonth = _nft.monthly[uint8(i) - 1];
             if (_nftMonth.shares > 0 || _nftMonth.hasWithdrawn == 1) {
                 return _nftMonth.shares;
@@ -532,8 +514,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      **/
     function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenUri) {
         require(_exists(_tokenId), "GenesisNft: URI query for nonexistent tokenId");
-        uint256 staked = getStaked(_tokenId);
-        uint256 shares = getShares(_tokenId);
+        (uint256 staked, , uint256 shares, , , ) = getNftInfo(_tokenId);
         uint256 level = nftData.getLevelCapped(staked, nft[_tokenId].tier);
         NftInfo storage _nft = nft[_tokenId];
 
@@ -569,7 +550,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     function getNftInfo(
         uint256 _tokenId
     )
-        external
+        public
         view
         returns (
             uint256 _staked,
@@ -585,44 +566,21 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             NftInfoMonth storage _nftMonth = _nft.monthly[uint8(i) - 1];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1) {
                 _staked = _nftMonth.staked;
+                break;
+            }
+        }
+        for (uint256 i = getCurrentMonth() + 1; i >= 1; --i) {
+            NftInfoMonth storage _nftMonth = _nft.monthly[uint8(i) - 1];
+            if (_nftMonth.shares > 0 || _nftMonth.hasWithdrawn == 1) {
                 _shares = _nftMonth.shares;
                 break;
             }
         }
-        _stakingAllowance = getStakingAllowance(_tokenId, _staked);
-        _level = getLevel(_tokenId);
+        _stakingAllowance = _getStakingAllowance(_tokenId, _staked);
         _tier = _nft.tier;
+        _level = nftData.getLevelCapped(_staked, _tier);
         _lockPeriod = _nft.lockPeriod;
         return (_staked, _stakingAllowance, _shares, _level, _tier, _lockPeriod);
-    }
-
-    /**
-     * @notice Get the shares, staked and minimumStaked of a specific NFT at a specific month.
-     * @param _tokenId The id of the NFT.
-     * @param _month The month you want to get the information for.
-     * @return shares The shares of the NFT.
-     * @return staked The current staked tokens in an NFT in a month.
-     * @return minimumStaked The minimum staked tokens in an NFT at a month.
-     **/
-    function getNftInfoAtMonth(
-        uint256 _tokenId,
-        uint256 _month
-    ) external view returns (uint256 shares, uint256 staked, uint256 minimumStaked) {
-        NftInfo storage _nft = nft[_tokenId];
-        NftInfoMonth storage _nftMonth = _nft.monthly[uint8(_month)];
-        shares = _nftMonth.shares;
-        staked = _nftMonth.staked;
-        minimumStaked = _nftMonth.minimumStaked;
-    }
-
-    /**
-     * @notice Gets the tier of an NFT. There are 8 tiers, each tier has 10 levels.
-     * @param _tokenId The id of the NFT.
-     * @return The tier of the NFT in the range of 0-8.
-     **/
-    function getTier(uint256 _tokenId) external view returns (uint256) {
-        require(super._exists(_tokenId), "GenesisNft: This token does not exists");
-        return nft[_tokenId].tier;
     }
 
     /**
@@ -644,19 +602,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     }
 
     /**
-     * @notice Returns if an NFT has been withdrawn from in a specific month.
-     * @param _tokenId The id of the NFT.
-     * @param _month The specific month.
-     * @return hasWithdrawn Boolean indicating if a withdrawn has happened.
-     **/
-    function getTokenIdToHasWithdrawnAtMonth(
-        uint256 _tokenId,
-        uint256 _month
-    ) external view returns (uint256 hasWithdrawn) {
-        return nft[_tokenId].monthly[uint8(_month)].hasWithdrawn;
-    }
-
-    /**
      * @notice Aggregate function that returns the total shares, total balance and total minimum balance for a specific month.
      * @dev The function loops back to prior months if the current month has no data.
      * @param _month The specific month.
@@ -673,10 +618,16 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         if (_month > 0 && _totalBalance == 0) {
             for (uint256 i = _month + 1; i >= 1; i--) {
                 NftTotalMonth storage _monthlyTotal = monthlyTotal[uint8(i) - 1];
-                if (_monthlyTotal.totalStaked > 0 || _monthlyTotal.totalShares > 0 || i <= 1) {
-                    _totalShares = _monthlyTotal.totalShares;
+                if (_monthlyTotal.totalStaked > 0 || i <= 1) {
                     _totalBalance = _monthlyTotal.totalStaked;
                     _minimumBalance = _monthlyTotal.minimumStaked;
+                    break;
+                }
+            }
+            for (uint256 i = _month + 1; i >= 1; i--) {
+                NftTotalMonth storage _monthlyTotal = monthlyTotal[uint8(i) - 1];
+                if (_monthlyTotal.totalShares > 0 || i <= 1) {
+                    _totalShares = _monthlyTotal.totalShares;
                     break;
                 }
             }
@@ -686,6 +637,26 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     /****
      **** private VIEW
      ****/
+
+    /**
+     * @notice How much tokens you are allowed to stake into a specific tokenId.
+     * @dev It finds the allowance for the passed time since the startTime and calculates how much tokens you are allowed to stake for each.
+     *  After it checks how much you have staked already this month and subtracts that.
+     * @param _tokenId The id of the nft for which you want to know the total allowance.
+     * @return stakingAllowance The total amount of tokens you are currently allowed to stake.
+     **/
+    function _getStakingAllowance(uint256 _tokenId, uint256 _staked) private view returns (uint256 stakingAllowance) {
+        if (startTime > block.timestamp) return 0;
+
+        uint256 accumulatedAllowance = (((((block.timestamp - startTime) / 1 days) * DAILY_STAKING_ALLOWANCE) +
+            DAILY_STAKING_ALLOWANCE) * ONE_E18);
+        NftInfo storage _nft = nft[_tokenId];
+        if (accumulatedAllowance + _nft.stakedAtMint > _staked) {
+            stakingAllowance = accumulatedAllowance + _nft.stakedAtMint - _staked;
+        } else {
+            return 0;
+        }
+    }
 
     function _getTotalShares(uint256 _month) private view returns (uint256 sharesTotal) {
         sharesTotal = monthlyTotal[uint8(_month)].totalShares;
@@ -703,22 +674,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
                 }
             } while (true);
         }
-    }
-
-    /**
-     * @notice Calculate the shares of an NFT based on the level.
-     * @dev The multiplier is rounded that is included in the calculation by adding a value and then later dividing, this is to avoid rounding errors.
-     * @param _nftLevel The level of the NFT.
-     * @return The shares of the NFT.
-     **/
-    function _calculateShares(uint256 _nftLevel) private pure returns (uint256) {
-        if (_nftLevel == 80) return 320;
-        uint256 totalLevelCost = 525;
-        uint256 currentLevelIteration = 1;
-        for (currentLevelIteration = 1; currentLevelIteration <= _nftLevel; currentLevelIteration++) {
-            totalLevelCost += ((3 + (currentLevelIteration / 10)) * ((70 + currentLevelIteration) * 25)) / 10;
-        }
-        return ((totalLevelCost + (currentLevelIteration - 1) * 12) + 250) / 500;
     }
 
     /**

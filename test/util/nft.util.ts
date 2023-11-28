@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
+import { BigNumber, Wallet } from "ethers";
 import { GenesisNft, TokenDistribution, WorkToken } from "../../typings";
 import { Network } from "hardhat/types/runtime";
 import { amount } from "./helpers.util";
@@ -83,9 +83,9 @@ export const mintNft = async (
   }
 
   expect(await nft.ownerOf(tokenId)).to.be.equal(account.address);
-  const _tokenIdInfoAtMonth = await nft.getNftInfoAtMonth(tokenId, 0);
-  expect(_tokenIdInfoAtMonth.staked).to.be.equal(amount(stakingAmount));
-  expect(_tokenIdInfoAtMonth.minimumStaked).to.be.equal(amount(stakingAmount));
+  const _tokenIdInfoAtMonth = await nft.getStaked(tokenId, 0);
+  expect(_tokenIdInfoAtMonth[0]).to.be.equal(amount(stakingAmount));
+  expect(_tokenIdInfoAtMonth[1]).to.be.equal(amount(stakingAmount));
 
   await approveWorkToken(network, workToken, account, nft.address);
 
@@ -93,6 +93,16 @@ export const mintNft = async (
     nftId: tokenId,
     voucherId: voucher.voucherId,
   };
+};
+
+export const getVoucherSigner = (): Wallet => {
+  if (!process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) throw new Error("NFT_MESSAGE_SIGNER_PRIVATE_KEY not set");
+  return new ethers.Wallet(process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER as string).connect(ethers.provider);
+};
+
+export const getShares = async (tokenId: number, nft: GenesisNft): Promise<BigNumber> => {
+  const _nft = await nft.getNftInfo(tokenId);
+  return _nft._shares;
 };
 
 export type Voucher = {

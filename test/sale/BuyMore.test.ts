@@ -1,13 +1,13 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai, { expect } from "chai";
 import { config } from "dotenv";
-import { BigNumber } from "ethers";
 import { ethers, network } from "hardhat";
 import { CONSTANTS } from "../constants";
 import { amount, expectToRevert } from "../util/helpers.util";
 import { BuyMore } from "../../typings";
 import { solidity } from "ethereum-waffle";
 import { approveToken, sendToken } from "../util/worktoken.util";
+import { deNormalizeAmount, regenerateBuyMore } from "../util/sale.util";
 
 config();
 
@@ -17,25 +17,6 @@ describe("BuyMore", function () {
   let buyMore: BuyMore;
 
   let accounts: SignerWithAddress[];
-  const targetDecimals: BigNumber = BigNumber.from(36);
-
-  const regenerateBuyMore = async (
-    wallet = "0xaaaaD8F4c7c14eC33E5a7ec605D4608b5bB410fD",
-    tokenNames = ["BUSD"],
-    tokenAddresses = [CONSTANTS.BUSD],
-  ) => {
-    const factory = await ethers.getContractFactory("BuyMore");
-
-    buyMore = (await factory.deploy(wallet, tokenNames, tokenAddresses)) as BuyMore;
-    await buyMore.deployed();
-  };
-
-  const deNormalizeAmount = (
-    amount: BigNumber,
-    sourceDecimals: BigNumber = BigNumber.from(CONSTANTS.BUSD_DECIMALS),
-  ): BigNumber => {
-    return amount.div(BigNumber.from(10).pow(targetDecimals.sub(sourceDecimals)));
-  };
 
   before(async function () {
     this.timeout(60 * 1000);
@@ -63,7 +44,7 @@ describe("BuyMore", function () {
       await sendToken(network, signerImpersonate, accounts[i].address, ethers.utils.parseEther("800000"), token);
     }
 
-    await regenerateBuyMore();
+    buyMore = await regenerateBuyMore();
   });
 
   it("revert if trying to deploy with invalid accepted tokens format", async () => {

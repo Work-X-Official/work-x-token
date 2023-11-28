@@ -80,7 +80,7 @@ const config: HardhatUserConfig = {
       },
       // Disable the optimizer when debugging
       optimizer: {
-        enabled: true,
+        enabled: false,
         runs: 1000,
       },
     },
@@ -97,7 +97,7 @@ const config: HardhatUserConfig = {
   },
   gasReporter: {
     currency: "USD",
-    gasPrice: 80,
+    gasPrice: 20,
     enabled: !!process.env.REPORT_GAS,
     excludeContracts: [],
     src: "./contracts",
