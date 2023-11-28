@@ -10,11 +10,12 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 import "./GenesisNftData.sol";
 import "./../sale/TokenDistribution.sol";
+import "./../interface/IWorkToken.sol";
 
 contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     GenesisNftData public immutable nftData;
     TokenDistribution public immutable tokenDistribution;
-    WorkToken public immutable token;
+    IWorkToken public immutable token;
 
     uint8 constant BASE_STAKE = 50;
     uint8 constant TYPE_GUAR = 0;
@@ -81,7 +82,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     ) ERC721(_nftName, _nftSymbol) EIP712(_nftName, "1.0.0") {
         require(_workTokenAddress != address(0), "GenesisNft: Invalid token address");
         require(_tokenDistributionAddress != address(0), "GenesisNft: Invalid token distribution address");
-        token = WorkToken(_workTokenAddress);
+        token = IWorkToken(_workTokenAddress);
         tokenDistribution = TokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
         voucherSigner = _voucherSigner;
