@@ -237,3 +237,8 @@ export const mintNftMany = async (
   }
   return nftIds;
 };
+
+export interface Stake {
+  staked: BigNumber;
+  minimumStaked: BigNumber;
+}
