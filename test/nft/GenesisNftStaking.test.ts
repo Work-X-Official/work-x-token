@@ -98,8 +98,19 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId5, 0)).staked).to.be.equal(amount(100000));
     expect((await getNftInfoAtMonth(nftId5, 0)).minimumStaked).to.be.equal(amount(100000));
   });
+  it("On day 0, Check Only, total and individual shares check", async () => {
+    const totals = await nft.getTotals(0);
+    const totalSharesExpected = 1 + 1 + 1 + 21 + 204 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
 
-  it("On day 10, is oke and that all the total amounts are correct.", async () => {
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(51);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(51);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(51);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(71);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(254);
+  });
+
+  it("On day 10, check that the total and individual amounts are correct.", async () => {
     await mineDays(10, network);
 
     // nftMinter2 and nftMinter3 stake
@@ -131,6 +142,18 @@ describe("GenesisNftStaking", () => {
     expect((await nft.getNftInfo(nftId5))._staked).to.be.equal(amount(100000));
     expect((await getNftInfoAtMonth(nftId5, 0)).staked).to.be.equal(amount(100000));
     expect((await getNftInfoAtMonth(nftId5, 0)).minimumStaked).to.be.equal(amount(100000));
+  });
+
+  it("On day 10, Check only, totals and individual shares check", async () => {
+    const totals = await nft.getTotals(0);
+    const totalSharesExpected = 1 + 2 + 5 + 21 + 204 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(51);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(52);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(55);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(71);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(254);
   });
 
   it("On day 40, stake in nft4, and 5, check if all amounts are correct.", async () => {
@@ -173,6 +196,18 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId5, 1)).minimumStaked).to.be.equal(amount(100000));
   });
 
+  it("On day 40, Check only, totals and individual shares check", async () => {
+    const totals = await nft.getTotals(1);
+    const totalSharesExpected = 1 + 2 + 5 + 31 + 216 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(51);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(52);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(55);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(266);
+  });
+
   it("On day 50, stake in nft2, and 3, check if all amounts are correct.", async () => {
     await mineDays(10, network);
 
@@ -212,10 +247,33 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId5, 1)).staked).to.be.equal(amount(105000));
     expect((await getNftInfoAtMonth(nftId5, 1)).minimumStaked).to.be.equal(amount(100000));
   });
+  it("On day 50, Check only, totals and individual shares check", async () => {
+    const totals = await nft.getTotals(1);
+    const totalSharesExpected = 1 + 13 + 13 + 31 + 216 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(51);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(63);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(63);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(266);
+  });
+  it("On day 50, Evolve Tier, totals and individual shares check", async () => {
+    await nft.connect(nftMinter2).evolveTier(nftId2);
+    await nft.connect(nftMinter3).evolveTier(nftId3);
+    const totals = await nft.getTotals(1);
+    const totalSharesExpected = 1 + 23 + 27 + 31 + 216 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(51);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(73);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(77);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(266);
+  });
 
   it("On day 60, all nfts stake, check if all amounts are correct.", async () => {
     await mineDays(10, network);
-
     await nft.connect(nftMinter1).stake(nftId1, amount(5000));
     await nft.connect(nftMinter2).stake(nftId2, amount(5000));
     await nft.connect(nftMinter3).stake(nftId3, amount(5000));
@@ -250,30 +308,42 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId5, 2)).minimumStaked).to.be.equal(amount(105000));
   });
 
+  it("On day 60, Check only , totals and individual shares check", async () => {
+    const totals = await nft.getTotals(2);
+    const totalSharesExpected = 11 + 31 + 31 + 31 + 222 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(61);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(272);
+  });
+
   it("On day 70, 2 and 3 unstake, check if all amounts are correct.", async () => {
     await mineDays(10, network);
 
-    await nft.connect(nftMinter2).unstake(nftId2, amount(6000));
-    await nft.connect(nftMinter3).unstake(nftId3, amount(6000));
+    await nft.connect(nftMinter2).unstake(nftId2, amount(1500));
+    await nft.connect(nftMinter3).unstake(nftId3, amount(1500));
 
     const totals = await nft.getTotals(2);
-    const minimumExpected = amount(10000 + 11500 + 15000 + 105000);
-    const expectedTotal = amount(5000 + 10000 + 11500 + 20000 + 110000);
+    const minimumExpected = amount(11000 + 12500 + 15000 + 105000);
+    const expectedTotal = amount(5000 + 14500 + 16000 + 20000 + 110000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);
     expect(totals._totalBalance).to.be.equal(expectedTotal);
 
     expect((await nft.getNftInfo(nftId1))._staked).to.be.equal(amount(5000));
     expect((await getNftInfoAtMonth(nftId1, 2)).staked).to.be.equal(amount(5000));
-    expect((await getNftInfoAtMonth(nftId1, 2)).minimumStaked).to.be.equal(amount(5000));
+    expect((await getNftInfoAtMonth(nftId1, 2)).minimumStaked).to.be.equal(amount(0));
 
-    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(10000));
-    expect((await getNftInfoAtMonth(nftId2, 2)).staked).to.be.equal(amount(10000));
-    expect((await getNftInfoAtMonth(nftId2, 2)).minimumStaked).to.be.equal(amount(10000));
+    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId2, 2)).staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId2, 2)).minimumStaked).to.be.equal(amount(11000));
 
-    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(11500));
-    expect((await getNftInfoAtMonth(nftId3, 2)).staked).to.be.equal(amount(11500));
-    expect((await getNftInfoAtMonth(nftId3, 2)).minimumStaked).to.be.equal(amount(11500));
+    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(16000));
+    expect((await getNftInfoAtMonth(nftId3, 2)).staked).to.be.equal(amount(16000));
+    expect((await getNftInfoAtMonth(nftId3, 2)).minimumStaked).to.be.equal(amount(12500));
 
     expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(20000));
     expect((await getNftInfoAtMonth(nftId4, 2)).staked).to.be.equal(amount(20000));
@@ -284,17 +354,29 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId5, 2)).minimumStaked).to.be.equal(amount(105000));
   });
 
+  it("On day 70, Check only , totals and individual shares check", async () => {
+    const totals = await nft.getTotals(2);
+    const totalSharesExpected = 11 + 31 + 31 + 31 + 222 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(61);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(272);
+  });
+
   it("On day 90, 1, 2 stake, 3, 4 unstake, check if all amounts are correct.", async () => {
     await mineDays(20, network);
 
     await nft.connect(nftMinter1).stake(nftId1, amount(10000));
     await nft.connect(nftMinter2).stake(nftId2, amount(10000));
-    await nft.connect(nftMinter3).unstake(nftId3, amount(4000));
-    await nft.connect(nftMinter4).unstake(nftId4, amount(4000));
+    await nft.connect(nftMinter3).unstake(nftId3, amount(1500));
+    await nft.connect(nftMinter4).unstake(nftId4, amount(1500));
 
     const totals = await nft.getTotals(3);
-    const minimumExpected = amount(5000 + 10000 + 7500 + 16000 + 110000);
-    const expectedTotal = amount(15000 + 20000 + 7500 + 16000 + 110000);
+    const minimumExpected = amount(5000 + 14500 + 14500 + 18500 + 110000);
+    const expectedTotal = amount(15000 + 24500 + 14500 + 18500 + 110000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);
     expect(totals._totalBalance).to.be.equal(expectedTotal);
@@ -303,21 +385,33 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId1, 3)).staked).to.be.equal(amount(15000));
     expect((await getNftInfoAtMonth(nftId1, 3)).minimumStaked).to.be.equal(amount(5000));
 
-    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 3)).staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 3)).minimumStaked).to.be.equal(amount(10000));
+    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 3)).staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 3)).minimumStaked).to.be.equal(amount(14500));
 
-    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 3)).staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 3)).minimumStaked).to.be.equal(amount(7500));
+    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 3)).staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 3)).minimumStaked).to.be.equal(amount(14500));
 
-    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(16000));
-    expect((await getNftInfoAtMonth(nftId4, 3)).staked).to.be.equal(amount(16000));
-    expect((await getNftInfoAtMonth(nftId4, 3)).minimumStaked).to.be.equal(amount(16000));
+    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(18500));
+    expect((await getNftInfoAtMonth(nftId4, 3)).staked).to.be.equal(amount(18500));
+    expect((await getNftInfoAtMonth(nftId4, 3)).minimumStaked).to.be.equal(amount(18500));
 
     expect((await nft.getNftInfo(nftId5))._staked).to.be.equal(amount(110000));
     expect((await getNftInfoAtMonth(nftId5, 3)).staked).to.be.equal(amount(110000));
     expect((await getNftInfoAtMonth(nftId5, 3)).minimumStaked).to.be.equal(amount(110000));
+  });
+
+  it("On day 90, Check only , totals and individual shares check", async () => {
+    const totals = await nft.getTotals(3);
+    const totalSharesExpected = 13 + 31 + 31 + 31 + 222 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(63);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(272);
   });
 
   it("On day 120, only nft 5 stakes, check if all amounts are correct.", async () => {
@@ -326,8 +420,8 @@ describe("GenesisNftStaking", () => {
     await nft.connect(nftMinter5).stake(nftId5, amount(20000));
 
     const totals = await nft.getTotals(4);
-    const minimumExpected = amount(15000 + 20000 + 7500 + 16000 + 110000);
-    const expectedTotal = amount(15000 + 20000 + 7500 + 16000 + 130000);
+    const minimumExpected = amount(15000 + 24500 + 14500 + 18500 + 110000);
+    const expectedTotal = amount(15000 + 24500 + 14500 + 18500 + 130000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);
     expect(totals._totalBalance).to.be.equal(expectedTotal);
@@ -336,31 +430,41 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId1, 4)).staked).to.be.equal(amount(15000));
     expect((await getNftInfoAtMonth(nftId1, 4)).minimumStaked).to.be.equal(amount(15000));
 
-    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 4)).staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 4)).minimumStaked).to.be.equal(amount(20000));
+    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 4)).staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 4)).minimumStaked).to.be.equal(amount(24500));
 
-    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 4)).staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 4)).minimumStaked).to.be.equal(amount(7500));
+    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 4)).staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 4)).minimumStaked).to.be.equal(amount(14500));
 
-    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(16000));
-    expect((await getNftInfoAtMonth(nftId4, 4)).staked).to.be.equal(amount(16000));
-    expect((await getNftInfoAtMonth(nftId4, 4)).minimumStaked).to.be.equal(amount(16000));
+    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(18500));
+    expect((await getNftInfoAtMonth(nftId4, 4)).staked).to.be.equal(amount(18500));
+    expect((await getNftInfoAtMonth(nftId4, 4)).minimumStaked).to.be.equal(amount(18500));
 
     expect((await nft.getNftInfo(nftId5))._staked).to.be.equal(amount(130000));
     expect((await getNftInfoAtMonth(nftId5, 4)).staked).to.be.equal(amount(130000));
     expect((await getNftInfoAtMonth(nftId5, 4)).minimumStaked).to.be.equal(amount(110000));
   });
+  it("On day 120, Check only , totals and individual shares check", async () => {
+    const totals = await nft.getTotals(4);
+    const totalSharesExpected = 13 + 31 + 31 + 31 + 242 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
 
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(63);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(292);
+  });
   it("On day 150, only nft 4 unstakes, check if all amounts are correct.", async () => {
     await mineDays(30, network);
 
     await nft.connect(nftMinter4).unstake(nftId4, amount(1000));
 
     const totals = await nft.getTotals(5);
-    const minimumExpected = amount(15000 + 20000 + 7500 + 15000 + 130000);
-    const expectedTotal = amount(15000 + 20000 + 7500 + 15000 + 130000);
+    const minimumExpected = amount(15000 + 24500 + 14500 + 17500 + 130000);
+    const expectedTotal = amount(15000 + 24500 + 14500 + 17500 + 130000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);
     expect(totals._totalBalance).to.be.equal(expectedTotal);
@@ -369,21 +473,33 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId1, 5)).staked).to.be.equal(amount(15000));
     expect((await getNftInfoAtMonth(nftId1, 5)).minimumStaked).to.be.equal(amount(15000));
 
-    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 5)).staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 5)).minimumStaked).to.be.equal(amount(20000));
+    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 5)).staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 5)).minimumStaked).to.be.equal(amount(24500));
 
-    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 5)).staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 5)).minimumStaked).to.be.equal(amount(7500));
+    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 5)).staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 5)).minimumStaked).to.be.equal(amount(14500));
 
-    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(15000));
-    expect((await getNftInfoAtMonth(nftId4, 5)).staked).to.be.equal(amount(15000));
-    expect((await getNftInfoAtMonth(nftId4, 5)).minimumStaked).to.be.equal(amount(15000));
+    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(17500));
+    expect((await getNftInfoAtMonth(nftId4, 5)).staked).to.be.equal(amount(17500));
+    expect((await getNftInfoAtMonth(nftId4, 5)).minimumStaked).to.be.equal(amount(17500));
 
     expect((await nft.getNftInfo(nftId5))._staked).to.be.equal(amount(130000));
     expect((await getNftInfoAtMonth(nftId5, 5)).staked).to.be.equal(amount(130000));
     expect((await getNftInfoAtMonth(nftId5, 5)).minimumStaked).to.be.equal(amount(130000));
+  });
+
+  it("On day 150, Check only, totals and individual shares check", async () => {
+    const totals = await nft.getTotals(5);
+    const totalSharesExpected = 13 + 31 + 31 + 31 + 242 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(63);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(292);
   });
 
   it("On day 210, only nft 1 stakes, check if all amounts are correct.", async () => {
@@ -392,8 +508,8 @@ describe("GenesisNftStaking", () => {
     await nft.connect(nftMinter1).stake(nftId1, amount(15000));
 
     const totals = await nft.getTotals(7);
-    const minimumExpected = amount(15000 + 20000 + 7500 + 15000 + 130000);
-    const expectedTotal = amount(30000 + 20000 + 7500 + 15000 + 130000);
+    const minimumExpected = amount(15000 + 24500 + 14500 + 17500 + 130000);
+    const expectedTotal = amount(30000 + 24500 + 14500 + 17500 + 130000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);
     expect(totals._totalBalance).to.be.equal(expectedTotal);
@@ -402,35 +518,46 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId1, 7)).staked).to.be.equal(amount(30000));
     expect((await getNftInfoAtMonth(nftId1, 7)).minimumStaked).to.be.equal(amount(15000));
 
-    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 7)).staked).to.be.equal(amount(20000));
-    expect((await getNftInfoAtMonth(nftId2, 7)).minimumStaked).to.be.equal(amount(20000));
+    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 7)).staked).to.be.equal(amount(24500));
+    expect((await getNftInfoAtMonth(nftId2, 7)).minimumStaked).to.be.equal(amount(24500));
 
-    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 7)).staked).to.be.equal(amount(7500));
-    expect((await getNftInfoAtMonth(nftId3, 7)).minimumStaked).to.be.equal(amount(7500));
+    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 7)).staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 7)).minimumStaked).to.be.equal(amount(14500));
 
-    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(15000));
-    expect((await getNftInfoAtMonth(nftId4, 7)).staked).to.be.equal(amount(15000));
-    expect((await getNftInfoAtMonth(nftId4, 7)).minimumStaked).to.be.equal(amount(15000));
+    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(17500));
+    expect((await getNftInfoAtMonth(nftId4, 7)).staked).to.be.equal(amount(17500));
+    expect((await getNftInfoAtMonth(nftId4, 7)).minimumStaked).to.be.equal(amount(17500));
 
     expect((await nft.getNftInfo(nftId5))._staked).to.be.equal(amount(130000));
     expect((await getNftInfoAtMonth(nftId5, 7)).staked).to.be.equal(amount(130000));
     expect((await getNftInfoAtMonth(nftId5, 7)).minimumStaked).to.be.equal(amount(130000));
   });
 
-  it("On day 220, 1,2,3, 5, unstakes 1000, check if all amounts are correct.", async () => {
+  it("On day 210, Check only, totals and individual shares check", async () => {
+    const totals = await nft.getTotals(7);
+    const totalSharesExpected = 13 + 31 + 31 + 31 + 242 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(63);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(292);
+  });
+
+  it("On day 220, 1,2, 5, unstakes 1000, check if all amounts are correct.", async () => {
     await mineDays(10, network);
 
     await nft.connect(nftMinter1).unstake(nftId1, amount(1000));
     await nft.connect(nftMinter2).unstake(nftId2, amount(1000));
-    await nft.connect(nftMinter3).unstake(nftId3, amount(1000));
     await nft.connect(nftMinter5).unstake(nftId5, amount(1000));
 
     const totals = await nft.getTotals(7);
 
-    const minimumExpected = amount(15000 + 19000 + 6500 + 15000 + 129000);
-    const expectedTotal = amount(29000 + 19000 + 6500 + 15000 + 129000);
+    const minimumExpected = amount(15000 + 23500 + 14500 + 17500 + 129000);
+    const expectedTotal = amount(29000 + 23500 + 14500 + 17500 + 129000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);
     expect(totals._totalBalance).to.be.equal(expectedTotal);
@@ -439,21 +566,55 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId1, 7)).staked).to.be.equal(amount(29000));
     expect((await getNftInfoAtMonth(nftId1, 7)).minimumStaked).to.be.equal(amount(15000));
 
-    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(19000));
-    expect((await getNftInfoAtMonth(nftId2, 7)).staked).to.be.equal(amount(19000));
-    expect((await getNftInfoAtMonth(nftId2, 7)).minimumStaked).to.be.equal(amount(19000));
+    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(23500));
+    expect((await getNftInfoAtMonth(nftId2, 7)).staked).to.be.equal(amount(23500));
+    expect((await getNftInfoAtMonth(nftId2, 7)).minimumStaked).to.be.equal(amount(23500));
 
-    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(6500));
-    expect((await getNftInfoAtMonth(nftId3, 7)).staked).to.be.equal(amount(6500));
-    expect((await getNftInfoAtMonth(nftId3, 7)).minimumStaked).to.be.equal(amount(6500));
+    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 7)).staked).to.be.equal(amount(14500));
+    expect((await getNftInfoAtMonth(nftId3, 7)).minimumStaked).to.be.equal(amount(14500));
 
-    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(15000));
-    expect((await getNftInfoAtMonth(nftId4, 7)).staked).to.be.equal(amount(15000));
-    expect((await getNftInfoAtMonth(nftId4, 7)).minimumStaked).to.be.equal(amount(15000));
+    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(17500));
+    expect((await getNftInfoAtMonth(nftId4, 7)).staked).to.be.equal(amount(17500));
+    expect((await getNftInfoAtMonth(nftId4, 7)).minimumStaked).to.be.equal(amount(17500));
 
     expect((await nft.getNftInfo(nftId5))._staked).to.be.equal(amount(129000));
     expect((await getNftInfoAtMonth(nftId5, 7)).staked).to.be.equal(amount(129000));
     expect((await getNftInfoAtMonth(nftId5, 7)).minimumStaked).to.be.equal(amount(129000));
+  });
+
+  it("On day 220, Check only, totals and individual shares check", async () => {
+    const totals = await nft.getTotals(7);
+    const totalSharesExpected = 13 + 31 + 31 + 31 + 242 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(63);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(292);
+  });
+  it("On day 220, Only Evolve all tiers, totals and individual shares check", async () => {
+    await nft.connect(nftMinter1).evolveTier(nftId1);
+    await nft.connect(nftMinter2).evolveTier(nftId2);
+
+    console.log(
+      "+++++++++++++++++!!!! ISSUE EVOLVING BACK TO TIER 1, BECAUSE NO STAKED AMOUNT IN MONTH, UPDATE SHARES NEEDS TO LOOP BACK.!!!!!+++++++++++++++++++++++",
+    );
+    await nft.connect(nftMinter3).evolveTier(nftId3);
+    console.log("+++++++++++++++++!!!! ISSUE !!!!!+++++++++++++++++++++++");
+    await nft.connect(nftMinter4).evolveTier(nftId4);
+    await nft.connect(nftMinter5).evolveTier(nftId5);
+
+    expect((await nft.getNftInfo(nftId1))._shares).to.be.equal(111);
+    expect((await nft.getNftInfo(nftId2))._shares).to.be.equal(100);
+    expect((await nft.getNftInfo(nftId3))._shares).to.be.equal(81);
+    expect((await nft.getNftInfo(nftId4))._shares).to.be.equal(88);
+    expect((await nft.getNftInfo(nftId5))._shares).to.be.equal(313);
+
+    const totals = await nft.getTotals(7);
+    const totalSharesExpected = 61 + 50 + 31 + 38 + 263 + 5 * 50;
+    expect(totals._totalShares).to.be.equal(totalSharesExpected);
   });
 
   it("On day 400, everybody stakes 40000, check if all amounts are correct.", async () => {
@@ -466,8 +627,8 @@ describe("GenesisNftStaking", () => {
     await nft.connect(nftMinter5).stake(nftId5, amount(50000));
 
     const totals = await nft.getTotals(13);
-    const minimumExpected = amount(29000 + 19000 + 6500 + 15000 + 129000);
-    const expectedTotal = amount(79000 + 69000 + 56500 + 65000 + 179000);
+    const minimumExpected = amount(29000 + 23500 + 14500 + 17500 + 129000);
+    const expectedTotal = amount(79000 + 73500 + 64500 + 67500 + 179000);
 
     expect(totals._minimumBalance).to.be.equal(minimumExpected);
     expect(totals._totalBalance).to.be.equal(expectedTotal);
@@ -476,17 +637,17 @@ describe("GenesisNftStaking", () => {
     expect((await getNftInfoAtMonth(nftId1, 13)).staked).to.be.equal(amount(79000));
     expect((await getNftInfoAtMonth(nftId1, 13)).minimumStaked).to.be.equal(amount(29000));
 
-    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(69000));
-    expect((await getNftInfoAtMonth(nftId2, 13)).staked).to.be.equal(amount(69000));
-    expect((await getNftInfoAtMonth(nftId2, 13)).minimumStaked).to.be.equal(amount(19000));
+    expect((await nft.getNftInfo(nftId2))._staked).to.be.equal(amount(73500));
+    expect((await getNftInfoAtMonth(nftId2, 13)).staked).to.be.equal(amount(73500));
+    expect((await getNftInfoAtMonth(nftId2, 13)).minimumStaked).to.be.equal(amount(23500));
 
-    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(56500));
-    expect((await getNftInfoAtMonth(nftId3, 13)).staked).to.be.equal(amount(56500));
-    expect((await getNftInfoAtMonth(nftId3, 13)).minimumStaked).to.be.equal(amount(6500));
+    expect((await nft.getNftInfo(nftId3))._staked).to.be.equal(amount(64500));
+    expect((await getNftInfoAtMonth(nftId3, 13)).staked).to.be.equal(amount(64500));
+    expect((await getNftInfoAtMonth(nftId3, 13)).minimumStaked).to.be.equal(amount(14500));
 
-    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(65000));
-    expect((await getNftInfoAtMonth(nftId4, 13)).staked).to.be.equal(amount(65000));
-    expect((await getNftInfoAtMonth(nftId4, 13)).minimumStaked).to.be.equal(amount(15000));
+    expect((await nft.getNftInfo(nftId4))._staked).to.be.equal(amount(67500));
+    expect((await getNftInfoAtMonth(nftId4, 13)).staked).to.be.equal(amount(67500));
+    expect((await getNftInfoAtMonth(nftId4, 13)).minimumStaked).to.be.equal(amount(17500));
 
     expect((await nft.getNftInfo(nftId5))._staked).to.be.equal(amount(179000));
     expect((await getNftInfoAtMonth(nftId5, 13)).staked).to.be.equal(amount(179000));
@@ -526,7 +687,6 @@ describe("GenesisNftStaking", () => {
         "GenesisNft: You are not the owner of this NFT",
       );
     });
-
     it("Cannot call stakeAndEvolve before the nft startTime (except level 80 people)", async () => {
       await expectToRevert(
         nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1)),
@@ -540,31 +700,32 @@ describe("GenesisNftStaking", () => {
       await mineDays(20, network);
       const amount = ethers.utils.parseEther("5000");
       await nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount);
-      expect(await nft.getStaked(nftId1, await nft.getCurrentMonth())).to.be.equal(amount);
+      const staked = await nft.getStaked(nftId1, await nft.getCurrentMonth());
+      expect(staked[0]).to.be.equal(amount);
       const nftInfo = await nft.getNftInfo(nftId1);
       expect(nftInfo._staked).to.be.equal(amount);
       expect(nftInfo._shares).to.be.equal(11 + 50);
       expect(nftInfo._tier).to.be.equal(0);
       expect(nftInfo._level).to.be.equal(9);
     });
-
     it("StakeAndEvolve nftId2 at day 40 increase stake nftInfo is correct(did evolve to tier 1)", async () => {
       await mineDays(20, network);
       const amount = ethers.utils.parseEther("11000");
       await nft.connect(nftMinter2).stakeAndEvolve(nftId2, amount);
-      expect(await nft.getStaked(nftId2, await nft.getCurrentMonth())).to.be.equal(amount);
+      const staked = await nft.getStaked(nftId2, await nft.getCurrentMonth());
+      expect(staked[0]).to.be.equal(amount);
       const nftInfo = await nft.getNftInfo(nftId2);
       expect(nftInfo._staked).to.be.equal(amount);
       expect(nftInfo._shares).to.be.equal(23 + 50);
       expect(nftInfo._tier).to.be.equal(1);
       expect(nftInfo._level).to.be.equal(16);
     });
-
     it("StakeAndEvolve nftId3 at day 60, increase stake and nftInfo is correct, did evolve to tier 2", async () => {
       await mineDays(20, network);
       const amount = ethers.utils.parseEther("16000");
       await nft.connect(nftMinter3).stakeAndEvolve(nftId3, amount);
-      expect(await nft.getStaked(nftId3, await nft.getCurrentMonth())).to.be.equal(amount);
+      const staked = await nft.getStaked(nftId3, await nft.getCurrentMonth());
+      expect(staked[0]).to.be.equal(amount);
       const nftInfo = await nft.getNftInfo(nftId3);
       expect(nftInfo._staked).to.be.equal(amount);
       expect(nftInfo._shares).to.be.equal(33 + 50);
@@ -588,6 +749,60 @@ describe("GenesisNftStaking", () => {
       expect(nftInfoAfter._level).to.be.equal(80);
     });
   });
+
+  describe("Test Total looping of Shares and Balance by getTotals", async () => {
+    let nftMinter1: SignerWithAddress;
+    let nftMinter2: SignerWithAddress;
+
+    let nftId1: number;
+    let amountStaked: BigNumber;
+
+    before(async () => {
+      nftMinter1 = accounts[3];
+      nftMinter2 = accounts[4];
+      workToken = await regenerateWorkToken(accounts, accounts[0].address);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
+      distribution = await regenerateTokenDistribution(startTime, workToken);
+      await distribution.setWalletClaimable([nftMinter1.address], [10000], [0], [0], [0]);
+      await distribution.setWalletClaimable([nftMinter2.address], [10000], [0], [0], [0]);
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      await mineDays(12, network);
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 10000, 0, 0, chainId));
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 10000, 0, 0, chainId));
+      amountStaked = ethers.utils.parseEther("20000");
+    });
+
+    it("GetTotals returns the correct amounts after mint", async () => {
+      const totals = await nft.getTotals(0);
+      expect(totals._totalBalance).to.be.equal(amountStaked);
+      expect(totals._minimumBalance).to.be.equal(amountStaked);
+      expect(totals._totalShares).to.be.equal(21 + 50 + 21 + 50);
+    });
+
+    it("After two months getTotals returns the correct amounts after stake", async () => {
+      await mineDays(60, network);
+      const amountStake = ethers.utils.parseEther("10000");
+      amountStaked = amountStaked.add(amountStake);
+      await nft.connect(nftMinter1).stake(nftId1, amountStake);
+      const totals = await nft.getTotals(2);
+      expect(totals._totalBalance).to.be.equal(amountStaked);
+      expect(totals._minimumBalance).to.be.equal(amountStaked.sub(amountStake));
+      expect(totals._totalShares).to.be.equal(31 + 50 + 21 + 50);
+    });
+    it("Next Month getTotals returns the correct amounts unstake stake", async () => {
+      await mineDays(30, network);
+      console.log("getCurrentMonth()", await nft.getCurrentMonth());
+
+      const amountUnStake = ethers.utils.parseEther("4000");
+      amountStaked = amountStaked.sub(amountUnStake);
+      await nft.connect(nftMinter1).unstake(nftId1, amountUnStake);
+      const totals = await nft.getTotals(3);
+      expect(totals._totalBalance).to.be.equal(amountStaked);
+      expect(totals._minimumBalance).to.be.equal(amountStaked);
+      expect(totals._totalShares).to.be.equal(31 + 50 + 21 + 50);
+    });
+  });
+  // });
 
   const getNftInfoAtMonth = async (nftId: number, month: number): Promise<Stake> => {
     const ret = await nft.getStaked(nftId, month);
