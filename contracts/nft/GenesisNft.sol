@@ -5,16 +5,16 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 import "./GenesisNftData.sol";
-import "./../sale/TokenDistribution.sol";
+import "./../interface/ITokenDistribution.sol";
+import "./../interface/IWorkToken.sol";
 
 contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     GenesisNftData public immutable nftData;
-    TokenDistribution public immutable tokenDistribution;
-    WorkToken public immutable token;
+    ITokenDistribution public immutable tokenDistribution;
+    IWorkToken public immutable token;
 
     uint8 constant BASE_STAKE = 50;
     uint8 constant TYPE_GUAR = 0;
@@ -81,8 +81,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     ) ERC721(_nftName, _nftSymbol) EIP712(_nftName, "1.0.0") {
         require(_workTokenAddress != address(0), "GenesisNft: Invalid token address");
         require(_tokenDistributionAddress != address(0), "GenesisNft: Invalid token distribution address");
-        token = WorkToken(_workTokenAddress);
-        tokenDistribution = TokenDistribution(_tokenDistributionAddress);
+        token = IWorkToken(_workTokenAddress);
+        tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
         voucherSigner = _voucherSigner;
         startTime = uint128(block.timestamp + 12 days);
@@ -192,7 +192,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     ) external nonReentrant {
         require(accountMinted[_account] == 0, "GenesisNft: This account already minted an NFT");
         bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, _account, _amountToStake);
-        require(_verify(digest, _signature), "GenesisNft: Invalid signature");
+        require(nftData.verify(digest, _signature, voucherSigner), "GenesisNft: Invalid signature");
 
         if (_type == TYPE_GUAR) {
             require(nftIdCounter < COUNT_GUAR, "GenesisNft: No more guaranteed spots.");
@@ -707,15 +707,5 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
                     )
                 )
             );
-    }
-
-    /**
-     * @notice Checks with a digest and a signature if the account that signed the digest matches the voucherSigner.
-     * @param _digest The digest that is checked, this is the hash of messages that included the the typed data.
-     * @param _signature The signature that is checked, this is the signature of the person that signed the digest.
-     * @return a bool that is true if the account that signed the digest matches the voucherSigner.
-     **/
-    function _verify(bytes32 _digest, bytes memory _signature) private view returns (bool) {
-        return ECDSA.recover(_digest, _signature) == voucherSigner;
     }
 }
