@@ -1,6 +1,6 @@
 export const GENISIS_NFT_ADDRESSES = {
   goerli: "",
-  sepolia: "0xcEa96FE81C49b3576De3adAFeF0e52A81eB965A7",
+  sepolia: "0x3695cfdB98ccB46e72Fff33B72e4f09BC8332154",
   hardhat: "",
   kovan: "",
   mainnet: "",
@@ -17,7 +17,7 @@ export const GENISIS_NFT_ADDRESSES = {
 
 export const GENESIS_NFT_DATA_ADDRESSES = {
   goerli: "",
-  sepolia: "0xF42fB2AC6C9dCB02770dD093bAc3521eAF9334d8",
+  sepolia: "0x87e6F7AFAaE40fA10E3a779B224a5968E3D8E294",
   hardhat: "",
   kovan: "",
   mainnet: "",
@@ -30,4 +30,21 @@ export const GENESIS_NFT_DATA_ADDRESSES = {
   polygon: "",
   mumbai: "",
   scrollSepolia: "0x25e38433127d8eBDBf54198A3f06A328ecad554f",
+};
+
+export const GENESIS_NFT_ATTRIBUTES_ADDRESSES = {
+  goerli: "",
+  sepolia: "0xF04E6C456F50665BbD2cc7267B5d2cfbdD480814",
+  hardhat: "",
+  kovan: "",
+  mainnet: "",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+  scrollSepolia: "",
 };
