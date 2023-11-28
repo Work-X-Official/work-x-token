@@ -5,6 +5,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "base64-sol/base64.sol";
 import "./GenesisNftAttributes.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract GenesisNftData {
     GenesisNftAttributes public immutable attributes;
@@ -97,6 +98,16 @@ contract GenesisNftData {
     constructor(address _attributesAddress) {
         require(_attributesAddress != address(0), "GenesisNftData: Invalid attributes address");
         attributes = GenesisNftAttributes(_attributesAddress);
+    }
+
+    /**
+     * @notice Checks with a digest and a signature if the account that signed the digest matches the voucherSigner.
+     * @param _digest The digest that is checked, this is the hash of messages that included the the typed data.
+     * @param _signature The signature that is checked, this is the signature of the person that signed the digest.
+     * @return a bool that is true if the account that signed the digest matches the voucherSigner.
+     **/
+    function verify(bytes32 _digest, bytes memory _signature, address _voucherSigner) external pure returns (bool) {
+        return ECDSA.recover(_digest, _signature) == _voucherSigner;
     }
 
     /**
