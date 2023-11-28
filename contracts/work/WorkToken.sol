@@ -14,13 +14,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  **/
 contract WorkToken is ERC20Capped, ERC20Burnable, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     /**
      * @notice The constructor does not take arguments but sets the name, symbol and cap of the token.
      * @dev The role MINTER_ROLE is set to the deployer of the contract.
      **/
-    constructor() ERC20("Work X Token", "WORK") ERC20Capped(100 * 10 ** 6 * 10 ** decimals()) ERC20Burnable() {
+    constructor() ERC20("Work X Token", "WORK") ERC20Capped(100 * 10 ** 6 * 10 ** decimals()) {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
@@ -32,26 +31,6 @@ contract WorkToken is ERC20Capped, ERC20Burnable, AccessControl {
      **/
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
-    }
-
-    /**
-     * @notice Burns an amount of $WORK tokens belonging to the sender.
-     * @dev This function can only be called by an address with the role BURNER_ROLE.
-     * @param amount The amount of tokens that will be burned.
-     **/
-    function burn(uint256 amount) public override onlyRole(BURNER_ROLE) {
-        _burn(_msgSender(), amount);
-    }
-
-    /**
-     * @notice Destroys `amount` tokens from `account`, deducting from the caller's
-     * allowance.
-     * @dev This function can only be called by an address with the role BURNER_ROLE.
-     * @param amount The amount of tokens that will be burned.
-     **/
-    function burnFrom(address account, uint256 amount) public override {
-        _spendAllowance(account, _msgSender(), amount);
-        _burn(account, amount);
     }
 
     /**
