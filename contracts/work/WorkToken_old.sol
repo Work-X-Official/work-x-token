@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * @notice The token used in the decentralized Work X ecosystem.
  * @dev Mint function is only accessible by the minter role.
  **/
-contract WorkToken is ERC20Capped, AccessControl {
+contract WorkTokenOld is ERC20Capped, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     /**
