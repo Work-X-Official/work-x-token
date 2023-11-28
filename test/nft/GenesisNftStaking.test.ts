@@ -597,12 +597,7 @@ describe("GenesisNftStaking", () => {
   it("On day 220, Only Evolve all tiers, totals and individual shares check", async () => {
     await nft.connect(nftMinter1).evolveTier(nftId1);
     await nft.connect(nftMinter2).evolveTier(nftId2);
-
-    console.log(
-      "+++++++++++++++++!!!! ISSUE EVOLVING BACK TO TIER 1, BECAUSE NO STAKED AMOUNT IN MONTH, UPDATE SHARES NEEDS TO LOOP BACK.!!!!!+++++++++++++++++++++++",
-    );
     await nft.connect(nftMinter3).evolveTier(nftId3);
-    console.log("+++++++++++++++++!!!! ISSUE !!!!!+++++++++++++++++++++++");
     await nft.connect(nftMinter4).evolveTier(nftId4);
     await nft.connect(nftMinter5).evolveTier(nftId5);
 

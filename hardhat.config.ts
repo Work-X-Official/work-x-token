@@ -24,6 +24,9 @@ if (!mnemonic) {
   throw new Error("Please set your MNEMONIC in a .env file");
 }
 
+const usePrivateKey: string = process.env.USE_PRIVATE_KEY || "";
+const privateKey: string = process.env.PRIVATE_KEY || "";
+
 const chainIds = {
   goerli: 5,
   sepolia: 11155111,
@@ -59,15 +62,21 @@ const chainUrls = {
 };
 
 function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
-  return {
-    accounts: {
-      count: 10,
-      mnemonic,
-      path: "m/44'/60'/0'/0",
-    },
-    chainId: chainIds[network],
-    url: chainUrls[network],
-  };
+  return usePrivateKey == "YES"
+    ? {
+        accounts: [privateKey],
+        chainId: chainIds[network],
+        url: chainUrls[network],
+      }
+    : {
+        accounts: {
+          count: 10,
+          mnemonic,
+          path: "m/44'/60'/0'/0",
+        },
+        chainId: chainIds[network],
+        url: chainUrls[network],
+      };
 }
 
 const config: HardhatUserConfig = {
@@ -107,7 +116,7 @@ const config: HardhatUserConfig = {
       // gas: 20000000,
       accounts: {
         count: 10,
-        mnemonic: mnemonic,
+        // mnemonic: mnemonic,
         accountsBalance: "100000000000000000000000000",
       },
       chainId: chainIds.hardhat,

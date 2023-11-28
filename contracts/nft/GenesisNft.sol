@@ -329,15 +329,22 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         uint256 totalSharesCurrentMonth = _getTotalShares(currentMonth);
         NftTotalMonth storage _nftMonthTotal = monthlyTotal[uint8(currentMonth)];
         NftInfo storage _nft = nft[_tokenId];
-        NftInfoMonth storage _nftMonth = _nft.monthly[uint8(currentMonth)];
-        if (_isIncreasingShares) {
-            uint256 nftSharesNew = nftData.calculateShares(nftData.getLevelCapped(_nftMonth.staked, _nft.tier)) +
-                BASE_STAKE;
-            _nftMonth.shares = uint16(nftSharesNew);
-            _nftMonthTotal.totalShares = uint32(totalSharesCurrentMonth + nftSharesNew - nftSharesOld);
-        } else {
-            _nftMonth.shares = 0;
-            _nftMonthTotal.totalShares = uint32(totalSharesCurrentMonth - nftSharesOld);
+        NftInfoMonth storage _nftMonthToSet = _nft.monthly[uint8(currentMonth)];
+        for (uint256 i = currentMonth + 1; i >= 1; --i) {
+            NftInfoMonth memory _nftMonth = _nft.monthly[uint8(i) - 1];
+            if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1 || i == 1) {
+                if (_isIncreasingShares) {
+                    uint256 nftSharesNew = nftData.calculateShares(
+                        nftData.getLevelCapped(_nftMonth.staked, _nft.tier)
+                    ) + BASE_STAKE;
+                    _nftMonthToSet.shares = uint16(nftSharesNew);
+                    _nftMonthTotal.totalShares = uint32(totalSharesCurrentMonth + nftSharesNew - nftSharesOld);
+                } else {
+                    _nftMonthToSet.shares = 0;
+                    _nftMonthTotal.totalShares = uint32(totalSharesCurrentMonth - nftSharesOld);
+                }
+                break;
+            }
         }
     }
 
