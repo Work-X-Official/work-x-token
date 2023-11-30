@@ -3,7 +3,7 @@ export const WORK_TOKEN_ADDRESSES = {
   sepolia: "0x38658CA8Dd79b19a221eD4D16341785fDfA663f8",
   hardhat: "",
   kovan: "",
-  mainnet: "",
+  mainnet: "0x8888888837F84a7A82668E0320AC454f5945d0b9",
   rinkeby: "",
   ropsten: "",
   bsc: "0x8888888837F84a7A82668E0320AC454f5945d0b9",
