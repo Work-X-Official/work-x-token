@@ -81,7 +81,7 @@ contract TokenDistribution is AccessControl {
     }
 
     /****
-     **** ONLY STARTER_ROLE
+     **** ONLY INIT_ROLE
      ****/
 
     /**
@@ -94,10 +94,6 @@ contract TokenDistribution is AccessControl {
         require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
         startTime = uint128(_startTime);
     }
-
-    /****
-     **** ONLY INIT_ROLE
-     ****/
 
     /**
      * @notice The startDistribution function starts the distribution in the future, this can not be changed after the distribution has started.

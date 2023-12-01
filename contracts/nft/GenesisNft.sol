@@ -36,7 +36,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
 
     mapping(address => bool) public accountMinted;
     mapping(address => bool) public isRewarder;
-    mapping(uint8 => NftTotalMonth) public monthlyTotal;
+    mapping(uint8 => NftTotalMonth) public monthlyTotal; // change to uint256
     struct NftTotalMonth {
         uint32 totalShares;
         uint128 totalStaked;
@@ -50,7 +50,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         uint64 lockPeriod;
         uint128 stakedAtMint;
         bytes32 encodedAttributes;
-        mapping(uint8 => NftInfoMonth) monthly;
+        mapping(uint8 => NftInfoMonth) monthly; // change to uint256
     }
     struct NftInfoMonth {
         uint16 shares;
