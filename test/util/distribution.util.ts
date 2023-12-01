@@ -13,6 +13,7 @@ import { ethers } from "hardhat";
 export const regenerateTokenDistribution = async (
   _startTime: number,
   workToken: WorkToken,
+  deployer: SignerWithAddress,
 ): Promise<TokenDistribution> => {
   if (_startTime == null) {
     _startTime = (await ethers.provider.getBlock("latest")).timestamp;
@@ -21,6 +22,7 @@ export const regenerateTokenDistribution = async (
     await ethers.getContractFactory("TokenDistribution")
   ).deploy(workToken.address, _startTime)) as TokenDistribution;
   await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
+  await distribution.grantRole(await distribution.INIT_ROLE(), deployer.address);
   return distribution;
 };
 

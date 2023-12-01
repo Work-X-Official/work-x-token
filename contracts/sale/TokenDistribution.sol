@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../work/WorkToken.sol";
 
 /**
@@ -11,8 +11,9 @@ import "../work/WorkToken.sol";
  * @notice The contract used to distribute the $WORK tokens according to a vesting schedule.
  * @dev There are 3 rounds, with different vesting periods. The 3rd round has a direct unlock of 10%.
  **/
-contract TokenDistribution is Ownable, AccessControl {
+contract TokenDistribution is AccessControl {
     bytes32 public constant NFT_ROLE = keccak256("NFT_ROLE");
+    bytes32 public constant INIT_ROLE = keccak256("INIT_ROLE");
 
     WorkToken public immutable workToken;
 
@@ -66,7 +67,7 @@ contract TokenDistribution is Ownable, AccessControl {
     }
 
     /****
-     **** ONLY NFT
+     **** ONLY NFT_ROLE
      ****/
 
     function setTotalClaimed(address wallet, uint256 totalClaimed) external onlyRole(NFT_ROLE) {
@@ -80,7 +81,7 @@ contract TokenDistribution is Ownable, AccessControl {
     }
 
     /****
-     **** ONLY OWNER
+     **** ONLY STARTER_ROLE
      ****/
 
     /**
@@ -88,11 +89,15 @@ contract TokenDistribution is Ownable, AccessControl {
      * @dev The WorkToken contract is used to mint the tokens directly towards the claimer.
      * @param _startTime The amount of tokens that will be minted.
      **/
-    function startDistribution(uint256 _startTime) external onlyOwner {
+    function startDistribution(uint256 _startTime) external onlyRole(INIT_ROLE) {
         require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
         require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
         startTime = uint128(_startTime);
     }
+
+    /****
+     **** ONLY INIT_ROLE
+     ****/
 
     /**
      * @notice The startDistribution function starts the distribution in the future, this can not be changed after the distribution has started.
@@ -109,7 +114,7 @@ contract TokenDistribution is Ownable, AccessControl {
         uint32[] calldata amount2,
         uint32[] calldata amount3,
         uint32[] calldata totalClaimed
-    ) external onlyOwner {
+    ) external onlyRole(INIT_ROLE) {
         require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
         for (uint256 w = 0; w < wallet.length; w++) {
             accountBalance[wallet[w]] = Balance(

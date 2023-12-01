@@ -58,8 +58,8 @@ describe("GenesisNftStaking", () => {
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
     workToken = await regenerateWorkToken(accounts, accounts[0].address);
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 11;
-    distribution = await regenerateTokenDistribution(startTime, workToken);
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 12;
+    distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
     await distribution.setWalletClaimable([nftMinter3.address], [500], [0], [0], [0]);
     await distribution.setWalletClaimable([nftMinter4.address], [10000], [0], [0], [0]);
@@ -666,8 +666,8 @@ describe("GenesisNftStaking", () => {
       nftMinter3 = accounts[5];
       nftMinter4 = accounts[6];
       workToken = await regenerateWorkToken(accounts, accounts[0].address);
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
-      distribution = await regenerateTokenDistribution(startTime, workToken);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 9;
+      distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       await distribution.setWalletClaimable([nftMinter4.address], [155000], [0], [0], [0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
@@ -756,8 +756,8 @@ describe("GenesisNftStaking", () => {
       nftMinter1 = accounts[3];
       nftMinter2 = accounts[4];
       workToken = await regenerateWorkToken(accounts, accounts[0].address);
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
-      distribution = await regenerateTokenDistribution(startTime, workToken);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 9;
+      distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       await distribution.setWalletClaimable([nftMinter1.address], [10000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [10000], [0], [0], [0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);

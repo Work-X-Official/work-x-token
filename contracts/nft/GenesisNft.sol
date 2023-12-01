@@ -34,7 +34,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     string imageFolder = "QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b";
     address voucherSigner;
 
-    mapping(address => uint16) public accountMinted;
+    mapping(address => bool) public accountMinted;
+    mapping(address => bool) public isRewarder;
     mapping(uint8 => NftTotalMonth) public monthlyTotal;
     struct NftTotalMonth {
         uint32 totalShares;
@@ -137,6 +138,14 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     }
 
     /**
+     * @notice Sets or unsets a specific address to be a rewarder, they can add tokens to any NFT bypassing the stakingAllowance.
+     * @param _rewarder Address of the vouchersigner that will be set.
+     **/
+    function setRewarder(address _rewarder, bool _isRewarder) external onlyOwner {
+        isRewarder[_rewarder] = _isRewarder;
+    }
+
+    /**
      * @notice Sets the start time of the NFT reward mechanism.
      * @param _startTime The new start time.
      **/
@@ -144,26 +153,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         require(startTime > block.timestamp, "GenesisNft: The reward mechanism has already started");
         require(_startTime > block.timestamp, "GenesisNft: The startTime must be in the future");
         startTime = uint128(_startTime);
-    }
-
-    /****
-     **** PUBLIC WRITE
-     ****/
-
-    /**
-     * @notice The stake function stakes an amount of tokens into an NFT of the owner.
-     * @dev The amount that can be staked for a specific tokenId builds up over time. You can only stake up to this allowance and you need own enough tokens.
-     * @param _tokenId The id of the nft that will receive the tokens.
-     * @param _amount The amount of tokens that will be staked.
-     **/
-    function stake(uint256 _tokenId, uint256 _amount) public nonReentrant {
-        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
-        if (nftData.getLevel(stakedAmount) < 80) {
-            uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
-            require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
-        }
-        _stake(_tokenId, _amount);
     }
 
     /****
@@ -190,7 +179,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         uint256 _amountToStake,
         bytes calldata _signature
     ) external nonReentrant {
-        require(accountMinted[_account] == 0, "GenesisNft: This account already minted an NFT");
+        require(accountMinted[_account] == false, "GenesisNft: This account already minted an NFT");
         bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, _account, _amountToStake);
         require(nftData.verify(digest, _signature, voucherSigner), "GenesisNft: Invalid signature");
 
@@ -206,7 +195,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
 
         tokenDistribution.setTotalClaimed(_account, _amountToStake);
 
-        accountMinted[_account] = 1;
+        accountMinted[_account] = true;
         nftIdCounter += 1;
         _safeMint(_account, nftIdCounter);
 
@@ -258,6 +247,33 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
 
         _burn(_tokenId);
         _refundTokens(stakedAmount);
+    }
+
+    /**
+     * @notice The stake function stakes an amount of tokens into an NFT of the owner.
+     * @dev The amount that can be staked for a specific tokenId builds up over time. You can only stake up to this allowance and you need own enough tokens.
+     * @param _tokenId The id of the nft that will receive the tokens.
+     * @param _amount The amount of tokens that will be staked.
+     **/
+    function stake(uint256 _tokenId, uint256 _amount) external nonReentrant {
+        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
+        (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
+        if (nftData.getLevel(stakedAmount) < 80) {
+            uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
+            require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
+        }
+        _stake(_tokenId, _amount);
+    }
+
+    /**
+     * @notice The reward function stakes an amount of tokens into any NFT, bypassing the stakingAllowance.
+     * @dev Rewarders can stake tokens into any NFT, which potentially increases its level but does not evolve it to the next tier.
+     * @param _tokenId The id of the nft that will receive the tokens.
+     * @param _amount The amount of tokens that will be staked.
+     **/
+    function reward(uint256 _tokenId, uint256 _amount) external nonReentrant {
+        require(isRewarder[msg.sender], "GenesisNft: You are not a rewarder!");
+        _stake(_tokenId, _amount);
     }
 
     /**

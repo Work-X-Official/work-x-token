@@ -47,8 +47,8 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
     workToken = await regenerateWorkToken(accounts, accounts[0].address);
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
-    distribution = await regenerateTokenDistribution(startTime, workToken);
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
+    distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
   });
 
@@ -64,8 +64,8 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
 
     before(async () => {
       nftMinter1 = accounts[1];
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 9;
-      distribution = await regenerateTokenDistribution(startTime, workToken);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
+      distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       await distribution.setWalletClaimable([nftMinter1.address], [1000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [2000], [0], [0], [0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
@@ -168,8 +168,8 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
 
     before(async () => {
       nftMinter1 = accounts[1];
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 9;
-      distribution = await regenerateTokenDistribution(startTime, workToken);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
+      distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       await distribution.setWalletClaimable([nftMinter1.address], [1000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [2000], [0], [0], [0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);

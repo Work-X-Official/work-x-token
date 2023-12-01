@@ -154,11 +154,6 @@ const config: HardhatUserConfig = {
       avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY || "",
     },
   },
-  sourcify: {
-    // Disabled by default
-    // Doesn't need an API key
-    enabled: true,
-  },
 };
 
 export default config;
