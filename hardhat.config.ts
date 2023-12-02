@@ -11,7 +11,7 @@ import { resolve } from "path";
 import "./tasks/work";
 import "./tasks/sale";
 import "./tasks/nft";
-e;
+
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
 const infuraApiKey: string | undefined = process.env.INFURA_API_KEY;
