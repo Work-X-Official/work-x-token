@@ -12,12 +12,13 @@ import {
   setClaimable,
   setClaimableByInvestment,
 } from "../util/distribution.util";
-import { vestingPeriod3Cliff, workBought, zeroInv } from "../util/sale.util";
+import { vestingPeriod3Cliff, zeroInv } from "../util/sale.util";
 import {
   VESTING_LENGHT_PRESALE_MONTHS,
   VESTING_LENGHT_PRIVATE_MONTHS,
   VESTING_LENGHT_SEED_MONTHS,
 } from "../../tasks/constants/sale.constants";
+import { workBought } from "../../tasks/util/utils";
 
 describe("TokenDistribution", function () {
   let distribution: TokenDistribution;

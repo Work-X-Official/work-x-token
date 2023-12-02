@@ -32,10 +32,10 @@ import {
   calculateBuyMoreTokenBalance,
   seed1kInv,
   seed251Inv,
-  workBought,
   zeroInv,
 } from "../util/sale.util";
 import { maxLockLength, regenerateTokenDistribution } from "../util/distribution.util";
+import { workBought } from "../../tasks/util/utils";
 
 config();
 

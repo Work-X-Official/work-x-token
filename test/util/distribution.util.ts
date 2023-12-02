@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TokenDistribution, WorkToken } from "../../typings";
-import { Investment, vestingPeriod3Cliff, vestingPeriods, workBought } from "./sale.util";
+import { Investment, vestingPeriod3Cliff, vestingPeriods } from "./sale.util";
 import { BigNumber } from "ethers";
 import { amount, big } from "./helpers.util";
 import {
@@ -9,6 +9,7 @@ import {
   VESTING_LENGHT_SEED_MONTHS,
 } from "../../tasks/constants/sale.constants";
 import { ethers } from "hardhat";
+import { workBought } from "../../tasks/util/utils";
 
 export const regenerateTokenDistribution = async (
   _startTime: number,
