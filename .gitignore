@@ -31,3 +31,5 @@ yarn-error.log*
 .yarn
 
 contracts_list.txt
+
+.csv
