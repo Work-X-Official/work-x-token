@@ -91,6 +91,7 @@ contract TokenDistribution is AccessControl {
      * @param _startTime The amount of tokens that will be minted.
      **/
     function startDistribution(uint256 _startTime) external onlyRole(INIT_ROLE) {
+        _startTime = uint256(uint128(_startTime));
         require(startTime > block.timestamp, "TokenDistribution: The token distribution has already started");
         require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
         startTime = uint128(_startTime);
