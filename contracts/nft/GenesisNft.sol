@@ -150,6 +150,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _startTime The new start time.
      **/
     function setStartTime(uint256 _startTime) external onlyOwner {
+        _startTime = uint256(uint128(_startTime));
         require(startTime > block.timestamp, "GenesisNft: The reward mechanism has already started");
         require(_startTime > block.timestamp, "GenesisNft: The startTime must be in the future");
         startTime = uint128(_startTime);

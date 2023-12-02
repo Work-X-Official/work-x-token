@@ -42,6 +42,7 @@ contract TokenDistribution is AccessControl {
      * @dev A reference to the work token is made.
      **/
     constructor(address _tokenAddress, uint256 _startTime) {
+        _startTime = uint256(uint128(_startTime))
         require(_startTime > block.timestamp, "TokenDistribution: The startTime must be in the future");
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         workToken = WorkToken(_tokenAddress);
