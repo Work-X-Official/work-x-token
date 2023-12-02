@@ -187,13 +187,13 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             revert("GenesisNft: All NFT's have been minted");
         }
 
+        accountMinted[_account] = true;
+
         if (_amountToStake > 0) {
             tokenDistribution.setTotalClaimed(_account, _amountToStake);
         }
 
-        accountMinted[_account] = true;
         nftIdCounter += 1;
-        _safeMint(_account, nftIdCounter);
 
         NftInfo storage _nft = nft[nftIdCounter];
         _nft.voucherId = uint16(_voucherId);
@@ -213,9 +213,11 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         totalMonthly.totalStaked += uint128(_amountToStake);
         totalMonthly.totalShares += _info.shares;
 
+        if (_amountToStake > 0) {
+            token.mint(address(this), _amountToStake);
+        }
+        _safeMint(_account, nftIdCounter);
         emit Evolve(nftIdCounter, _nft.tier);
-
-        token.mint(address(this), _amountToStake);
     }
 
     /**
