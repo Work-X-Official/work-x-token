@@ -24,13 +24,14 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     uint16 constant COUNT_GUAR = 350;
     uint16 constant COUNT_FCFS = 150;
     uint16 constant COUNT_INV = 499;
+
     uint16 public nftIdCounter;
     uint8 public initCompleted = 0;
 
     uint128 constant ONE_E18 = 10 ** 18;
     uint128 public startTime;
 
-    string imageBaseURI = "https://plum-potential-tiglon-489.mypinata.cloud/ipfs/";
+    string imageBaseURI = "ipfs://";
     string imageFolder = "QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b";
     address voucherSigner;
 
@@ -99,14 +100,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      **/
     function setIpfsFolder(string calldata _folder) external onlyOwner {
         imageFolder = _folder;
-    }
-
-    /**
-     * @notice Sets the IPFS gateway where the NFT images are stored.
-     * @param _gateway The gateway that will be set.
-     **/
-    function setIpfsGateway(string calldata _gateway) external onlyOwner {
-        imageBaseURI = _gateway;
     }
 
     /**
@@ -326,6 +319,9 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         emit Unstake(_tokenId, _amount);
     }
 
+    /**
+     * @notice Tries to evolve the tier if you are the owner of the NFT.
+     **/
     function evolveTier(uint256 _tokenId) external {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
         _evolveTier(_tokenId);
