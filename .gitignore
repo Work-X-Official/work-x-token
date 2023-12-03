@@ -33,3 +33,5 @@ yarn-error.log*
 contracts_list.txt
 
 *.csv
+
+**/tasks/work/workBuyers.ts
