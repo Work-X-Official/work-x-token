@@ -6,6 +6,7 @@ export const privatePools = {
     "0x40F57169690C038FB62247Ed44e6e8D6e90D0EE9",
     "0xb212489869efa26bab3bac48350c339c17094e33",
     "0x9eb0f54850c3d2eec63bc6351ff229fdeadbecc4",
+    "0x96d5efaEce455c0Fdf912fca7Ec352e20a76Dd69",
   ],
   56: [
     "0x57AD1D54d3c9b5b15263f66F58E13A29c1608DB9",

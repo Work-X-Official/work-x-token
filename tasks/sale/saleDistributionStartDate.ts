@@ -11,7 +11,9 @@ task("sale:distribution:getstartdate", "Prints the startdate").setAction(async (
   );
   const startTime = Number((await tokenDistribution.startTime()).toString());
   const startTimeDate = new Date(startTime * 1000);
-
+  const blockNumber = await hre.ethers.provider.getBlockNumber();
+  const block = await hre.ethers.provider.getBlock(blockNumber);
+  console.log(block.timestamp);
   console.log("╔══════════════════════════════════════════════════════════════════════");
   console.log("║  on '" + hre.network.name + "'");
   console.log("║ startTime in Unix:", startTime);
@@ -20,7 +22,7 @@ task("sale:distribution:getstartdate", "Prints the startdate").setAction(async (
   console.log("");
 });
 
-// example yarn hardhat sale:distribution:startdate --starttime 1654088656 --network sepolia
+// example yarn hardhat sale:distribution:startdate --starttime 1701615500 --network sepolia
 task("sale:distribution:startdate", "Sets the StartDate")
   .addParam("starttime", "Startime in Unix format")
   .setAction(async ({ starttime }, hre) => {
