@@ -11,25 +11,32 @@ task("sale:distribution:deploy").setAction(async function (_, hre) {
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
   const startTime = (await hre.ethers.provider.getBlock("latest")).timestamp + 80400;
-  const tokenDistribution = await (
+  const accounts = await hre.ethers.getSigners();
+  const distribution = await (
     await hre.ethers.getContractFactory("TokenDistribution")
   ).deploy(workToken.address, startTime);
-  await tokenDistribution.deployed();
+  await distribution.deployed();
   console.log("╔══════════════════════════════════════════════════════════════════════");
-  console.log("║ TokenDistribution deployed to:", tokenDistribution.address);
+  console.log("║ TokenDistribution deployed to:", distribution.address);
   console.log("║ On network: ", hre.network.name);
   console.log("║");
 
-  const grantRole = await workToken.grantRole(await workToken.MINTER_ROLE(), tokenDistribution.address);
-  const receiptGrantRole = await grantRole.wait(5);
+  const initRole = await distribution.grantRole(await distribution.INIT_ROLE(), accounts[0].address);
+  const initGrantRole = await initRole.wait();
+  console.log("║ The deployer is granted the INIT_ROLE");
+  console.log("║ Tx: " + initGrantRole.transactionHash);
+  console.log("║");
+
+  const grantRole = await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
+  const receiptGrantRole = await grantRole.wait();
   console.log("║ The tokenDistribution is granted the role to mint the WorkToken");
   console.log("║ Tx: " + receiptGrantRole.transactionHash);
   console.log("║");
 
-  await tokenDistribution.deployTransaction.wait(5);
+  await distribution.deployTransaction.wait(5);
   await hre.run("verify:verify", {
     contract: "contracts/sale/TokenDistribution.sol:TokenDistribution",
-    address: tokenDistribution.address,
+    address: distribution.address,
     constructorArguments: [workToken.address, startTime],
   });
   console.log("");
