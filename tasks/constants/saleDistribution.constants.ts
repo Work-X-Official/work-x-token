@@ -1,6 +1,6 @@
 export const SALE_DISTRIBUTION_ADDRESSES = {
   goerli: "",
-  sepolia: "0x933045f2615C44B4ebF45E0d3fD31e7e515be840",
+  sepolia: "0x4bf460A49a6b25D44c22056446f22486c54f2672",
   hardhat: "",
   kovan: "",
   mainnet: "0xE91F8Bd2B6558564ff4E5BcB104e38e95846455B",
