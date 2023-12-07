@@ -291,7 +291,7 @@ contract GenesisNftData {
      * @return _attributes The array of attributes.
      **/
     function decodeAttributes(bytes32 _encodedAttributes) public view returns (string[11] memory _attributes) {
-        uint8[11] memory i = this.splitBytes(abi.encode(_encodedAttributes));
+        uint8[11] memory i = splitBytes(abi.encode(_encodedAttributes));
         _attributes[0] = bytes32ToString(attributes.gender(i[0]));
         _attributes[1] = bytes32ToString(attributes.body(i[1]));
         _attributes[2] = bytes32ToString(attributes.profession(i[2]));
