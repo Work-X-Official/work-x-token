@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TokenDistribution, WorkToken } from "../../typings";
-import { Investment, vestingPeriod3Cliff, vestingPeriods, workBought } from "./sale.util";
+import { Investment, vestingPeriod3Cliff, vestingPeriods } from "./sale.util";
 import { BigNumber } from "ethers";
 import { amount, big } from "./helpers.util";
 import {
@@ -9,10 +9,12 @@ import {
   VESTING_LENGHT_SEED_MONTHS,
 } from "../../tasks/constants/sale.constants";
 import { ethers } from "hardhat";
+import { workBought } from "../../tasks/util/utils";
 
 export const regenerateTokenDistribution = async (
   _startTime: number,
   workToken: WorkToken,
+  deployer: SignerWithAddress,
 ): Promise<TokenDistribution> => {
   if (_startTime == null) {
     _startTime = (await ethers.provider.getBlock("latest")).timestamp;
@@ -21,6 +23,7 @@ export const regenerateTokenDistribution = async (
     await ethers.getContractFactory("TokenDistribution")
   ).deploy(workToken.address, _startTime)) as TokenDistribution;
   await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
+  await distribution.grantRole(await distribution.INIT_ROLE(), deployer.address);
   return distribution;
 };
 

@@ -36,8 +36,8 @@ describe.skip("GenesisNftMintType", () => {
     nftVoucherSigner = new ethers.Wallet(process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER as string).connect(ethers.provider);
 
     workToken = await regenerateWorkToken(accounts, accounts[0].address);
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 6;
-    distribution = await regenerateTokenDistribution(startTime, workToken);
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 7;
+    distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
   });
 

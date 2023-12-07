@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-waffle";
 // import { config } from "dotenv";
 import { task } from "hardhat/config";
 import { GenesisNft } from "../../typings";
-import { GENISIS_NFT_ADDRESSES } from "../constants/nft.contants";
+import { GENISIS_NFT_ADDRESSES } from "../constants/nft.constants";
 
 // example yarn hardhat nft:details --id 10 --network sepolia
 task("nft:details", "Prints the details of a specific nft")
