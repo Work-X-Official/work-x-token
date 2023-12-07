@@ -95,7 +95,7 @@ contract GenesisNftData {
         152720
     ];
 
-    uint16[81] private shares = [
+    uint16[81] public shares = [
         1,
         2,
         3,
@@ -231,17 +231,6 @@ contract GenesisNftData {
             return (_tier + 1) * 10;
         }
         return level;
-    }
-
-    /**
-     * @notice Calculate the shares of an NFT based on the level.
-     * @dev The multiplier is rounded that is included in the calculation by adding a value and then later dividing, this is to avoid rounding errors.
-     * @param _nftLevel The level of the NFT.
-     * @return The shares of the NFT.
-     **/
-    function calculateShares(uint256 _nftLevel) external view returns (uint256) {
-        if (_nftLevel >= 80) return 320;
-        return shares[_nftLevel];
     }
 
     /**

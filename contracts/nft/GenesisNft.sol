@@ -222,7 +222,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         NftInfoMonth memory _info;
         _info.staked = uint128(_amountToStake);
         _info.minimumStaked = uint128(_amountToStake);
-        _info.shares = uint16(nftData.calculateShares(level) + BASE_STAKE);
+        _info.shares = uint16(nftData.shares(level) + BASE_STAKE);
         _nft.monthly[0] = _info;
 
         NftTotalMonth storage totalMonthly = monthlyTotal[0];
@@ -368,9 +368,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             NftInfoMonth memory _nftMonth = _nft.monthly[i - 1];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1 || i == 1) {
                 if (_isIncreasingShares) {
-                    uint256 nftSharesNew = nftData.calculateShares(
-                        nftData.getLevelCapped(_nftMonth.staked, _nft.tier)
-                    ) + BASE_STAKE;
+                    uint256 nftSharesNew = nftData.shares(nftData.getLevelCapped(_nftMonth.staked, _nft.tier)) +
+                        BASE_STAKE;
                     _nftMonthToSet.shares = uint16(nftSharesNew);
                     _nftMonthTotal.totalShares = uint32(totalSharesCurrentMonth + nftSharesNew - nftSharesOld);
                 } else {
