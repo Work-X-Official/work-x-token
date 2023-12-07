@@ -95,6 +95,89 @@ contract GenesisNftData {
         152720
     ];
 
+    uint16[80] private shares = [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        16,
+        18,
+        19,
+        21,
+        23,
+        25,
+        26,
+        28,
+        31,
+        33,
+        35,
+        37,
+        40,
+        42,
+        45,
+        47,
+        50,
+        52,
+        55,
+        58,
+        61,
+        64,
+        68,
+        71,
+        74,
+        77,
+        80,
+        84,
+        88,
+        91,
+        95,
+        99,
+        103,
+        107,
+        111,
+        116,
+        120,
+        124,
+        129,
+        134,
+        139,
+        143,
+        148,
+        153,
+        159,
+        164,
+        169,
+        174,
+        180,
+        186,
+        192,
+        198,
+        204,
+        210,
+        216,
+        222,
+        228,
+        235,
+        242,
+        249,
+        256,
+        263,
+        270,
+        278,
+        285,
+        292,
+        300,
+        307
+    ];
+
     constructor(address _attributesAddress) {
         require(_attributesAddress != address(0), "GenesisNftData: Invalid attributes address");
         attributes = GenesisNftAttributes(_attributesAddress);
@@ -155,14 +238,9 @@ contract GenesisNftData {
      * @param _nftLevel The level of the NFT.
      * @return The shares of the NFT.
      **/
-    function calculateShares(uint256 _nftLevel) external pure returns (uint256) {
-        if (_nftLevel == 80) return 320;
-        uint256 totalLevelCost = 525;
-        uint256 currentLevelIteration = 1;
-        for (currentLevelIteration = 1; currentLevelIteration <= _nftLevel; currentLevelIteration++) {
-            totalLevelCost += (3 + uint256((currentLevelIteration) / 10)) * (175 + ((currentLevelIteration * 25) / 10));
-        }
-        return ((totalLevelCost + (currentLevelIteration - 1) * 12) + 250) / 500;
+    function calculateShares(uint256 _nftLevel) external view returns (uint256) {
+        if (_nftLevel >= 80) return 320;
+        return shares[_nftLevel];
     }
 
     /**
