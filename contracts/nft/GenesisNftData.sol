@@ -95,8 +95,7 @@ contract GenesisNftData {
         152720
     ];
 
-    uint16[80] private shares = [
-        1,
+    uint16[81] private shares = [
         2,
         3,
         4,

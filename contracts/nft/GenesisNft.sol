@@ -64,6 +64,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     event Stake(uint256 indexed tokenId, uint256 amount);
     event Unstake(uint256 indexed tokenId, uint256 amount);
     event Evolve(uint256 indexed tokenId, uint256 tier);
+    event Destroy(uint256 indexed tokenId);
 
     /**
      * @notice Deploying the NFT contract and sets the Admin role and references Erc20 Token, TokenDistribution and NftData contracts.
@@ -150,6 +151,16 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         startTime = uint128(_startTime);
     }
 
+    /**
+     * @notice After the minting period has ended, the remaining NFT will be minted to the treasury account.
+     **/
+    function mintRemainingToTreasury() external onlyOwner {
+        for (uint256 i = nftIdCounter; i <= 999; i++) {
+            nftIdCounter += 1;
+            _safeMint(owner(), nftIdCounter);
+        }
+    }
+
     /****
      **** EXTERNAL WRITE
      ****/
@@ -223,7 +234,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
             token.mint(address(this), _amountToStake);
         }
         _safeMint(_account, newCounter);
-        emit Evolve(newCounter, _nft.tier);
     }
 
     /**
@@ -250,7 +260,9 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         _nftMonth.hasWithdrawn = 1;
 
         _burn(_tokenId);
-        _refundTokens(stakedAmount);
+        token.transfer(msg.sender, stakedAmount);
+
+        emit Destroy(_tokenId);
     }
 
     /**
@@ -323,8 +335,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         NftInfoMonth storage _nftMonth = _nft.monthly[currentMonth];
         _nftMonth.hasWithdrawn = 1;
 
-        _refundTokens(_amount);
-        emit Unstake(_tokenId, _amount);
+        token.transfer(msg.sender, _amount);
     }
 
     /**
@@ -399,17 +410,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         _updateShares(_tokenId, true);
         token.transferFrom(msg.sender, address(this), _amount);
         emit Stake(_tokenId, _amount);
-    }
-
-    /**
-     * @notice Send $WORK tokens from the NFT contract to the owner.
-     * @dev The contract needs to have enough funds.
-     * @param _amount The amount of tokens that will be unstaked and send back to the owner of the NFT
-     **/
-    function _refundTokens(uint256 _amount) private {
-        uint256 amount = token.balanceOf(address(this));
-        require(amount >= _amount, "GenesisNft: Not enough $WORK tokens in the contract");
-        token.transfer(msg.sender, _amount);
     }
 
     /**
