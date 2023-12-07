@@ -4,7 +4,6 @@ import { task } from "hardhat/config";
 import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/saleDistribution.constants";
 
 // example: yarn hardhat sale:distribution:info --network sepolia
-
 task("sale:distribution:info", "Gets info about the distribution of an address")
   .addParam("address", "the addres you want to mint tokens to")
   .setAction(async ({ address }, hre) => {

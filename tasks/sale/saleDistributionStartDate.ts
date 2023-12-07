@@ -4,7 +4,6 @@ import { task } from "hardhat/config";
 import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/saleDistribution.constants";
 
 // example: yarn hardhat sale:distribution:getstartdate --network sepolia
-
 task("sale:distribution:getstartdate", "Prints the startdate").setAction(async ({ _ }, hre) => {
   const tokenDistribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
     SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],

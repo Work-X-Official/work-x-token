@@ -33,7 +33,7 @@ contract BuyMore {
      * @param tokenName name of the token spent
      * @param amount amount of tokens spent
      **/
-    function buyMore(string memory tokenName, uint256 amount) public {
+    function buyMore(string calldata tokenName, uint256 amount) external {
         _buyMore(tokenName, amount);
         emit BoughtMore(msg.sender, amount);
     }
@@ -53,7 +53,7 @@ contract BuyMore {
      * @param tokenName name of the token spent
      * @param amount amount of tokens spent
      **/
-    function _buyMore(string memory tokenName, uint256 amount) private {
+    function _buyMore(string calldata tokenName, uint256 amount) private {
         require(acceptedTokens[tokenName] != IERC20Metadata(address(0)), "BuyMore: Invalid tokenName");
         require(amount > 0, "BuyMore: You can't invest 0 tokens");
         require(amount % (10 ** acceptedTokens[tokenName].decimals()) == 0, "BuyMore: Only round numbers are accepted");

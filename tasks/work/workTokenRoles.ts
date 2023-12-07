@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
 
-// Example: yarn hardhat work:role:minter --to 0x0 --network sepolia
+// Example: yarn hardhat work:role:minter --address 0x0 --network sepolia
 task("work:role:minter")
   .addParam("address", "the addres you want to grant the MINTER_ROLE to")
   .setAction(async ({ address }, hre) => {
