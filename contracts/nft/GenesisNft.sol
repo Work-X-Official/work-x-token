@@ -18,15 +18,15 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     ITokenDistribution private immutable tokenDistribution;
     IWorkToken private immutable token;
 
-    uint256 constant BASE_STAKE = 50;
-    uint256 constant TYPE_GUAR = 0;
-    uint256 constant TYPE_FCFS = 1;
-    uint256 constant TYPE_INV = 2;
-    uint256 constant DAILY_STAKING_ALLOWANCE = 294;
-    uint256 constant COUNT_GUAR = 350;
-    uint256 constant COUNT_FCFS = 150;
-    uint256 constant COUNT_INV = 499;
-    uint256 constant ONE_E18 = 10 ** 18;
+    uint256 public constant BASE_STAKE = 50;
+    uint256 private constant TYPE_GUAR = 0;
+    uint256 private constant TYPE_FCFS = 1;
+    uint256 private constant TYPE_INV = 2;
+    uint256 public constant DAILY_STAKING_ALLOWANCE = 294;
+    uint256 private constant COUNT_GUAR = 350;
+    uint256 private constant COUNT_FCFS = 150;
+    uint256 private constant COUNT_INV = 499;
+    uint256 private constant ONE_E18 = 10 ** 18;
 
     uint128 public startTime;
     uint16 public nftIdCounter;
@@ -109,6 +109,10 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @dev This is used to make sure that the attributes can not be changed after the init is completed.
      **/
     function setInitCompleted() external onlyOwner {
+        require(
+            nft[999].encodedAttributes != bytes32(0),
+            "GenesisNft: The NFT attributes must be set before the init is completed"
+        );
         initCompleted = 1;
     }
 
@@ -155,6 +159,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @notice After the minting period has ended, the remaining NFT will be minted to the treasury account.
      **/
     function mintRemainingToTreasury() external onlyOwner {
+        require(initCompleted == 0, "GenesisNft: The NFT attributes can not be changed after the init is completed");
+        require(startTime > block.timestamp, "GenesisNft: The reward mechanism has already started");
         for (uint256 i = nftIdCounter; i <= 999; i++) {
             nftIdCounter += 1;
             _safeMint(owner(), nftIdCounter);
@@ -169,7 +175,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @notice The function mintNft mints the Work X GenesisNft and mints an amount of tokens into the NFT these tokens are locked for a certain amount of time but the NFT is freely tradable.
      *  A voucher is constructed by Work X backend and only callers with a valid voucher can mint the NFT.
      * @dev Before giving out vouchers the tokenDistribution startTime has to be set, otherwise the tokens will not be locked correctly.
-     * @dev Only the caller of the mintNft function can be the receiving _account, because evolveTier is checking if the msg.sender is the owner of the nft.
      * @param _account The address of the account that will receive the NFT.
      * @param _voucherId The id of the voucher that will be used to mint the NFT, each voucher can only be used once for an NFT with a tokenID.
      * @param _type The id of the minting type.
@@ -269,16 +274,22 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @notice The stake function stakes an amount of tokens into an NFT of the owner.
      * @dev The amount that can be staked for a specific tokenId builds up over time. You can only stake up to this allowance and you need own enough tokens.
      * @param _tokenId The id of the nft that will receive the tokens.
-     * @param _amount The amount of tokens that will be staked.
+     * @param _amount The amount of tokens that should be staked.
      **/
     function stake(uint256 _tokenId, uint256 _amount) external nonReentrant {
-        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
-        if (nftData.getLevel(stakedAmount) < 80) {
-            uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
-            require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
-        }
+        _checkAllowance(_tokenId, _amount);
         _stake(_tokenId, _amount);
+    }
+
+    /**
+     * @notice The stakeAndEvolve function stakes tokens and afterwards evolves the NFT to the a higher tier if applicable.
+     * @param _tokenId The id of the NFT.
+     * @param _amount The amount of tokens that should be staked.
+     **/
+    function stakeAndEvolve(uint256 _tokenId, uint256 _amount) external nonReentrant {
+        _checkAllowance(_tokenId, _amount);
+        _stake(_tokenId, _amount);
+        _evolveTier(_tokenId);
     }
 
     /**
@@ -290,22 +301,6 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     function reward(uint256 _tokenId, uint256 _amount) external nonReentrant {
         require(isRewarder[msg.sender], "GenesisNft: You are not a rewarder!");
         _stake(_tokenId, _amount);
-    }
-
-    /**
-     * @notice The stakeAndEvolve function stakes tokens and afterwards evolves the NFT to the a higher tier if applicable.
-     * @param _tokenId The id of the NFT.
-     * @param _amount a string which is the tokenURI of an NFT.
-     **/
-    function stakeAndEvolve(uint256 _tokenId, uint256 _amount) external nonReentrant {
-        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
-        (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
-        if (nftData.getLevel(stakedAmount) < 80) {
-            uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
-            require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
-        }
-        _stake(_tokenId, _amount);
-        _evolveTier(_tokenId);
     }
 
     /**
@@ -668,6 +663,20 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     /****
      **** private VIEW
      ****/
+
+    /**
+     * @notice The _checkAllowance function checks if an amount does not go over the staking allowance for a specific NFT.
+     * @param _tokenId The id of the NFT.
+     * @param _amount The amount of tokens that should be staked.
+     **/
+    function _checkAllowance(uint256 _tokenId, uint256 _amount) private view {
+        require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
+        (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
+        if (nftData.getLevel(stakedAmount) < 80) {
+            uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
+            require(_amount <= allowance, "GenesisNft: The amount you want to stake is more than the total allowance");
+        }
+    }
 
     /**
      * @notice How much tokens you are allowed to stake into a specific tokenId.

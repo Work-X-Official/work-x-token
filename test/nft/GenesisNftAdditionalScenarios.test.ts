@@ -1269,7 +1269,7 @@ describe("GenesisNftAdditionalScenarios", () => {
         expect(nftInfo1._staked).to.be.equal(amount(0));
         expect(nftInfo1._level).to.be.equal(0);
         // expect(nftInfo1._tier).to.be.equal(0);
-        // console.log("4");
+
         const staked1 = await nft.getStaked(nftId4, 26);
         expect(staked1[0]).to.be.equal(0);
         expect(staked1[1]).to.be.equal(0);
