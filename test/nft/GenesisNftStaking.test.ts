@@ -786,7 +786,6 @@ describe("GenesisNftStaking", () => {
     });
     it("Next Month getTotals returns the correct amounts unstake stake", async () => {
       await mineDays(30, network);
-      console.log("getCurrentMonth()", await nft.getCurrentMonth());
 
       const amountUnStake = ethers.utils.parseEther("4000");
       amountStaked = amountStaked.sub(amountUnStake);
