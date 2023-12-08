@@ -187,7 +187,7 @@ contract GenesisNftAttributes {
         bytes32("Beauty Spot Lip")
     ];
 
-    bytes32[8] public item = [bytes32("A/B Testing")];
+    bytes32[1] public item = [bytes32("A/B Testing")];
 
-    bytes32[8] public clothes = [bytes32("Business Suit")];
+    bytes32[1] public clothes = [bytes32("Business Suit")];
 }

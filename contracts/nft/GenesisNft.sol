@@ -32,12 +32,12 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     uint16 public nftIdCounter;
     uint8 public initCompleted = 0;
 
-    string private imageBaseURI = "ipfs://";
+    string private constant imageBaseURI = "ipfs://";
     string private imageFolder = "QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b";
-    address private voucherSigner;
+    address public voucherSigner;
 
     mapping(address => bool) public accountMinted;
-    mapping(address => bool) private isRewarder;
+    mapping(address => bool) public isRewarder;
     mapping(uint256 => NftTotalMonth) public monthlyTotal; // change to uint256
     struct NftTotalMonth {
         uint32 totalShares;
@@ -109,10 +109,12 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @dev This is used to make sure that the attributes can not be changed after the init is completed.
      **/
     function setInitCompleted() external onlyOwner {
-        require(
-            nft[999].encodedAttributes != bytes32(0),
-            "GenesisNft: The NFT attributes must be set before the init is completed"
-        );
+        for (uint256 i = 1; i <= 999; i++) {
+            require(
+                nft[i].encodedAttributes != bytes32(0),
+                "GenesisNft: The NFT attributes must be set before the init is completed"
+            );
+        }
         initCompleted = 1;
     }
 
@@ -321,7 +323,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         (uint256 stakedAmount, ) = getStaked(_tokenId, currentMonth);
         uint256 tokensRequiredForMaxLevelInTier = nftData.getTokensRequiredForTier(_nft.tier + 1);
         require(
-            tokensRequiredForMaxLevelInTier <= stakedAmount - _amount,
+            tokensRequiredForMaxLevelInTier + _amount <= stakedAmount,
             "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier"
         );
 
@@ -331,6 +333,8 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         _nftMonth.hasWithdrawn = 1;
 
         token.transfer(msg.sender, _amount);
+
+        emit Unstake(_tokenId, _amount);
     }
 
     /**
