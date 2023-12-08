@@ -4,16 +4,13 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 import "./GenesisNftData.sol";
 import "./../interface/ITokenDistribution.sol";
 import "./../interface/IWorkToken.sol";
 
-import "hardhat/console.sol";
-
-contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
+contract GenesisNft is ERC721, Ownable, EIP712 {
     GenesisNftData private immutable nftData;
     ITokenDistribution private immutable tokenDistribution;
     IWorkToken private immutable token;
@@ -191,7 +188,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         uint256 _lockPeriod,
         uint256 _amountToStake,
         bytes calldata _signature
-    ) external nonReentrant {
+    ) external {
         require(accountMinted[_account] == false, "GenesisNft: This account already minted an NFT");
         bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, _account, _amountToStake);
         require(nftData.verify(digest, _signature, voucherSigner), "GenesisNft: Invalid signature");
@@ -218,7 +215,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         }
 
         nftIdCounter += 1;
-        uint256 newCounter = nftIdCounter;
+        uint256 newCounter = oldCounter + 1;
         NftInfo storage _nft = nft[newCounter];
         _nft.voucherId = uint16(_voucherId);
         _nft.lockPeriod = uint64(_lockPeriod);
@@ -246,12 +243,11 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
     /**
      * @notice The function destroyNft destroys your NFT and gives you back the tokens in that NFT. Your "Piggy bank will be destroyed forever."
      * @dev In order to destroy an NFT you need to be the owner, the lockPeriod should have passed, and it should be approved.
-     *  The nonReentrant modifier is used to make extra sure people will not be able to extract more tokens. On top of the checks-effects pattern
      *  Its fine to use the block.timestamp for the comparison because the miner can not manipulate the block.timestamp by a practically significant amount.
      *  It is oke to use block.timestamp for comparison, because miner
      * @param _tokenId The id of the NFT that will destroyed.
      **/
-    function destroyNft(uint256 _tokenId) external nonReentrant {
+    function destroyNft(uint256 _tokenId) external {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
         require(
             block.timestamp > nft[_tokenId].lockPeriod + startTime,
@@ -278,7 +274,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _tokenId The id of the nft that will receive the tokens.
      * @param _amount The amount of tokens that should be staked.
      **/
-    function stake(uint256 _tokenId, uint256 _amount) external nonReentrant {
+    function stake(uint256 _tokenId, uint256 _amount) external {
         _checkAllowance(_tokenId, _amount);
         _stake(_tokenId, _amount);
     }
@@ -288,7 +284,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _tokenId The id of the NFT.
      * @param _amount The amount of tokens that should be staked.
      **/
-    function stakeAndEvolve(uint256 _tokenId, uint256 _amount) external nonReentrant {
+    function stakeAndEvolve(uint256 _tokenId, uint256 _amount) external {
         _checkAllowance(_tokenId, _amount);
         _stake(_tokenId, _amount);
         _evolveTier(_tokenId);
@@ -300,7 +296,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _tokenId The id of the nft that will receive the tokens.
      * @param _amount The amount of tokens that will be staked.
      **/
-    function reward(uint256 _tokenId, uint256 _amount) external nonReentrant {
+    function reward(uint256 _tokenId, uint256 _amount) external {
         require(isRewarder[msg.sender], "GenesisNft: You are not a rewarder!");
         _stake(_tokenId, _amount);
     }
@@ -312,7 +308,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
      * @param _tokenId The id of the NFT that will receive the tokens.
      * @param _amount The amount of tokens that will be staked.
      **/
-    function unstake(uint256 _tokenId, uint256 _amount) external nonReentrant {
+    function unstake(uint256 _tokenId, uint256 _amount) external {
         require(msg.sender == ownerOf(_tokenId), "GenesisNft: You are not the owner of this NFT!");
         NftInfo storage _nft = nft[_tokenId];
         require(
@@ -590,14 +586,15 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         )
     {
         NftInfo storage _nft = nft[_tokenId];
-        for (uint256 i = getCurrentMonth() + 1; i >= 1; --i) {
+        uint256 currentMonth = getCurrentMonth();
+        for (uint256 i = currentMonth + 1; i >= 1; --i) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
             if (_nftMonth.staked > 0 || _nftMonth.hasWithdrawn == 1) {
                 _staked = _nftMonth.staked;
                 break;
             }
         }
-        for (uint256 i = getCurrentMonth() + 1; i >= 1; --i) {
+        for (uint256 i = currentMonth + 1; i >= 1; --i) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
             if (_nftMonth.shares > 0 || (_nftMonth.hasWithdrawn == 1 && _nftMonth.staked == 0)) {
                 _shares = _nftMonth.shares;
