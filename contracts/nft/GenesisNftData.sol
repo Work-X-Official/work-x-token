@@ -246,7 +246,7 @@ contract GenesisNftData {
 
     /**
      * @notice Returns the amount of tokens required to reach a specific tier.
-     * @dev Gets the tokens from the level array and multiplies it by 1e18.
+     * @dev Gets the tokens required for the specified tier from the level array and multiplies it by 1e18.
      * @param _tier The tier to get the tokens required for.
      * @return The amount of tokens required to reach the tier.
      **/
