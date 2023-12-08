@@ -106,12 +106,6 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      * @dev This is used to make sure that the attributes can not be changed after the init is completed.
      **/
     function setInitCompleted() external onlyOwner {
-        for (uint256 i = 1; i <= 999; i++) {
-            require(
-                nft[i].encodedAttributes != bytes32(0),
-                "GenesisNft: The NFT attributes must be set before the init is completed"
-            );
-        }
         initCompleted = 1;
     }
 
