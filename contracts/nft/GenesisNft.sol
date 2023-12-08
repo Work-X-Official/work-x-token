@@ -218,7 +218,7 @@ contract GenesisNft is ERC721, Ownable, ReentrancyGuard, EIP712 {
         }
 
         nftIdCounter += 1;
-        uint256 newCounter = nftIdCounter;
+        uint256 newCounter = oldCounter + 1;
         NftInfo storage _nft = nft[newCounter];
         _nft.voucherId = uint16(_voucherId);
         _nft.lockPeriod = uint64(_lockPeriod);
