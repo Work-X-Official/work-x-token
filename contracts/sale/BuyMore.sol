@@ -59,8 +59,8 @@ contract BuyMore {
         require(amount % (10 ** acceptedTokens[tokenName].decimals()) == 0, "BuyMore: Only round numbers are accepted");
 
         uint256 normalizedAmount = _normalizeDecimals(amount, acceptedTokens[tokenName]);
-        _safeTransferFrom(address(acceptedTokens[tokenName]), msg.sender, targetWallet, amount);
         investments[msg.sender] = investments[msg.sender] + normalizedAmount;
+        _safeTransferFrom(address(acceptedTokens[tokenName]), msg.sender, targetWallet, amount);
     }
 
     /**
