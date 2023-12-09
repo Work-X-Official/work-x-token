@@ -273,6 +273,18 @@ contract GenesisNftData {
         }
     }
 
+    // function splitBytes(bytes memory _b) public pure returns (uint8[11] memory _res) {
+    //     for (uint256 i = 0; i < 11; i++) {
+    //         _res[i] = uint8(bytes1(_b[i]));
+    //     }
+    // }
+
+    //One more thing about issue GenesisNftData.splitBytes (low, Overcomplicated encoding and decoding).
+    //We suggest to call the function like this: contract.splitBytes(0x0102030405060708090A0B).
+    //It just raw bytes. In this case, decoding to uint8[11] could be look like this: ^
+    //In this case, you do not have to encode the string of decimals offchain and decode them onchain.
+    //Just pass raw bytes of attributes indexes, where _b[i] is hex representation of the index for `i`th attribute.
+
     function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
         uint8 i = 0;
         while (i < 32 && _bytes32[i] != 0) {
