@@ -63,6 +63,14 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
     event Evolve(uint256 indexed tokenId, uint256 tier);
     event Destroy(uint256 indexed tokenId);
 
+    event InitCompleted(uint256 indexed timestamp);
+    event IpfsFolderChanged(string indexed ipfsFolder);
+    event NftAttributesSet();
+    event VoucherSignerSet(address indexed voucherSigner);
+    event RewarderSet(address indexed rewarder, bool isRewarder);
+    event StartTimeSet(uint256 indexed startTime);
+    event RemainingToTreasuryMinted(uint256 indexed amount);
+
     /**
      * @notice Deploying the NFT contract and sets the Admin role and references Erc20 Token, TokenDistribution and NftData contracts.
      * @dev Requires the Erc20Token, TokenDistribution and NftData contracts to be deployed first and they addresses set to the constants.
@@ -71,6 +79,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      * @param _workTokenAddress The address of the $WORK token contract (ERC20).
      * @param _tokenDistributionAddress The TokenDistribution address that will be used to mint tokens and update the claimed amount.
      * @param _nftDataAddress The address of the NftData contract that will be used to get the data for the nft, like how many tokens are needed for each level.
+     * @param _voucherSigner The address of account that is authorized to sign NFT minting vouchers.
      **/
     constructor(
         string memory _nftName,
@@ -80,8 +89,10 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         address _nftDataAddress,
         address _voucherSigner
     ) ERC721(_nftName, _nftSymbol) EIP712(_nftName, "1.0.0") {
-        require(_workTokenAddress != address(0), "GenesisNft: Invalid token address");
-        require(_tokenDistributionAddress != address(0), "GenesisNft: Invalid token distribution address");
+        require(_workTokenAddress != address(0), "GenesisNft: Invalid WORK Token contract address");
+        require(_tokenDistributionAddress != address(0), "GenesisNft: Invalid TokenDistribution contract address");
+        require(_nftDataAddress != address(0), "GenesisNft: Invalid GenesisNftData contract address");
+        require(_voucherSigner != address(0), "GenesisNft: Invalid voucher signer address");
         token = IWorkToken(_workTokenAddress);
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
@@ -99,6 +110,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setIpfsFolder(string calldata _folder) external onlyOwner {
         imageFolder = _folder;
+        emit IpfsFolderChanged(_folder);
     }
 
     /**
@@ -107,6 +119,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setInitCompleted() external onlyOwner {
         initCompleted = 1;
+        emit InitCompleted(block.timestamp);
     }
 
     /**
@@ -119,6 +132,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
+        emit NftAttributesSet(); // change this to event that opensea etc. understands
     }
 
     /**
@@ -127,6 +141,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setVoucherSigner(address _voucherSigner) external onlyOwner {
         voucherSigner = _voucherSigner;
+        emit VoucherSignerSet(_voucherSigner);
     }
 
     /**
@@ -135,6 +150,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setRewarder(address _rewarder, bool _isRewarder) external onlyOwner {
         isRewarder[_rewarder] = _isRewarder;
+        emit RewarderSet(_rewarder, _isRewarder);
     }
 
     /**
@@ -146,6 +162,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         require(startTime > block.timestamp, "GenesisNft: The reward mechanism has already started");
         require(_startTime > block.timestamp, "GenesisNft: The startTime must be in the future");
         startTime = uint128(_startTime);
+        emit StartTimeSet(_startTime);
     }
 
     /**
@@ -154,10 +171,13 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
     function mintRemainingToTreasury() external onlyOwner {
         require(initCompleted == 0, "GenesisNft: The NFT attributes can not be changed after the init is completed");
         require(startTime > block.timestamp, "GenesisNft: The reward mechanism has already started");
+
         for (uint256 i = nftIdCounter; i <= 999; i++) {
-            nftIdCounter += 1;
-            _safeMint(owner(), nftIdCounter);
+            _safeMint(owner(), i);
         }
+
+        emit RemainingToTreasuryMinted(999 - nftIdCounter);
+        nftIdCounter = 999;
     }
 
     /****
@@ -220,13 +240,14 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         NftInfoMonth memory _info;
         _info.staked = uint128(_amountToStake);
         _info.minimumStaked = uint128(_amountToStake);
-        _info.shares = uint16(nftData.shares(level) + BASE_STAKE);
+        uint256 shares = nftData.shares(level) + BASE_STAKE;
+        _info.shares = uint16(shares);
         _nft.monthly[0] = _info;
 
         NftTotalMonth storage totalMonthly = monthlyTotal[0];
         totalMonthly.minimumStaked += uint128(_amountToStake);
         totalMonthly.totalStaked += uint128(_amountToStake);
-        totalMonthly.totalShares += _info.shares;
+        totalMonthly.totalShares += uint16(shares);
 
         if (_amountToStake > 0) {
             token.mint(address(this), _amountToStake);

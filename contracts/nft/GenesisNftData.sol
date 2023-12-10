@@ -340,7 +340,13 @@ contract GenesisNftData {
         uint256 _startTime,
         string calldata _imageUri
     ) external view returns (string memory) {
-        string[11] memory attr = decodeAttributes(_encodedAttributes);
+        string[11] memory attr;
+        if (_startTime > block.timestamp) {
+            attr = decodeAttributes(_encodedAttributes);
+        } else {
+            attr = ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"];
+        }
+
         string memory id = Strings.toString(_tokenId);
 
         string memory part1 = string(
