@@ -313,6 +313,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function reward(uint256 _tokenId, uint256 _amount) external {
         require(isRewarder[msg.sender], "GenesisNft: You are not a rewarder!");
+        require(_exists(_tokenId), "GenesisNft: This NFT does not exist!");
         _stake(_tokenId, _amount);
     }
 

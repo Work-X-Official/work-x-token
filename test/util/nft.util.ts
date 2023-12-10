@@ -41,7 +41,7 @@ export const regenerateNft = async (
   return nft;
 };
 
-export const mintNft = async (
+export const _mintNft = async (
   network: Network,
   nft: GenesisNft,
   workToken: WorkToken,
@@ -81,11 +81,7 @@ export const mintNft = async (
     console.error("Error minting NFT");
     console.error(error);
   }
-
   expect(await nft.ownerOf(tokenId)).to.be.equal(account.address);
-  const _tokenIdInfoAtMonth = await nft.getStaked(tokenId, 0);
-  expect(_tokenIdInfoAtMonth[0]).to.be.equal(amount(stakingAmount));
-  expect(_tokenIdInfoAtMonth[1]).to.be.equal(amount(stakingAmount));
 
   await approveWorkToken(network, workToken, account, nft.address);
 
@@ -93,6 +89,23 @@ export const mintNft = async (
     nftId: tokenId,
     voucherId: voucher.voucherId,
   };
+};
+
+export const mintNft = async (
+  network: Network,
+  nft: GenesisNft,
+  workToken: WorkToken,
+  account: SignerWithAddress,
+  stakingAmount: number,
+  lockPeriod: number,
+  type: number,
+  chainId: number,
+): Promise<NftIds> => {
+  const nftIds = await _mintNft(network, nft, workToken, account, stakingAmount, lockPeriod, type, chainId);
+  const _tokenIdInfoAtMonth = await nft.getStaked(nftIds.nftId, 0);
+  expect(_tokenIdInfoAtMonth[0]).to.be.equal(amount(stakingAmount));
+  expect(_tokenIdInfoAtMonth[1]).to.be.equal(amount(stakingAmount));
+  return nftIds;
 };
 
 export const getVoucherSigner = (): Wallet => {

@@ -35,7 +35,7 @@ describe("GenesisNftData", () => {
         "Black Hat",
         "Full",
         "Blush Light",
-        "A/B Testing",
+        "None",
         "Business Suit",
       ]);
     });
