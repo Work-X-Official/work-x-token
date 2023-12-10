@@ -274,8 +274,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         _updateMonthly(_tokenId, false, stakedAmount, currentMonth);
         _updateShares(_tokenId, false);
 
-        NftInfoMonth storage _nftMonth = nft[_tokenId].monthly[currentMonth];
-        _nftMonth.hasWithdrawn = 1;
+        nft[_tokenId].monthly[currentMonth].hasWithdrawn = 1;
 
         _burn(_tokenId);
         token.transfer(msg.sender, stakedAmount);
@@ -340,9 +339,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         );
 
         _updateMonthly(_tokenId, false, _amount, currentMonth);
-
-        NftInfoMonth storage _nftMonth = _nft.monthly[currentMonth];
-        _nftMonth.hasWithdrawn = 1;
+        nft[_tokenId].monthly[currentMonth].hasWithdrawn = 1;
 
         token.transfer(msg.sender, _amount);
 

@@ -11,88 +11,89 @@ contract GenesisNftData {
     GenesisNftAttributes public immutable attributes;
 
     uint256 constant ONE_E18 = 10 ** 18;
+    uint256 constant FOUR_E18 = 4 * 10 ** 18;
 
-    uint24[80] private levels = [
-        525,
-        1056,
-        1596,
-        2142,
-        2697,
-        3258,
-        3828,
-        4404,
-        4989,
-        5580,
-        6380,
-        7188,
-        8008,
-        8836,
-        9676,
-        10524,
-        11384,
-        12252,
-        13132,
-        14020,
-        15145,
-        16280,
-        17430,
-        18590,
-        19765,
-        20950,
-        22150,
-        23360,
-        24585,
-        25820,
-        27320,
-        28832,
-        30362,
-        31904,
-        33464,
-        35036,
-        36626,
-        38228,
-        39848,
-        41480,
-        43405,
-        45344,
-        47304,
-        49278,
-        51273,
-        53282,
-        55312,
-        57356,
-        59421,
-        61500,
-        63900,
-        66316,
-        68756,
-        71212,
-        73692,
-        76188,
-        78708,
-        81244,
-        83804,
-        86380,
-        89305,
-        92248,
-        95218,
-        98206,
-        101221,
-        104254,
-        107314,
-        110392,
-        113497,
-        116620,
-        120120,
-        123640,
-        127190,
-        130760,
-        134360,
-        137980,
-        141630,
-        145300,
-        149000,
-        152720
+    uint16[80] private levels = [
+        131,
+        264,
+        399,
+        535,
+        674,
+        814,
+        957,
+        1101,
+        1247,
+        1395,
+        1595,
+        1797,
+        2002,
+        2209,
+        2419,
+        2631,
+        2846,
+        3063,
+        3283,
+        3505,
+        3786,
+        4070,
+        4357,
+        4647,
+        4941,
+        5237,
+        5537,
+        5840,
+        6146,
+        6455,
+        6830,
+        7208,
+        7590,
+        7976,
+        8366,
+        8759,
+        9156,
+        9557,
+        9962,
+        10370,
+        10851,
+        11336,
+        11826,
+        12319,
+        12818,
+        13320,
+        13828,
+        14339,
+        14855,
+        15375,
+        15975,
+        16579,
+        17189,
+        17803,
+        18423,
+        19047,
+        19677,
+        20311,
+        20951,
+        21595,
+        22326,
+        23062,
+        23804,
+        24551,
+        25305,
+        26063,
+        26828,
+        27598,
+        28374,
+        29155,
+        30030,
+        30910,
+        31797,
+        32690,
+        33590,
+        34495,
+        35407,
+        36325,
+        37250,
+        38180
     ];
 
     uint16[81] public shares = [
@@ -202,12 +203,12 @@ contract GenesisNftData {
      **/
     function getLevel(uint256 _staked) public view returns (uint256) {
         for (uint256 s1 = 1; s1 <= 4; s1++) {
-            if (_staked < uint256(levels[s1 * 20 - 1]) * ONE_E18) {
+            if (_staked < uint256(levels[s1 * 20 - 1]) * FOUR_E18) {
                 for (uint256 s2 = 1; s2 <= 4; s2++) {
-                    if (_staked <= uint256(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * ONE_E18) {
+                    if (_staked <= uint256(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * FOUR_E18) {
                         uint256 ls = (s1 - 1) * 20 + (s2 - 1) * 5;
                         for (uint256 level = ls; level <= ls + 4; level++) {
-                            if (_staked < uint256(levels[level]) * ONE_E18) {
+                            if (_staked < uint256(levels[level]) * FOUR_E18) {
                                 return level;
                             }
                         }
@@ -241,7 +242,7 @@ contract GenesisNftData {
      **/
     function getTokensRequiredForLevel(uint256 _level) external view returns (uint256) {
         require(_level <= levels.length, "Level must be less than or equal to max level");
-        return levels[_level - 1] * ONE_E18;
+        return levels[_level - 1] * FOUR_E18;
     }
 
     /**
@@ -255,9 +256,9 @@ contract GenesisNftData {
             return 0;
         }
         if (_tier * 10 <= levels.length) {
-            return levels[(_tier * 10) - 1] * ONE_E18;
+            return levels[(_tier * 10) - 1] * FOUR_E18;
         } else {
-            return levels[levels.length - 1] * ONE_E18;
+            return levels[levels.length - 1] * FOUR_E18;
         }
     }
 
