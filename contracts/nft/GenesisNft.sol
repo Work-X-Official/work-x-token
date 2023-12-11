@@ -21,7 +21,7 @@ error NotRewarder();
 error AccountAlreadyMinted();
 error InvalidSignature();
 error NoMoreSpots(uint256 nftIdCounter, uint256 typeMint);
-error AllNftsMinted();
+error InvalidMintType();
 
 error NotNftOwner();
 error NftTimeLocked(uint256 lockedTill);
@@ -206,7 +206,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         if (startTime <= block.timestamp) {
              revert InvalidStartTime(startTime, block.timestamp, 0);
         }
-        for (uint256 i = nftIdCounter; i <= 999; i++) {
+        for (uint256 i = nftIdCounter + 1; i <= 999; i++) {
             _safeMint(owner(), i);
         }
 
@@ -262,7 +262,7 @@ function mintNft(
             revert NoMoreSpots(oldCounter, _type);
         }
     } else {
-        revert AllNftsMinted();
+        revert InvalidMintType();
     }
 
 
