@@ -19,7 +19,7 @@ chai.use(solidity);
  * These tests take a long time to run, so they are skipped by default, remove .skip to run them
  **/
 
-describe.only("GenesisNftMint", () => {
+describe("GenesisNftMint", () => {
   let nft: GenesisNft;
   let signerImpersonated: SignerWithAddress;
 
