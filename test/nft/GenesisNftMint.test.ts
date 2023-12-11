@@ -77,6 +77,12 @@ describe("GenesisNftMint", () => {
       expect(nftCountRead).to.equal(350);
       expect(nftCount).to.equal(350);
     });
+    it("Should revert when trying to mint another nft of type 0", async () => {
+      const type = 0;
+      await expect(mintNft(network, nft, workToken, accounts[350], 0, 0, type, chainId)).to.be.revertedWith(
+        "NoMoreSpots",
+      );
+    });
   });
 
   describe("Minting Nft with $WORK Tokens", async () => {
