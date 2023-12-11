@@ -49,7 +49,7 @@ config();
 
 chai.use(solidity);
 
-describe.only("GenesisNft", () => {
+describe("GenesisNft", () => {
   let nft: GenesisNft;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
@@ -297,6 +297,16 @@ describe.only("GenesisNft", () => {
   });
 
   describe("Minting", async () => {
+    it("Should revert on mint with an invalid signature", async () => {
+      const failingSignature =
+        "0x48e26ea2d47b73e8e058325bc0a1c29230d48b18ad04641394a678bf5dfc939b75603ffa49dc5973ca83433f3e07bc9816222a99511ef3047c441adadb8cbc1d1c";
+      await expect(
+        nft.connect(nftMinter1).mintNft(nftMinter1.address, 0, 0, 0, 0, failingSignature),
+      ).to.be.revertedWith("InvalidSignature");
+    });
+    it("Should revert when trying to read the tokenURI of a non existing token", async () => {
+      await expect(nft.tokenURI(1)).to.be.revertedWith("NftDoesNotExist");
+    });
     it("Mint an nft", async () => {
       ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
     });
