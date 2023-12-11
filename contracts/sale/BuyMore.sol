@@ -4,6 +4,12 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
+/**
+ * @notice This contract allows users to buy more $WORK tokens
+ * @dev This contract does not deal with the $WORK token, it only deals with the tokens used to buy more $WORK
+ * the tokens used to buy more $WORK are a variety of stablecoins, which are passed as parameters in the constructor
+ * this contract keeps track of the amount of tokens each user has invested
+ */
 contract BuyMore {
     uint256 public constant NORMALIZING_DECIMALS = 36;
     address public immutable targetWallet;
@@ -14,6 +20,7 @@ contract BuyMore {
     event BoughtMore(address indexed sender, uint256 amount);
 
     /**
+     * @notice
      * @dev Constructor referencing the target wallet and the accepted tokens
      * @param _targetWallet the wallet the bought tokens will be sent to
      * @param _tokenNames names of allowed tokens to spend
@@ -54,13 +61,14 @@ contract BuyMore {
      * @param amount amount of tokens spent
      **/
     function _buyMore(string calldata tokenName, uint256 amount) private {
-        require(acceptedTokens[tokenName] != IERC20Metadata(address(0)), "BuyMore: Invalid tokenName");
+        IERC20Metadata token = acceptedTokens[tokenName];
+        require(token != IERC20Metadata(address(0)), "BuyMore: Invalid tokenName");
         require(amount > 0, "BuyMore: You can't invest 0 tokens");
-        require(amount % (10 ** acceptedTokens[tokenName].decimals()) == 0, "BuyMore: Only round numbers are accepted");
+        require(amount % (10 ** token.decimals()) == 0, "BuyMore: Only round numbers are accepted");
 
-        uint256 normalizedAmount = _normalizeDecimals(amount, acceptedTokens[tokenName]);
+        uint256 normalizedAmount = _normalizeDecimals(amount, token);
         investments[msg.sender] = investments[msg.sender] + normalizedAmount;
-        _safeTransferFrom(address(acceptedTokens[tokenName]), msg.sender, targetWallet, amount);
+        _safeTransferFrom(address(token), msg.sender, targetWallet, amount);
     }
 
     /**

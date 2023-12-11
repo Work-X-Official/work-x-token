@@ -5,7 +5,6 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "base64-sol/base64.sol";
 import "./GenesisNftAttributes.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract GenesisNftData {
     GenesisNftAttributes public immutable attributes;
@@ -13,6 +12,10 @@ contract GenesisNftData {
     uint256 constant ONE_E18 = 10 ** 18;
     uint256 constant FOUR_E18 = 4 * 10 ** 18;
 
+    /**
+     * @notice The formula is: (175 + level * 2.5) * ( 3 + floor(level / 10))
+     * This formula should be run and accumulated for each level up to the current level and then divided by 4 to fit into a uint16
+     */
     uint16[80] private levels = [
         131,
         264,
@@ -96,6 +99,9 @@ contract GenesisNftData {
         38180
     ];
 
+    /**
+     * @notice The formula is: (level * 12 + levelCost) / 500
+     */
     uint16[81] public shares = [
         1,
         2,
@@ -186,16 +192,6 @@ contract GenesisNftData {
     }
 
     /**
-     * @notice Checks with a digest and a signature if the account that signed the digest matches the voucherSigner.
-     * @param _digest The digest that is checked, this is the hash of messages that included the the typed data.
-     * @param _signature The signature that is checked, this is the signature of the person that signed the digest.
-     * @return a bool that is true if the account that signed the digest matches the voucherSigner.
-     **/
-    function verify(bytes32 _digest, bytes memory _signature, address _voucherSigner) external pure returns (bool) {
-        return ECDSA.recover(_digest, _signature) == _voucherSigner;
-    }
-
-    /**
      * @notice Returns the level of the NFT based on the amount of tokens staked.
      * @dev Splits 80 into 4 seconds of 20, then splits 20 into 4 sections of 5, then loops over the remaining 5 to find the correct level from the XP array.
      * @param _staked The amount of tokens staked.
@@ -236,7 +232,7 @@ contract GenesisNftData {
 
     /**
      * @notice Returns the amount of tokens required to reach a specific level.
-     * @dev Gets the tokens from the level array and multiplies it by 1e18.
+     * @dev Gets the tokens from the level array and multiplies it by 4e18.
      * @param _level The level to get the tokens required for.
      * @return The amount of tokens required to reach the level.
      **/
@@ -247,8 +243,8 @@ contract GenesisNftData {
 
     /**
      * @notice Returns the amount of tokens required to reach a specific tier.
-     * @dev Gets the tokens required for the specified tier from the level array and multiplies it by 1e18.
-     * @param _tier The tier to get the tokens required for.
+     * @dev Gets the tokens required for the specified tier from the level array and multiplies it by 4e18.
+     * @param _tier The tier to get the tokens required to reach it for.
      * @return The amount of tokens required to reach the tier.
      **/
     function getTokensRequiredForTier(uint256 _tier) external view returns (uint256) {
@@ -269,23 +265,15 @@ contract GenesisNftData {
      **/
     function splitBytes(bytes memory _b) public pure returns (uint8[11] memory _res) {
         for (uint256 i = 0; i < 11; i++) {
-            uint8 tmp = uint8(uint256(uint8(_b[i * 2])) * 10 + uint256(uint8(_b[i * 2 + 1])));
-            if (tmp > 15) _res[i] = tmp - 16;
+            _res[i] = uint8(bytes1(_b[i]));
         }
     }
 
-    // function splitBytes(bytes memory _b) public pure returns (uint8[11] memory _res) {
-    //     for (uint256 i = 0; i < 11; i++) {
-    //         _res[i] = uint8(bytes1(_b[i]));
-    //     }
-    // }
-
-    //One more thing about issue GenesisNftData.splitBytes (low, Overcomplicated encoding and decoding).
-    //We suggest to call the function like this: contract.splitBytes(0x0102030405060708090A0B).
-    //It just raw bytes. In this case, decoding to uint8[11] could be look like this: ^
-    //In this case, you do not have to encode the string of decimals offchain and decode them onchain.
-    //Just pass raw bytes of attributes indexes, where _b[i] is hex representation of the index for `i`th attribute.
-
+    /**
+     * @notice Converts bytes32 to a string.
+     * @param _bytes32 The bytes to convert.
+     * @return The string representation of the bytes32.
+     **/
     function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
         uint8 i = 0;
         while (i < 32 && _bytes32[i] != 0) {
