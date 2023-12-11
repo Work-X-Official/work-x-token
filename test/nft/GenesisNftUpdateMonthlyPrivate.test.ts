@@ -5,7 +5,7 @@ import { WorkToken, GenesisNft, ERC20, TokenDistribution } from "../../typings";
 import { amount, getImpersonateAccounts } from "../util/helpers.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { Stake, mintNft, regenerateNft } from "../util/nft.util";
 import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
 import { regenerateTokenDistribution } from "../util/distribution.util";
@@ -55,7 +55,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
   /*****************************************************************************
    * The following tests are commented out because they test _updateMonthly    *
    * If you want to use them uncomment them and make _updateMonthly public     *
-   
+
 
   describe("Private Functions: Update monthly staking balances for a tokenId", async () => {
     let nftMinter1: SignerWithAddress;
@@ -149,7 +149,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
 
     it("In month 4, try to decrease more than the current balance, it should revert", async () => {
       await expect(nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(2000), 4)).to.be.revertedWith(
-        "GenesisNft: You are trying to unstake more than the total staked in this nft!",
+        "UnableToUnstakeRequestedAmount",
       );
     });
     // cannot decrease full balance, because then getStaked will loop back till finding a month with a balance or hasWithdrawn is true.
@@ -252,7 +252,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
 
     it("Totals, In month 4, try to decrease more than the current balance, it should revert", async () => {
       await expect(nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(2000), 4)).to.be.revertedWith(
-        "GenesisNft: You are trying to unstake more than the total staked in this nft!",
+        "UnableToUnstakeRequestedAmount",
       );
     });
   });
@@ -264,5 +264,5 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
       minimumStaked: ret[1],
     };
   };
-  *****************************************************************************/
+   *****************************************************************************/
 });
