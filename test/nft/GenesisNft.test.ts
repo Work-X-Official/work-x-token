@@ -1,7 +1,15 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
-import { WorkToken, GenesisNft, ERC20, TokenDistribution } from "../../typings";
+import {
+  WorkToken,
+  GenesisNft,
+  ERC20,
+  TokenDistribution,
+  GenesisNftAttributes,
+  GenesisNftData,
+  GenesisNft__factory,
+} from "../../typings";
 import { big, expectToRevert, getImpersonateAccounts, mineDays, monthsToSeconds } from "../util/helpers.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -41,7 +49,7 @@ config();
 
 chai.use(solidity);
 
-describe("GenesisNft", () => {
+describe.only("GenesisNft", () => {
   let nft: GenesisNft;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
@@ -75,8 +83,6 @@ describe("GenesisNft", () => {
     const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
     distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-    await mineDays(12, network);
-    ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
   });
 
   describe("Deployment", async () => {
@@ -91,6 +97,86 @@ describe("GenesisNft", () => {
 
     it("Should return the correct symbol", async () => {
       expect(await nft.symbol()).to.equal("Work X Genesis NFT");
+    });
+  });
+
+  describe("Deployment Address errors", () => {
+    let nftAttributes: GenesisNftAttributes;
+    let nftData: GenesisNftData;
+    let nftFactory: GenesisNft__factory;
+    before(async () => {
+      nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
+      nftData = await (
+        await ethers.getContractFactory("GenesisNftData", signerImpersonated)
+      ).deploy(nftAttributes.address);
+      nftFactory = await ethers.getContractFactory("GenesisNft", signerImpersonated);
+    });
+
+    it("Should revert with Invalid Address error when the workToken address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          ethers.constants.AddressZero,
+          distribution.address,
+          nftData.address,
+          signerImpersonated.address,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+
+    it("Should revert with Invalid Address error when the distribution address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          workToken.address,
+          ethers.constants.AddressZero,
+          nftData.address,
+          signerImpersonated.address,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+
+    it("Should revert with Invalid Address error when the nftData address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          workToken.address,
+          distribution.address,
+          ethers.constants.AddressZero,
+          signerImpersonated.address,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+    it("Should revert with Invalid Address error when the nftVoucherSigner address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          workToken.address,
+          distribution.address,
+          nftData.address,
+          ethers.constants.AddressZero,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+  });
+
+  describe("Testing setStarttime", async () => {
+    let startTimeNew = 0;
+    it("Should revert when starttime is in the past", async () => {
+      await expect(nft.setStartTime(0)).to.be.revertedWith("InvalidStartTime");
+    });
+    it("Should be able to change the starttime to days from now", async () => {
+      startTimeNew = (await ethers.provider.getBlock("latest")).timestamp + 10 * 86400;
+      await nft.setStartTime(startTimeNew);
+      expect(await nft.startTime()).to.equal(startTimeNew);
+    });
+    it("Mine 10 days, should not be able to change after start", async () => {
+      await mineDays(10, network);
+      await expect(nft.setStartTime(startTimeNew)).to.be.revertedWith("InvalidStartTime");
     });
   });
 
@@ -211,6 +297,10 @@ describe("GenesisNft", () => {
   });
 
   describe("Minting", async () => {
+    it("Mint an nft", async () => {
+      ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+    });
+
     it("The nft contract should have the MINTER_ROLE", async () => {
       expect(await workToken.hasRole(await workToken.MINTER_ROLE(), nft.address)).to.be.true;
     });
