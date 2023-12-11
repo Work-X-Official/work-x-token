@@ -14,7 +14,7 @@ import "./../interface/IWorkToken.sol";
 
 
 error InvalidStartTime(uint256 currentStart, uint256 blockTimestamp, uint256 attemptedStart);
-error InvalidAddress(address addr);
+error InvalidAddress();
 error InitCompletedError();
 error NotRewarder();
 
@@ -108,17 +108,8 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         address _nftDataAddress,
         address _voucherSigner
     ) ERC721(_nftName, _nftSymbol) EIP712(_nftName, "1.0.0") {
-        if (_workTokenAddress == address(0)) {
-            revert InvalidAddress(_workTokenAddress);
-        }
-        if (_tokenDistributionAddress == address(0)) {
-            revert InvalidAddress(_tokenDistributionAddress);
-        }
-        if (_nftDataAddress == address(0)) {
-            revert InvalidAddress(_nftDataAddress);
-        }
-        if (_voucherSigner == address(0)) {
-            revert InvalidAddress(_voucherSigner);
+        if (_workTokenAddress == address(0) || _tokenDistributionAddress == address(0) || _nftDataAddress == address(0) || _voucherSigner == address(0)) {
+            revert InvalidAddress();
         }
         token = IWorkToken(_workTokenAddress);
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
@@ -253,7 +244,7 @@ function mintNft(
             revert NotNftOwner();
     }
     bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, _account, _amountToStake);
-    if (_verify(digest, _signature, voucherSigner)) {
+    if (!_verify(digest, _signature, voucherSigner)) {
         revert InvalidSignature();
     }
 
@@ -501,7 +492,7 @@ function mintNft(
      * @param _amount The amount of tokens staked.
      * @param _amount The month at which we are looking.
      **/
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) private {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) public {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
