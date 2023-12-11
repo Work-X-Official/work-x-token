@@ -5,96 +5,103 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "base64-sol/base64.sol";
 import "./GenesisNftAttributes.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract GenesisNftData {
     GenesisNftAttributes public immutable attributes;
 
     uint256 constant ONE_E18 = 10 ** 18;
+    uint256 constant FOUR_E18 = 4 * 10 ** 18;
 
-    uint24[80] private levels = [
-        525,
-        1056,
-        1596,
-        2142,
-        2697,
-        3258,
-        3828,
-        4404,
-        4989,
-        5580,
-        6380,
-        7188,
-        8008,
-        8836,
-        9676,
-        10524,
-        11384,
-        12252,
-        13132,
-        14020,
-        15145,
-        16280,
-        17430,
-        18590,
-        19765,
-        20950,
-        22150,
-        23360,
-        24585,
-        25820,
-        27320,
-        28832,
-        30362,
-        31904,
-        33464,
-        35036,
-        36626,
-        38228,
-        39848,
-        41480,
-        43405,
-        45344,
-        47304,
-        49278,
-        51273,
-        53282,
-        55312,
-        57356,
-        59421,
-        61500,
-        63900,
-        66316,
-        68756,
-        71212,
-        73692,
-        76188,
-        78708,
-        81244,
-        83804,
-        86380,
-        89305,
-        92248,
-        95218,
-        98206,
-        101221,
-        104254,
-        107314,
-        110392,
-        113497,
-        116620,
-        120120,
-        123640,
-        127190,
-        130760,
-        134360,
-        137980,
-        141630,
-        145300,
-        149000,
-        152720
+    /**
+     * @notice The formula is: (175 + level * 2.5) * ( 3 + floor(level / 10))
+     * This formula should be run and accumulated for each level up to the current level and then divided by 4 to fit into a uint16
+     */
+    uint16[80] private levels = [
+        131,
+        264,
+        399,
+        535,
+        674,
+        814,
+        957,
+        1101,
+        1247,
+        1395,
+        1595,
+        1797,
+        2002,
+        2209,
+        2419,
+        2631,
+        2846,
+        3063,
+        3283,
+        3505,
+        3786,
+        4070,
+        4357,
+        4647,
+        4941,
+        5237,
+        5537,
+        5840,
+        6146,
+        6455,
+        6830,
+        7208,
+        7590,
+        7976,
+        8366,
+        8759,
+        9156,
+        9557,
+        9962,
+        10370,
+        10851,
+        11336,
+        11826,
+        12319,
+        12818,
+        13320,
+        13828,
+        14339,
+        14855,
+        15375,
+        15975,
+        16579,
+        17189,
+        17803,
+        18423,
+        19047,
+        19677,
+        20311,
+        20951,
+        21595,
+        22326,
+        23062,
+        23804,
+        24551,
+        25305,
+        26063,
+        26828,
+        27598,
+        28374,
+        29155,
+        30030,
+        30910,
+        31797,
+        32690,
+        33590,
+        34495,
+        35407,
+        36325,
+        37250,
+        38180
     ];
 
+    /**
+     * @notice The formula is: (level * 12 + levelCost) / 500
+     */
     uint16[81] public shares = [
         1,
         2,
@@ -185,16 +192,6 @@ contract GenesisNftData {
     }
 
     /**
-     * @notice Checks with a digest and a signature if the account that signed the digest matches the voucherSigner.
-     * @param _digest The digest that is checked, this is the hash of messages that included the the typed data.
-     * @param _signature The signature that is checked, this is the signature of the person that signed the digest.
-     * @return a bool that is true if the account that signed the digest matches the voucherSigner.
-     **/
-    function verify(bytes32 _digest, bytes memory _signature, address _voucherSigner) external pure returns (bool) {
-        return ECDSA.recover(_digest, _signature) == _voucherSigner;
-    }
-
-    /**
      * @notice Returns the level of the NFT based on the amount of tokens staked.
      * @dev Splits 80 into 4 seconds of 20, then splits 20 into 4 sections of 5, then loops over the remaining 5 to find the correct level from the XP array.
      * @param _staked The amount of tokens staked.
@@ -202,12 +199,12 @@ contract GenesisNftData {
      **/
     function getLevel(uint256 _staked) public view returns (uint256) {
         for (uint256 s1 = 1; s1 <= 4; s1++) {
-            if (_staked < uint256(levels[s1 * 20 - 1]) * ONE_E18) {
+            if (_staked < uint256(levels[s1 * 20 - 1]) * FOUR_E18) {
                 for (uint256 s2 = 1; s2 <= 4; s2++) {
-                    if (_staked <= uint256(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * ONE_E18) {
+                    if (_staked <= uint256(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * FOUR_E18) {
                         uint256 ls = (s1 - 1) * 20 + (s2 - 1) * 5;
                         for (uint256 level = ls; level <= ls + 4; level++) {
-                            if (_staked < uint256(levels[level]) * ONE_E18) {
+                            if (_staked < uint256(levels[level]) * FOUR_E18) {
                                 return level;
                             }
                         }
@@ -235,19 +232,19 @@ contract GenesisNftData {
 
     /**
      * @notice Returns the amount of tokens required to reach a specific level.
-     * @dev Gets the tokens from the level array and multiplies it by 1e18.
+     * @dev Gets the tokens from the level array and multiplies it by 4e18.
      * @param _level The level to get the tokens required for.
      * @return The amount of tokens required to reach the level.
      **/
     function getTokensRequiredForLevel(uint256 _level) external view returns (uint256) {
         require(_level <= levels.length, "Level must be less than or equal to max level");
-        return levels[_level - 1] * ONE_E18;
+        return levels[_level - 1] * FOUR_E18;
     }
 
     /**
      * @notice Returns the amount of tokens required to reach a specific tier.
-     * @dev Gets the tokens required for the specified tier from the level array and multiplies it by 1e18.
-     * @param _tier The tier to get the tokens required for.
+     * @dev Gets the tokens required for the specified tier from the level array and multiplies it by 4e18.
+     * @param _tier The tier to get the tokens required to reach it for.
      * @return The amount of tokens required to reach the tier.
      **/
     function getTokensRequiredForTier(uint256 _tier) external view returns (uint256) {
@@ -255,9 +252,9 @@ contract GenesisNftData {
             return 0;
         }
         if (_tier * 10 <= levels.length) {
-            return levels[(_tier * 10) - 1] * ONE_E18;
+            return levels[(_tier * 10) - 1] * FOUR_E18;
         } else {
-            return levels[levels.length - 1] * ONE_E18;
+            return levels[levels.length - 1] * FOUR_E18;
         }
     }
 
@@ -268,11 +265,15 @@ contract GenesisNftData {
      **/
     function splitBytes(bytes memory _b) public pure returns (uint8[11] memory _res) {
         for (uint256 i = 0; i < 11; i++) {
-            uint8 tmp = uint8(uint256(uint8(_b[i * 2])) * 10 + uint256(uint8(_b[i * 2 + 1])));
-            if (tmp > 15) _res[i] = tmp - 16;
+            _res[i] = uint8(bytes1(_b[i]));
         }
     }
 
+    /**
+     * @notice Converts bytes32 to a string.
+     * @param _bytes32 The bytes to convert.
+     * @return The string representation of the bytes32.
+     **/
     function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
         uint8 i = 0;
         while (i < 32 && _bytes32[i] != 0) {
@@ -328,7 +329,13 @@ contract GenesisNftData {
         uint256 _startTime,
         string calldata _imageUri
     ) external view returns (string memory) {
-        string[11] memory attr = decodeAttributes(_encodedAttributes);
+        string[11] memory attr;
+        if (_startTime > block.timestamp) {
+            attr = decodeAttributes(_encodedAttributes);
+        } else {
+            attr = ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"];
+        }
+
         string memory id = Strings.toString(_tokenId);
 
         string memory part1 = string(

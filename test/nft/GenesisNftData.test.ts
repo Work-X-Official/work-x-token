@@ -19,12 +19,12 @@ describe("GenesisNftData", () => {
 
   describe("Test Encoding", () => {
     it("Test splitBytes", async () => {
-      const result = await nftData.splitBytes(ethers.utils.formatBytes32String("0104051050000000120901"));
-      expect(result).to.eql([1, 4, 5, 10, 50, 0, 0, 0, 12, 9, 1]);
+      const result = await nftData.splitBytes("0x0104050A320000000C09580000000000");
+      expect(result).to.eql([1, 4, 5, 10, 50, 0, 0, 0, 12, 9, 88]);
     });
 
     it("Test decodeAttributes", async () => {
-      const attributes = await nftData.decodeAttributes(ethers.utils.formatBytes32String("0104051030000000000000"));
+      const attributes = await nftData.decodeAttributes("0x0104050A1E000000000000".concat("0".repeat(42)));
       expect(attributes).to.eql([
         "Female",
         "Caramel",
@@ -35,7 +35,7 @@ describe("GenesisNftData", () => {
         "Black Hat",
         "Full",
         "Blush Light",
-        "A/B Testing",
+        "None",
         "Business Suit",
       ]);
     });

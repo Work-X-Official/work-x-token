@@ -5,12 +5,14 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/interfaces/IERC4906.sol";
 
 import "./GenesisNftData.sol";
 import "./../interface/ITokenDistribution.sol";
 import "./../interface/IWorkToken.sol";
 
-contract GenesisNft is ERC721, Ownable, EIP712 {
+contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     GenesisNftData private immutable nftData;
     ITokenDistribution private immutable tokenDistribution;
     IWorkToken private immutable token;
@@ -63,6 +65,13 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
     event Evolve(uint256 indexed tokenId, uint256 tier);
     event Destroy(uint256 indexed tokenId);
 
+    event InitCompleted(uint256 indexed timestamp);
+    event IpfsFolderChanged(string indexed ipfsFolder);
+    event VoucherSignerSet(address indexed voucherSigner);
+    event RewarderSet(address indexed rewarder, bool isRewarder);
+    event StartTimeSet(uint256 indexed startTime);
+    event RemainingToTreasuryMinted(uint256 indexed amount);
+
     /**
      * @notice Deploying the NFT contract and sets the Admin role and references Erc20 Token, TokenDistribution and NftData contracts.
      * @dev Requires the Erc20Token, TokenDistribution and NftData contracts to be deployed first and they addresses set to the constants.
@@ -71,6 +80,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      * @param _workTokenAddress The address of the $WORK token contract (ERC20).
      * @param _tokenDistributionAddress The TokenDistribution address that will be used to mint tokens and update the claimed amount.
      * @param _nftDataAddress The address of the NftData contract that will be used to get the data for the nft, like how many tokens are needed for each level.
+     * @param _voucherSigner The address of account that is authorized to sign NFT minting vouchers.
      **/
     constructor(
         string memory _nftName,
@@ -80,13 +90,22 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         address _nftDataAddress,
         address _voucherSigner
     ) ERC721(_nftName, _nftSymbol) EIP712(_nftName, "1.0.0") {
-        require(_workTokenAddress != address(0), "GenesisNft: Invalid token address");
-        require(_tokenDistributionAddress != address(0), "GenesisNft: Invalid token distribution address");
+        require(_workTokenAddress != address(0), "GenesisNft: Invalid WORK Token contract address");
+        require(_tokenDistributionAddress != address(0), "GenesisNft: Invalid TokenDistribution contract address");
+        require(_nftDataAddress != address(0), "GenesisNft: Invalid GenesisNftData contract address");
+        require(_voucherSigner != address(0), "GenesisNft: Invalid voucher signer address");
         token = IWorkToken(_workTokenAddress);
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
         voucherSigner = _voucherSigner;
         startTime = uint128(block.timestamp + 12 days);
+    }
+
+    /**
+     * @notice Combine ERC721 with ERC4906
+     **/
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC721) returns (bool) {
+        return interfaceId == bytes4(0x49064906) || super.supportsInterface(interfaceId);
     }
 
     /****
@@ -99,6 +118,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setIpfsFolder(string calldata _folder) external onlyOwner {
         imageFolder = _folder;
+        emit IpfsFolderChanged(_folder);
     }
 
     /**
@@ -107,10 +127,14 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setInitCompleted() external onlyOwner {
         initCompleted = 1;
+        emit InitCompleted(block.timestamp);
     }
 
     /**
      * @notice Sets the attributes for a batch of NFTs.
+     * @dev This function can only be called before the init is completed.
+     * The array of tokenIds and the array of encodedAttributes should be the same length.
+     * The array of tokenIds should be ordered and contain no gaps
      * @param _tokenId The tokenId of the NFT.
      * @param _encodedAttributes The 11 NFT attributes encoded in a bytes32.
      **/
@@ -119,6 +143,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
+        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length);
     }
 
     /**
@@ -127,6 +152,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setVoucherSigner(address _voucherSigner) external onlyOwner {
         voucherSigner = _voucherSigner;
+        emit VoucherSignerSet(_voucherSigner);
     }
 
     /**
@@ -135,6 +161,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function setRewarder(address _rewarder, bool _isRewarder) external onlyOwner {
         isRewarder[_rewarder] = _isRewarder;
+        emit RewarderSet(_rewarder, _isRewarder);
     }
 
     /**
@@ -146,6 +173,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         require(startTime > block.timestamp, "GenesisNft: The reward mechanism has already started");
         require(_startTime > block.timestamp, "GenesisNft: The startTime must be in the future");
         startTime = uint128(_startTime);
+        emit StartTimeSet(_startTime);
     }
 
     /**
@@ -154,10 +182,13 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
     function mintRemainingToTreasury() external onlyOwner {
         require(initCompleted == 0, "GenesisNft: The NFT attributes can not be changed after the init is completed");
         require(startTime > block.timestamp, "GenesisNft: The reward mechanism has already started");
+
         for (uint256 i = nftIdCounter; i <= 999; i++) {
-            nftIdCounter += 1;
-            _safeMint(owner(), nftIdCounter);
+            _safeMint(owner(), i);
         }
+
+        emit RemainingToTreasuryMinted(999 - nftIdCounter);
+        nftIdCounter = 999;
     }
 
     /****
@@ -184,8 +215,9 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         bytes calldata _signature
     ) external {
         require(accountMinted[_account] == false, "GenesisNft: This account already minted an NFT");
+        require(_account == msg.sender, "GenesisNft: You are not the owner of this NFT!");
         bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, _account, _amountToStake);
-        require(nftData.verify(digest, _signature, voucherSigner), "GenesisNft: Invalid signature");
+        require(_verify(digest, _signature, voucherSigner), "GenesisNft: Invalid signature");
 
         uint256 oldCounter = nftIdCounter;
         if (_type == TYPE_GUAR) {
@@ -220,13 +252,14 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         NftInfoMonth memory _info;
         _info.staked = uint128(_amountToStake);
         _info.minimumStaked = uint128(_amountToStake);
-        _info.shares = uint16(nftData.shares(level) + BASE_STAKE);
+        uint256 shares = nftData.shares(level) + BASE_STAKE;
+        _info.shares = uint16(shares);
         _nft.monthly[0] = _info;
 
         NftTotalMonth storage totalMonthly = monthlyTotal[0];
         totalMonthly.minimumStaked += uint128(_amountToStake);
         totalMonthly.totalStaked += uint128(_amountToStake);
-        totalMonthly.totalShares += _info.shares;
+        totalMonthly.totalShares += uint16(shares);
 
         if (_amountToStake > 0) {
             token.mint(address(this), _amountToStake);
@@ -253,11 +286,10 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         _updateMonthly(_tokenId, false, stakedAmount, currentMonth);
         _updateShares(_tokenId, false);
 
-        NftInfoMonth storage _nftMonth = nft[_tokenId].monthly[currentMonth];
-        _nftMonth.hasWithdrawn = 1;
+        nft[_tokenId].monthly[currentMonth].hasWithdrawn = 1;
 
         _burn(_tokenId);
-        token.transfer(msg.sender, stakedAmount);
+        require(token.transfer(msg.sender, stakedAmount), "GenesisNft: Transfer failed");
 
         emit Destroy(_tokenId);
     }
@@ -292,6 +324,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
      **/
     function reward(uint256 _tokenId, uint256 _amount) external {
         require(isRewarder[msg.sender], "GenesisNft: You are not a rewarder!");
+        require(_exists(_tokenId), "GenesisNft: This NFT does not exist!");
         _stake(_tokenId, _amount);
     }
 
@@ -318,11 +351,9 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
         );
 
         _updateMonthly(_tokenId, false, _amount, currentMonth);
+        nft[_tokenId].monthly[currentMonth].hasWithdrawn = 1;
 
-        NftInfoMonth storage _nftMonth = _nft.monthly[currentMonth];
-        _nftMonth.hasWithdrawn = 1;
-
-        token.transfer(msg.sender, _amount);
+        require(token.transfer(msg.sender, _amount), "GenesisNft: Transfer failed");
 
         emit Unstake(_tokenId, _amount);
     }
@@ -396,7 +427,7 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
     function _stake(uint256 _tokenId, uint256 _amount) private {
         _updateMonthly(_tokenId, true, _amount, getCurrentMonth());
         _updateShares(_tokenId, true);
-        token.transferFrom(msg.sender, address(this), _amount);
+        require(token.transferFrom(msg.sender, address(this), _amount), "GenesisNft: Transfer failed");
         emit Stake(_tokenId, _amount);
     }
 
@@ -742,5 +773,15 @@ contract GenesisNft is ERC721, Ownable, EIP712 {
                     )
                 )
             );
+    }
+
+    /**
+     * @notice Checks with a digest and a signature if the account that signed the digest matches the voucherSigner.
+     * @param _digest The digest that is checked, this is the hash of messages that included the the typed data.
+     * @param _signature The signature that is checked, this is the signature of the person that signed the digest.
+     * @return a bool that is true if the account that signed the digest matches the voucherSigner.
+     **/
+    function _verify(bytes32 _digest, bytes memory _signature, address _voucherSigner) private pure returns (bool) {
+        return ECDSA.recover(_digest, _signature) == _voucherSigner;
     }
 }
