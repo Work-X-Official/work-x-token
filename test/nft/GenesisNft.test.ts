@@ -1,7 +1,15 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
-import { WorkToken, GenesisNft, ERC20, TokenDistribution } from "../../typings";
+import {
+  WorkToken,
+  GenesisNft,
+  ERC20,
+  TokenDistribution,
+  GenesisNftAttributes,
+  GenesisNftData,
+  GenesisNft__factory,
+} from "../../typings";
 import { big, expectToRevert, getImpersonateAccounts, mineDays, monthsToSeconds } from "../util/helpers.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -75,8 +83,6 @@ describe("GenesisNft", () => {
     const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
     distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-    await mineDays(12, network);
-    ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
   });
 
   describe("Deployment", async () => {
@@ -91,6 +97,86 @@ describe("GenesisNft", () => {
 
     it("Should return the correct symbol", async () => {
       expect(await nft.symbol()).to.equal("Work X Genesis NFT");
+    });
+  });
+
+  describe("Deployment Address errors", () => {
+    let nftAttributes: GenesisNftAttributes;
+    let nftData: GenesisNftData;
+    let nftFactory: GenesisNft__factory;
+    before(async () => {
+      nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
+      nftData = await (
+        await ethers.getContractFactory("GenesisNftData", signerImpersonated)
+      ).deploy(nftAttributes.address);
+      nftFactory = await ethers.getContractFactory("GenesisNft", signerImpersonated);
+    });
+
+    it("Should revert with Invalid Address error when the workToken address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          ethers.constants.AddressZero,
+          distribution.address,
+          nftData.address,
+          signerImpersonated.address,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+
+    it("Should revert with Invalid Address error when the distribution address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          workToken.address,
+          ethers.constants.AddressZero,
+          nftData.address,
+          signerImpersonated.address,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+
+    it("Should revert with Invalid Address error when the nftData address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          workToken.address,
+          distribution.address,
+          ethers.constants.AddressZero,
+          signerImpersonated.address,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+    it("Should revert with Invalid Address error when the nftVoucherSigner address is 0x0", async () => {
+      await expect(
+        nftFactory.deploy(
+          "Work X Genesis NFT",
+          "Work X Genesis NFT",
+          workToken.address,
+          distribution.address,
+          nftData.address,
+          ethers.constants.AddressZero,
+        ),
+      ).to.be.revertedWith("InvalidAddress");
+    });
+  });
+
+  describe("Testing setStarttime", async () => {
+    let startTimeNew = 0;
+    it("Should revert when starttime is in the past", async () => {
+      await expect(nft.setStartTime(0)).to.be.revertedWith("InvalidStartTime");
+    });
+    it("Should be able to change the starttime to days from now", async () => {
+      startTimeNew = (await ethers.provider.getBlock("latest")).timestamp + 10 * 86400;
+      await nft.setStartTime(startTimeNew);
+      expect(await nft.startTime()).to.equal(startTimeNew);
+    });
+    it("Mine 10 days, should not be able to change after start", async () => {
+      await mineDays(10, network);
+      await expect(nft.setStartTime(startTimeNew)).to.be.revertedWith("InvalidStartTime");
     });
   });
 
@@ -211,6 +297,20 @@ describe("GenesisNft", () => {
   });
 
   describe("Minting", async () => {
+    it("Should revert on mint with an invalid signature", async () => {
+      const failingSignature =
+        "0x48e26ea2d47b73e8e058325bc0a1c29230d48b18ad04641394a678bf5dfc939b75603ffa49dc5973ca83433f3e07bc9816222a99511ef3047c441adadb8cbc1d1c";
+      await expect(
+        nft.connect(nftMinter1).mintNft(nftMinter1.address, 0, 0, 0, 0, failingSignature),
+      ).to.be.revertedWith("InvalidSignature");
+    });
+    it("Should revert when trying to read the tokenURI of a non existing token", async () => {
+      await expect(nft.tokenURI(1)).to.be.revertedWith("NftDoesNotExist");
+    });
+    it("Mint an nft", async () => {
+      ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+    });
+
     it("The nft contract should have the MINTER_ROLE", async () => {
       expect(await workToken.hasRole(await workToken.MINTER_ROLE(), nft.address)).to.be.true;
     });
@@ -357,7 +457,7 @@ describe("GenesisNft", () => {
     });
 
     it("Destroying NFT you are not the owner of", async () => {
-      await expectToRevert(nft.connect(ownerNft3).destroyNft(nftId2), "GenesisNft: You are not the owner of this NFT!");
+      await expect(nft.connect(ownerNft3).destroyNft(nftId2)).to.be.revertedWith("NotNftOwner");
     });
 
     it("Approving the NFT of another person", async () => {
@@ -369,7 +469,7 @@ describe("GenesisNft", () => {
 
     it("Destroying the NFT of another person", async () => {
       await approveGenesisNft(network, nft, nftId2, ownerNft2, nft.address);
-      await expectToRevert(nft.destroyNft(nftId2), "GenesisNft: You are not the owner of this NFT!");
+      await expect(nft.destroyNft(nftId2)).to.be.revertedWith("NotNftOwner");
     });
 
     it("Try destroying Nft 2 right before end lock period and expect revert", async () => {
@@ -380,10 +480,7 @@ describe("GenesisNft", () => {
       const startTime = await nft.startTime();
       const lockedUntil = Number(startTime.add(lockPeriod2));
       expect(currentTimeStamp).to.be.lt(lockedUntil);
-      await expectToRevert(
-        nft.connect(ownerNft2).destroyNft(nftId2),
-        "GenesisNft: The NFT is still time-locked, so you can not destroy it yet",
-      );
+      await expect(nft.connect(ownerNft2).destroyNft(nftId2)).to.be.revertedWith("NftTimeLocked");
     });
 
     it("Try destroying callStatic Nft 3 after 547 days, you staked more so you would already be destroyable", async () => {
@@ -454,17 +551,13 @@ describe("GenesisNft", () => {
     });
 
     it("Try staking more than approved on the first day", async () => {
-      await expectToRevert(
-        nft.connect(ownerNft4).stake(nftId4, amount(300)),
-        "GenesisNft: The amount you want to stake is more than the total allowance",
-      );
+      await expect(nft.connect(ownerNft4).stake(nftId4, amount(300))).to.be.revertedWith("ExceedsAllowance");
     });
 
     it("Be able to stake full amount on the first day, but not more, then stake again the second day", async () => {
       await nft.connect(ownerNft4).stake(nftId4, amount(DAILY_STAKING_ALLOWANCE));
-      await expectToRevert(
-        nft.connect(ownerNft4).stake(nftId4, amount(DAILY_STAKING_ALLOWANCE)),
-        "GenesisNft: The amount you want to stake is more than the total allowance",
+      await expect(nft.connect(ownerNft4).stake(nftId4, amount(DAILY_STAKING_ALLOWANCE))).to.be.revertedWith(
+        "ExceedsAllowance",
       );
       await mineDays(1, network);
       await nft.connect(ownerNft4).stake(nftId4, amount(DAILY_STAKING_ALLOWANCE));
@@ -512,17 +605,16 @@ describe("GenesisNft", () => {
     it("Fail to unstake when the NFT is not max level", async () => {
       await nft.connect(ownerNft5).stake(nftId5, amount(DAILY_STAKING_ALLOWANCE));
       // failing to unstake at lvl zero.
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, amount(DAILY_STAKING_ALLOWANCE)),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(DAILY_STAKING_ALLOWANCE))).to.be.revertedWith(
+        "UnableToUnstakeAmount",
       );
+
       // stake more and become lvl 2.
       await nft.connect(ownerNft5).stake(nftId5, amount(511));
       // currently staked 250+294+512 = 1056
       // will fail to unstake at level 2.
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, amount(DAILY_STAKING_ALLOWANCE)),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(DAILY_STAKING_ALLOWANCE))).to.be.revertedWith(
+        "UnableToUnstakeAmount",
       );
     });
     // 2. failing to unstake exact maximum amount + 1 when you are max level.
@@ -532,10 +624,7 @@ describe("GenesisNft", () => {
       expect((await nft.getStaked(nftId5, await nft.getCurrentMonth()))[0]).to.equal(amount(6080));
       // With 6080 tokens you are still lvl 10, so 6369 - 5580 = 789 tokens are allowed to unstake.
       // Fail to unstake 790 tokens.
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, amount(501)),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(501))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Unstake maximum possible amount, which retains the max level", async () => {
@@ -546,10 +635,7 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(10);
       expect(_nft2._staked).to.equal(amount(5580));
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, 1),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, 1)).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     // 4. upgrade Tier, go from level 10, to lvl zero.
@@ -567,10 +653,8 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(10);
       expect(_nft2._tier).to.eq(1);
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, amount(10)),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(10))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     // 5. Stake more, upgrade tier, try the same tests 2 & 3 &  at lvl 20.
@@ -585,10 +669,7 @@ describe("GenesisNft", () => {
       expect((await nft.getStaked(nftId5, await nft.getCurrentMonth()))[0]).to.equal(amount(18227));
       // Now we are lvl 20, we need to keep 5615 to stay lvl 20, so we can unstake 7300-5615=1685
       // So unstaking 1686 will fail.
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, amount(4208)),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(4208))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Unstake exact maximum amount, so you still stay in max level20", async () => {
@@ -599,10 +680,7 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(20);
       expect(_nft2._staked).to.equal(amount(14020));
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, 1),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, 1)).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Upgrade tier, you still stay in max level20, but go the next tier", async () => {
@@ -613,10 +691,7 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(20);
       expect(_nft2._tier).to.eq(2);
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, amount(10)),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(10))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Stake more, upgrade tier to 7, failing to unstake exact maximum amount + 1 when you are lvl80", async () => {
@@ -634,10 +709,7 @@ describe("GenesisNft", () => {
       // Now we have staked 14020 + 14062 + 125000 = 153082
       // Now we are lvl 80, we need to keep 152720 to stay lvl 80, so we can unstake 153082-152720=362
       // So unstaking 363 will fail.
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, amount(363)),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(363))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Unstake maximum surplus, so the NFT will stay max level 80", async () => {
@@ -658,10 +730,8 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(80);
       expect(_nft2._tier).to.eq(8);
-      await expectToRevert(
-        nft.connect(ownerNft5).unstake(nftId5, 10),
-        "GenesisNft: Unable to unstake requested amount, the NFT can not go below max level in this tier",
-      );
+
+      await expect(nft.connect(ownerNft5).unstake(nftId5, 10)).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Do not go to a higher level when staking more in the last tier + lvl 80", async () => {
@@ -715,12 +785,9 @@ describe("GenesisNft", () => {
     });
 
     it("Check that the voucher cannot be used again", async () => {
-      await expectToRevert(
-        nft
-          .connect(ownerNft7)
-          .mintNft(ownerNft6.address, voucher.voucherId, 0, amount(0), voucher.lockPeriod, voucher.voucherSignature),
-        "GenesisNft: This account already minted an NFT",
-      );
+      await expect(
+        nft.connect(ownerNft7).mintNft(ownerNft6.address, voucher.voucherId, 0, 0, 0, voucher.voucherSignature),
+      ).to.be.revertedWith("AccountAlreadyMinted");
     });
 
     it("Check that the amount of nft owned increased by exactly 1", async () => {

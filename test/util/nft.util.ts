@@ -80,6 +80,7 @@ export const _mintNft = async (
   } catch (error) {
     console.error("Error minting NFT");
     console.error(error);
+    throw error;
   }
   expect(await nft.ownerOf(tokenId)).to.be.equal(account.address);
 
