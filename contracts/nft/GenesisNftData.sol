@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "base64-sol/base64.sol";
 import "./GenesisNftAttributes.sol";
 
+error InvalidAddress();
+error InvalidLevel();
+
 contract GenesisNftData {
     GenesisNftAttributes public immutable attributes;
 
@@ -187,7 +190,9 @@ contract GenesisNftData {
     ];
 
     constructor(address _attributesAddress) {
-        require(_attributesAddress != address(0), "GenesisNftData: Invalid attributes address");
+        if (_attributesAddress == address(0)) {
+            revert InvalidAddress();
+        }
         attributes = GenesisNftAttributes(_attributesAddress);
     }
 
@@ -237,7 +242,9 @@ contract GenesisNftData {
      * @return The amount of tokens required to reach the level.
      **/
     function getTokensRequiredForLevel(uint256 _level) external view returns (uint256) {
-        require(_level <= levels.length, "Level must be less than or equal to max level");
+        if(_level > 80){
+            revert InvalidLevel();
+        }
         return levels[_level - 1] * FOUR_E18;
     }
 
