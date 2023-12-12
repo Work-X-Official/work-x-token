@@ -923,4 +923,100 @@ describe("GenesisNft", () => {
       });
     });
   });
+
+  describe("setNftAttributes", async () => {
+    let nftMinter1: SignerWithAddress;
+    let nftMinter2: SignerWithAddress;
+    let nftMinter3: SignerWithAddress;
+    let nftMinter4: SignerWithAddress;
+
+    let nftId1: number;
+    let nftId2: number;
+    let nftId3: number;
+    let nftId4: number;
+
+    let attributes1: string;
+    let attributes2: string;
+    let attributes3: string;
+    let attributes4: string;
+
+    before(async () => {
+      nftMinter1 = accounts[1];
+      nftMinter2 = accounts[2];
+      nftMinter3 = accounts[3];
+      nftMinter4 = accounts[4];
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      await mineDays(12, network);
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
+      distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
+
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
+      ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 0, 0, 0, chainId));
+      ({ nftId: nftId4 } = await mintNft(network, nft, workToken, nftMinter4, 0, 0, 0, chainId));
+    });
+
+    it("The attributes are not set yet after minting", async () => {
+      const nftInfo1 = await nft.nft(nftId1);
+      attributes1 = nftInfo1.encodedAttributes;
+      const nftInfo2 = await nft.nft(nftId2);
+      attributes2 = nftInfo2.encodedAttributes;
+      const nftInfo3 = await nft.nft(nftId3);
+      attributes3 = nftInfo3.encodedAttributes;
+
+      expect(attributes1).to.be.equal(ethers.utils.formatBytes32String(""));
+      expect(attributes2).to.be.equal(ethers.utils.formatBytes32String(""));
+      expect(attributes3).to.be.equal(ethers.utils.formatBytes32String(""));
+    });
+    it("setNftAttributes reverts when non contract owner calls it", async () => {
+      const attributeToSet = "0x0104050a1e000000000000".concat("0".repeat(42));
+      await expectToRevert(
+        nft.connect(nftMinter1).setNftAttributes([nftId1], [attributeToSet]),
+        "Ownable: caller is not the owner",
+      );
+    });
+    it("setNftAttributes can be correctly set with attributes for one nft", async () => {
+      const attributeToSet = "0x0104050a1e000000000000".concat("0".repeat(42));
+      await nft.setNftAttributes([nftId1], [attributeToSet]);
+      const nftInfo1 = await nft.nft(nftId1);
+      attributes1 = nftInfo1.encodedAttributes;
+      expect(attributes1).to.be.equal(attributeToSet);
+    });
+    it("setNftAttributes can be correctly set for array of three nfts", async () => {
+      const attributeToSet1 = "0x0101010101000000000000".concat("0".repeat(42));
+      const attributeToSet2 = "0x0202020202000000000000".concat("0".repeat(42));
+      const attributeToSet3 = "0x0303030303000000000000".concat("0".repeat(42));
+      await nft.setNftAttributes([nftId1, nftId2, nftId3], [attributeToSet1, attributeToSet2, attributeToSet3]);
+
+      const nftInfo1 = await nft.nft(nftId1);
+      attributes1 = nftInfo1.encodedAttributes;
+      const nftInfo2 = await nft.nft(nftId2);
+      attributes2 = nftInfo2.encodedAttributes;
+      const nftInfo3 = await nft.nft(nftId3);
+      attributes3 = nftInfo3.encodedAttributes;
+      const nftInfo4 = await nft.nft(nftId4);
+      attributes4 = nftInfo4.encodedAttributes;
+
+      expect(attributes1).to.be.equal(attributeToSet1);
+      expect(attributes2).to.be.equal(attributeToSet2);
+      expect(attributes3).to.be.equal(attributeToSet3);
+      expect(attributes4).to.be.equal(ethers.utils.formatBytes32String(""));
+    });
+    it("The batch event is emitted that checks the correct tokenIds", async () => {
+      const attributeToSet1 = "0x0101010101000000000000".concat("0".repeat(42));
+      const attributeToSet2 = "0x0202020202000000000000".concat("0".repeat(42));
+      const attributeToSet3 = "0x0303030303000000000000".concat("0".repeat(42));
+      const tx = await nft.setNftAttributes(
+        [nftId1, nftId2, nftId3],
+        [attributeToSet1, attributeToSet2, attributeToSet3],
+      );
+      await expect(tx).to.emit(nft, "BatchMetadataUpdate").withArgs(nftId1, nftId3);
+    });
+    it("After InitCompleted setNftAttributes reverts", async () => {
+      await nft.setInitCompleted();
+      await expect(nft.setNftAttributes([nftId1], [attributes1])).to.be.revertedWith(
+        "GenesisNft: The NFT attributes can not be changed after the init is completed",
+      );
+    });
+  });
 });

@@ -118,6 +118,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function setIpfsFolder(string calldata _folder) external onlyOwner {
         imageFolder = _folder;
+        emit BatchMetadataUpdate(1, type(uint256).max);
         emit IpfsFolderChanged(_folder);
     }
 
@@ -143,7 +144,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
-        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length);
+        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
     }
 
     /**
