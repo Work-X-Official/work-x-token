@@ -606,7 +606,7 @@ describe("GenesisNft", () => {
       await nft.connect(ownerNft5).stake(nftId5, amount(DAILY_STAKING_ALLOWANCE));
       // failing to unstake at lvl zero.
       await expect(nft.connect(ownerNft5).unstake(nftId5, amount(DAILY_STAKING_ALLOWANCE))).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
+        "UnableToUnstakeAmount",
       );
 
       // stake more and become lvl 2.
@@ -614,7 +614,7 @@ describe("GenesisNft", () => {
       // currently staked 250+294+512 = 1056
       // will fail to unstake at level 2.
       await expect(nft.connect(ownerNft5).unstake(nftId5, amount(DAILY_STAKING_ALLOWANCE))).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
+        "UnableToUnstakeAmount",
       );
     });
     // 2. failing to unstake exact maximum amount + 1 when you are max level.
@@ -624,9 +624,7 @@ describe("GenesisNft", () => {
       expect((await nft.getStaked(nftId5, await nft.getCurrentMonth()))[0]).to.equal(amount(6080));
       // With 6080 tokens you are still lvl 10, so 6369 - 5580 = 789 tokens are allowed to unstake.
       // Fail to unstake 790 tokens.
-      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(501))).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(501))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Unstake maximum possible amount, which retains the max level", async () => {
@@ -637,7 +635,7 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(10);
       expect(_nft2._staked).to.equal(amount(5580));
-      await expect(nft.connect(ownerNft5).unstake(nftId5, 1)).to.be.revertedWith("UnableToUnstakeRequestedAmount");
+      await expect(nft.connect(ownerNft5).unstake(nftId5, 1)).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     // 4. upgrade Tier, go from level 10, to lvl zero.
@@ -656,9 +654,7 @@ describe("GenesisNft", () => {
       expect(_nft2._level).to.eq(10);
       expect(_nft2._tier).to.eq(1);
 
-      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(10))).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(10))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     // 5. Stake more, upgrade tier, try the same tests 2 & 3 &  at lvl 20.
@@ -673,9 +669,7 @@ describe("GenesisNft", () => {
       expect((await nft.getStaked(nftId5, await nft.getCurrentMonth()))[0]).to.equal(amount(18227));
       // Now we are lvl 20, we need to keep 5615 to stay lvl 20, so we can unstake 7300-5615=1685
       // So unstaking 1686 will fail.
-      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(4208))).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(4208))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Unstake exact maximum amount, so you still stay in max level20", async () => {
@@ -686,7 +680,7 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(20);
       expect(_nft2._staked).to.equal(amount(14020));
-      await expect(nft.connect(ownerNft5).unstake(nftId5, 1)).to.be.revertedWith("UnableToUnstakeRequestedAmount");
+      await expect(nft.connect(ownerNft5).unstake(nftId5, 1)).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Upgrade tier, you still stay in max level20, but go the next tier", async () => {
@@ -697,9 +691,7 @@ describe("GenesisNft", () => {
       const _nft2 = await nft.getNftInfo(nftId5);
       expect(_nft2._level).to.eq(20);
       expect(_nft2._tier).to.eq(2);
-      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(10))).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(10))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Stake more, upgrade tier to 7, failing to unstake exact maximum amount + 1 when you are lvl80", async () => {
@@ -717,9 +709,7 @@ describe("GenesisNft", () => {
       // Now we have staked 14020 + 14062 + 125000 = 153082
       // Now we are lvl 80, we need to keep 152720 to stay lvl 80, so we can unstake 153082-152720=362
       // So unstaking 363 will fail.
-      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(363))).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
-      );
+      await expect(nft.connect(ownerNft5).unstake(nftId5, amount(363))).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Unstake maximum surplus, so the NFT will stay max level 80", async () => {
@@ -741,7 +731,7 @@ describe("GenesisNft", () => {
       expect(_nft2._level).to.eq(80);
       expect(_nft2._tier).to.eq(8);
 
-      await expect(nft.connect(ownerNft5).unstake(nftId5, 10)).to.be.revertedWith("UnableToUnstakeRequestedAmount");
+      await expect(nft.connect(ownerNft5).unstake(nftId5, 10)).to.be.revertedWith("UnableToUnstakeAmount");
     });
 
     it("Do not go to a higher level when staking more in the last tier + lvl 80", async () => {

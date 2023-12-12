@@ -12,21 +12,20 @@ import "./GenesisNftData.sol";
 import "./../interface/ITokenDistribution.sol";
 import "./../interface/IWorkToken.sol";
 
-
-error InvalidStartTime(uint256 currentStart, uint256 blockTimestamp, uint256 attemptedStart);
+error InvalidStartTime();
 error InvalidAddress();
 error InitCompletedError();
 error NotRewarder();
 
 error AccountAlreadyMinted();
 error InvalidSignature();
-error NoMoreSpots(uint256 nftIdCounter, uint256 typeMint);
+error NoMoreSpots(uint256 nftIdCounter);
 error InvalidMintType();
 
 error NotNftOwner();
 error NftTimeLocked(uint256 lockedTill);
-error NftDoesNotExist(uint256 tokenId);
-error UnableToUnstakeRequestedAmount(uint256 amount);
+error NftDoesNotExist();
+error UnableToUnstakeAmount();
 error ExceedsAllowance(uint256 allowance);
 error TransferFailed();
 
@@ -190,7 +189,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     function setStartTime(uint256 _startTime) external onlyOwner {
         _startTime = uint256(uint128(_startTime));
         if (startTime <= block.timestamp || _startTime <= block.timestamp) {
-            revert InvalidStartTime(startTime, block.timestamp, _startTime);
+            revert InvalidStartTime();
         }
         startTime = uint128(_startTime);
         emit StartTimeSet(_startTime);
@@ -204,7 +203,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert InitCompletedError();
         }
         if (startTime <= block.timestamp) {
-             revert InvalidStartTime(startTime, block.timestamp, 0);
+             revert InvalidStartTime();
         }
         for (uint256 i = nftIdCounter + 1; i <= 999; i++) {
             _safeMint(owner(), i);
@@ -251,15 +250,15 @@ function mintNft(
     uint256 oldCounter = nftIdCounter;
     if (_type == TYPE_GUAR) {
         if (oldCounter >= COUNT_GUAR) {
-            revert NoMoreSpots(oldCounter, _type);
+            revert NoMoreSpots(oldCounter);
         }
     } else if (_type == TYPE_FCFS) {
         if (oldCounter >= COUNT_GUAR + COUNT_FCFS) {
-            revert NoMoreSpots(oldCounter, _type);
+            revert NoMoreSpots(oldCounter);
         }
     } else if (_type == TYPE_INV) {
         if (oldCounter >= COUNT_GUAR + COUNT_FCFS + COUNT_INV) {
-            revert NoMoreSpots(oldCounter, _type);
+            revert NoMoreSpots(oldCounter);
         }
     } else {
         revert InvalidMintType();
@@ -367,7 +366,7 @@ function mintNft(
             revert NotRewarder();
         }
         if (!_exists(_tokenId)) {
-            revert NftDoesNotExist(_tokenId);
+            revert NftDoesNotExist();
         }
         _stake(_tokenId, _amount);
     }
@@ -392,7 +391,7 @@ function mintNft(
         (uint256 stakedAmount, ) = getStaked(_tokenId, currentMonth);
         uint256 tokensRequiredForMaxLevelInTier = nftData.getTokensRequiredForTier(_nft.tier + 1);
         if (tokensRequiredForMaxLevelInTier + _amount > stakedAmount) {
-            revert UnableToUnstakeRequestedAmount(_amount);
+            revert UnableToUnstakeAmount();
         }
 
         _updateMonthly(_tokenId, false, _amount, currentMonth);
@@ -401,7 +400,6 @@ function mintNft(
         if (!token.transfer(msg.sender, _amount)) {
             revert TransferFailed();
         }
-
 
         emit Unstake(_tokenId, _amount);
     }
@@ -519,7 +517,7 @@ function mintNft(
                             _nftMonthToSet.minimumStaked = uint128(_minimumToCheck);
                         }
                     } else {
-                        revert  UnableToUnstakeRequestedAmount(_amount);
+                        revert  UnableToUnstakeAmount();
                     }
                 }
 
@@ -540,7 +538,7 @@ function mintNft(
                                     : _monthlyTotal.minimumStaked;
                                 _totalToSet.minimumStaked = uint128(_minimumToCheck - _minimumDecreased);
                             } else {
-                                revert  UnableToUnstakeRequestedAmount(_amount);
+                                revert  UnableToUnstakeAmount();
                             }
                         }
                         break;
@@ -616,7 +614,7 @@ function mintNft(
      **/
     function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenUri) {
         if (!_exists(_tokenId)) {
-            revert NftDoesNotExist(_tokenId);
+            revert NftDoesNotExist();
         }
         (uint256 staked, , uint256 shares, , , ) = getNftInfo(_tokenId);
         uint256 level = nftData.getLevelCapped(staked, nft[_tokenId].tier);

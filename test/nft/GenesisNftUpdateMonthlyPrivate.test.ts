@@ -149,7 +149,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
 
     it("In month 4, try to decrease more than the current balance, it should revert", async () => {
       await expect(nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(2000), 4)).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
+        "UnableToUnstakeAmount",
       );
     });
     // cannot decrease full balance, because then getStaked will loop back till finding a month with a balance or hasWithdrawn is true.
@@ -252,7 +252,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
 
     it("Totals, In month 4, try to decrease more than the current balance, it should revert", async () => {
       await expect(nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(2000), 4)).to.be.revertedWith(
-        "UnableToUnstakeRequestedAmount",
+        "UnableToUnstakeAmount",
       );
     });
   });
