@@ -13,7 +13,6 @@ import "./../interface/ITokenDistribution.sol";
 import "./../interface/IWorkToken.sol";
 
 error InvalidStartTime();
-error InvalidAddress();
 error InitCompletedError();
 error NotRewarder();
 
