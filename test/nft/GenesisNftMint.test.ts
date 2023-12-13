@@ -80,7 +80,7 @@ describe("GenesisNftMint", () => {
     it("Should revert when trying to mint another nft of type 0", async () => {
       const type = 0;
       await expect(mintNft(network, nft, workToken, accounts[350], 0, 0, type, chainId)).to.be.revertedWith(
-        "NoMoreSpots",
+        "NftMintUnavailable",
       );
     });
     it("Mint all remaining nfts by owner", async () => {
@@ -89,13 +89,19 @@ describe("GenesisNftMint", () => {
       expect(nftCountRead).to.equal(999);
     });
     it("Should revert with All nfts minted", async () => {
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 0, chainId)).to.be.revertedWith("NoMoreSpots");
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 1, chainId)).to.be.revertedWith("NoMoreSpots");
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 2, chainId)).to.be.revertedWith("NoMoreSpots");
+      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 0, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
+      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 1, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
+      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 2, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
     });
     it("Should revert if someone mints with an invalid type", async () => {
       await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 3, chainId)).to.be.revertedWith(
-        "InvalidMintType",
+        "MintTypeInvalid",
       );
     });
   });

@@ -190,7 +190,7 @@ describe("GenesisNftAdditionalScenarios", () => {
     });
 
     it("nftMinter2 tries unstaking from nftId1, should fail", async () => {
-      await expect(nft.connect(nftMinter2).unstake(nftId1, amount(100))).to.be.revertedWith("NotNftOwner");
+      await expect(nft.connect(nftMinter2).unstake(nftId1, amount(100))).to.be.revertedWith("NftNotOwned");
     });
 
     it("nftMinter1 unstaked 100 and puts 100 back", async () => {
@@ -212,7 +212,7 @@ describe("GenesisNftAdditionalScenarios", () => {
     it("nftMinter1 transfers his nft to nftMinter2, nftMinter 1 cannot unstake anymore", async () => {
       await approveGenesisNft(network, nft, nftId1, nftMinter1, nftMinter2.address);
       await nft.connect(nftMinter1).transferFrom(nftMinter1.address, nftMinter2.address, nftId1);
-      await expect(nft.connect(nftMinter1).unstake(nftId1, amount(100))).to.be.revertedWith("NotNftOwner");
+      await expect(nft.connect(nftMinter1).unstake(nftId1, amount(100))).to.be.revertedWith("NftNotOwned");
     });
 
     it("nftMinter2 unstakes 100 from nftId1 which he received", async () => {

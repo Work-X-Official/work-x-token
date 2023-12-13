@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "base64-sol/base64.sol";
 import "./GenesisNftAttributes.sol";
 
-error InvalidAddress();
-error InvalidLevel();
+error AddressInvalid();
+error LevelInvalid();
 
 contract GenesisNftData {
     GenesisNftAttributes public immutable attributes;
@@ -192,7 +192,7 @@ contract GenesisNftData {
 
     constructor(address _attributesAddress) {
         if (_attributesAddress == address(0)) {
-            revert InvalidAddress();
+            revert AddressInvalid();
         }
         attributes = GenesisNftAttributes(_attributesAddress);
     }
@@ -246,7 +246,7 @@ contract GenesisNftData {
         if (_level < 1) {
             return 0;
         } else if (_level > MAX_LEVEL) {
-            revert InvalidLevel();
+            revert LevelInvalid();
         }
         return levels[_level - 1] * FOUR_E18;
     }

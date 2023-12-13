@@ -14,18 +14,18 @@ import "./../interface/IWorkToken.sol";
 
 error StartTimeInvalid();
 error InitHasCompleted();
-error NotRewarder();
+error RewarderRoleNotPresent();
 
-error AccountAlreadyMinted();
-error InvalidSignature();
-error NoMoreSpots(uint256 nftIdCounter);
-error InvalidMintType();
+error AccountMintedPreviously();
+error SignatureInvalid();
+error NftMintUnavailable(uint256 nftIdCounter);
+error MintTypeInvalid();
 
-error NotNftOwner();
+error NftNotOwned();
 error NftLocked(uint256 lockedTill);
-error NftDoesNotExist();
-error UnableToUnstakeAmount();
-error ExceedsAllowance(uint256 allowance);
+error NftNotExists();
+error UnstakeAmountNotAllowed();
+error AllowanceExceeded(uint256 allowance);
 error TransferFailed();
 
 contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
@@ -113,7 +113,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             _nftDataAddress == address(0) ||
             _voucherSigner == address(0)
         ) {
-            revert InvalidAddress();
+            revert AddressInvalid();
         }
         token = IWorkToken(_workTokenAddress);
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
@@ -245,31 +245,31 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         bytes calldata _signature
     ) external {
         if (accountMinted[_account]) {
-            revert AccountAlreadyMinted();
+            revert AccountMintedPreviously();
         }
         if (msg.sender != _account) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
         bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, _account, _amountToStake);
         if (!_verify(digest, _signature, voucherSigner)) {
-            revert InvalidSignature();
+            revert SignatureInvalid();
         }
 
         uint256 oldCounter = nftIdCounter;
         if (_type == TYPE_GUAR) {
             if (oldCounter >= COUNT_GUAR) {
-                revert NoMoreSpots(oldCounter);
+                revert NftMintUnavailable(oldCounter);
             }
         } else if (_type == TYPE_FCFS) {
             if (oldCounter >= COUNT_GUAR + COUNT_FCFS) {
-                revert NoMoreSpots(oldCounter);
+                revert NftMintUnavailable(oldCounter);
             }
         } else if (_type == TYPE_INV) {
             if (oldCounter >= COUNT_GUAR + COUNT_FCFS + COUNT_INV) {
-                revert NoMoreSpots(oldCounter);
+                revert NftMintUnavailable(oldCounter);
             }
         } else {
-            revert InvalidMintType();
+            revert MintTypeInvalid();
         }
 
         accountMinted[_account] = true;
@@ -318,7 +318,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function destroyNft(uint256 _tokenId) external {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
         uint64 lockPeriod = nft[_tokenId].lockPeriod;
         if (block.timestamp <= lockPeriod + startTime) {
@@ -370,10 +370,10 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function reward(uint256 _tokenId, uint256 _amount) external {
         if (!isRewarder[msg.sender]) {
-            revert NotRewarder();
+            revert RewarderRoleNotPresent();
         }
         if (!_exists(_tokenId)) {
-            revert NftDoesNotExist();
+            revert NftNotExists();
         }
         _stake(_tokenId, _amount);
     }
@@ -387,7 +387,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function unstake(uint256 _tokenId, uint256 _amount) external {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
         NftInfo storage _nft = nft[_tokenId];
         if (block.timestamp <= _nft.lockPeriod + startTime) {
@@ -398,7 +398,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         (uint256 stakedAmount, ) = getStaked(_tokenId, currentMonth);
         uint256 tokensRequiredForMaxLevelInTier = nftData.getTokensRequiredForTier(_nft.tier + 1);
         if (tokensRequiredForMaxLevelInTier + _amount > stakedAmount) {
-            revert UnableToUnstakeAmount();
+            revert UnstakeAmountNotAllowed();
         }
 
         _updateMonthly(_tokenId, false, _amount, currentMonth);
@@ -416,7 +416,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function evolveTier(uint256 _tokenId) external {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
         _evolveTier(_tokenId);
     }
@@ -524,7 +524,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
                             _nftMonthToSet.minimumStaked = uint128(_minimumToCheck);
                         }
                     } else {
-                        revert UnableToUnstakeAmount();
+                        revert UnstakeAmountNotAllowed();
                     }
                 }
 
@@ -545,7 +545,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
                                     : _monthlyTotal.minimumStaked;
                                 _totalToSet.minimumStaked = uint128(_minimumToCheck - _minimumDecreased);
                             } else {
-                                revert UnableToUnstakeAmount();
+                                revert UnstakeAmountNotAllowed();
                             }
                         }
                         break;
@@ -621,7 +621,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenUri) {
         if (!_exists(_tokenId)) {
-            revert NftDoesNotExist();
+            revert NftNotExists();
         }
         (uint256 staked, , uint256 shares, , , ) = getNftInfo(_tokenId);
         uint256 level = nftData.getLevelCapped(staked, nft[_tokenId].tier);
@@ -757,14 +757,14 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function _checkAllowance(uint256 _tokenId, uint256 _amount) private view {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
 
         (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
         if (nftData.getLevel(stakedAmount) < MAX_LEVEL) {
             uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
             if (_amount > allowance) {
-                revert ExceedsAllowance(allowance);
+                revert AllowanceExceeded(allowance);
             }
         }
     }
