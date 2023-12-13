@@ -2,7 +2,7 @@ import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
 import { WorkToken, GenesisNft, ERC20, TokenDistribution } from "../../typings";
-import { expectToRevert, getImpersonateAccounts, mineDays } from "../util/helpers.util";
+import { getImpersonateAccounts, mineDays } from "../util/helpers.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, Wallet } from "ethers";
@@ -677,16 +677,10 @@ describe("GenesisNftStaking", () => {
     });
 
     it("Cannot call stakeAndEvolve if you are not the owner", async () => {
-      await expectToRevert(
-        nft.connect(nftMinter2).stakeAndEvolve(nftId1, amount(1000)),
-        "GenesisNft: You are not the owner of this NFT",
-      );
+      await expect(nft.connect(nftMinter2).stakeAndEvolve(nftId1, amount(1000))).to.be.revertedWith("NotNftOwner");
     });
     it("Cannot call stakeAndEvolve before the nft startTime (except level 80 people)", async () => {
-      await expectToRevert(
-        nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1)),
-        "GenesisNft: The amount you want to stake is more than the total allowance",
-      );
+      await expect(nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1))).to.be.revertedWith("ExceedsAllowance");
       // go to nft Starttime
       await mineDays(12, network);
     });

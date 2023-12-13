@@ -11,7 +11,7 @@ config();
 
 chai.use(solidity);
 
-describe.only("WorkToken", () => {
+describe("WorkToken", () => {
   let accounts: SignerWithAddress[];
   let minter1: SignerWithAddress;
   let minter2: SignerWithAddress;
