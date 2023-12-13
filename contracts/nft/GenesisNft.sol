@@ -18,7 +18,7 @@ error RewarderRoleNotPresent();
 
 error AccountMintedPreviously();
 error SignatureInvalid();
-error NftMintUnavailable(uint256 nftIdCounter);
+error NftMintUnavailable();
 error MintTypeInvalid();
 
 error NftNotOwned();
@@ -264,15 +264,15 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         uint256 oldCounter = nftIdCounter;
         if (_type == TYPE_GUAR) {
             if (oldCounter >= COUNT_GUAR) {
-                revert NftMintUnavailable(oldCounter);
+                revert NftMintUnavailable();
             }
         } else if (_type == TYPE_FCFS) {
             if (oldCounter >= COUNT_GUAR + COUNT_FCFS) {
-                revert NftMintUnavailable(oldCounter);
+                revert NftMintUnavailable();
             }
         } else if (_type == TYPE_INV) {
             if (oldCounter >= COUNT_GUAR + COUNT_FCFS + COUNT_INV) {
-                revert NftMintUnavailable(oldCounter);
+                revert NftMintUnavailable();
             }
         } else {
             revert MintTypeInvalid();
@@ -805,27 +805,15 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         }
     }
 
-    // function _getTotalShares(uint256 _month) private view returns (uint256 sharesTotal) {
-    //     for (uint256 i = _month; i > 0 && sharesTotal == 0; i--) {
-    //         sharesTotal = monthlyTotal[uint8(i)].totalShares;
-    //     }
-    // }
-
+    /**
+     * @notice Returns the total shares from all NFTs.
+     * @dev The function loops back to the last month the total shares where updated.
+     * @param _month The month to look at, and from which to loop back.
+     * @return sharesTotal The total amount of shares.
+     **/
     function _getTotalShares(uint256 _month) private view returns (uint256 sharesTotal) {
-        sharesTotal = monthlyTotal[_month].totalShares;
-        if (_month > 0 && sharesTotal == 0) {
-            uint256 i = _month - 1;
-            do {
-                if (monthlyTotal[i].totalShares > 0) {
-                    sharesTotal = monthlyTotal[i].totalShares;
-                    break;
-                }
-                if (i > 0) {
-                    i--;
-                } else {
-                    break;
-                }
-            } while (true);
+        for (uint256 i = _month + 1; i > 0 && sharesTotal == 0; i--) {
+            sharesTotal = monthlyTotal[i - 1].totalShares;
         }
     }
 
