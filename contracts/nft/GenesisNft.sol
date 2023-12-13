@@ -589,6 +589,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         uint256 _tokenId,
         uint256 _month
     ) public view returns (uint256 stakedAmount, uint256 stakedAmountMinimum) {
+        if (!_exists(_tokenId)) {
+            revert NftNotExists();
+        }
         NftInfo storage _nft = nft[_tokenId];
         for (uint256 i = _month + 1; i >= 1; --i) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
@@ -610,6 +613,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @return The shares of the NFT.
      **/
     function getShares(uint256 _tokenId, uint256 _month) public view returns (uint256) {
+        if (!_exists(_tokenId)) {
+            revert NftNotExists();
+        }
         NftInfo storage _nft = nft[_tokenId];
         for (uint256 i = _month + 1; i >= 1; i--) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
@@ -677,6 +683,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             uint256 _lockPeriod
         )
     {
+        if (!_exists(_tokenId)) {
+            revert NftNotExists();
+        }
         NftInfo storage _nft = nft[_tokenId];
         uint256 currentMonth = getCurrentMonth();
         for (uint256 i = currentMonth + 1; i >= 1; --i) {
@@ -710,7 +719,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         tokenIds = new uint256[](balanceOf(_nftOwner));
         uint256 counter = 0;
         for (uint256 i = 1; i <= nftIdCounter; i++) {
-            if (super._exists(i) && ownerOf(i) == _nftOwner) {
+            if (_exists(i) && ownerOf(i) == _nftOwner) {
                 tokenIds[counter] = i;
                 counter++;
             }
@@ -795,6 +804,12 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             return 0;
         }
     }
+
+    // function _getTotalShares(uint256 _month) private view returns (uint256 sharesTotal) {
+    //     for (uint256 i = _month; i > 0 && sharesTotal == 0; i--) {
+    //         sharesTotal = monthlyTotal[uint8(i)].totalShares;
+    //     }
+    // }
 
     function _getTotalShares(uint256 _month) private view returns (uint256 sharesTotal) {
         sharesTotal = monthlyTotal[_month].totalShares;

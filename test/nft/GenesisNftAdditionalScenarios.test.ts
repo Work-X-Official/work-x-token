@@ -1261,14 +1261,8 @@ describe("GenesisNftAdditionalScenarios", () => {
         await mineDays(30 * 1, network);
         // destroy nft4
         await nft.connect(nftMinter4).destroyNft(nftId4);
-        const nftInfo1 = await nft.getNftInfo(nftId4);
-        expect(nftInfo1._staked).to.be.equal(amount(0));
-        expect(nftInfo1._level).to.be.equal(0);
-        // expect(nftInfo1._tier).to.be.equal(0);
-
-        const staked1 = await nft.getStaked(nftId4, 26);
-        expect(staked1[0]).to.be.equal(0);
-        expect(staked1[1]).to.be.equal(0);
+        await expect(nft.getNftInfo(nftId4)).to.be.revertedWith("NftNotExists");
+        await expect(nft.getStaked(nftId4, 26)).to.be.revertedWith("NftNotExists");
 
         const expectedTotal1 = 20000 + 80000 + 100000;
         const expectedMin1 = 20000 + 80000 + 100000;
@@ -1308,12 +1302,8 @@ describe("GenesisNftAdditionalScenarios", () => {
         await mineDays(30 * 1, network);
         // destroy nft4
         await nft.connect(nftMinter3).destroyNft(nftId3);
-        const nftInfo1 = await nft.getNftInfo(nftId4);
-        expect(nftInfo1._staked).to.be.equal(amount(0));
-        expect(nftInfo1._level).to.be.equal(0);
-        const staked1 = await nft.getStaked(nftId4, 26);
-        expect(staked1[0]).to.be.equal(0);
-        expect(staked1[1]).to.be.equal(0);
+        await expect(nft.getNftInfo(nftId4)).to.be.revertedWith("NftNotExists");
+        await expect(nft.getStaked(nftId4, 26)).to.be.revertedWith("NftNotExists");
 
         const expectedTotal1 = 30000 + 80000;
         const expectedMin1 = 30000 + 80000;

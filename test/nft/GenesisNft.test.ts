@@ -505,7 +505,7 @@ describe("GenesisNft", () => {
       const workTokenBalance = await balanceOf(workToken, ownerNft2.address);
       await nft.connect(ownerNft2).destroyNft(nftId2);
       await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
-      expect((await nft.getStaked(nftId2, await nft.getCurrentMonth()))[0]).to.equal(big(0));
+      await expect(nft.connect(ownerNft3).destroyNft(nftId2)).to.be.revertedWith("ERC721: invalid token ID");
       // what is left in the contract is: 172150-8075 = 164075
       expect(await balanceOf(workToken, nft.address)).to.equal(amount(164075));
       expect(await balanceOf(workToken, ownerNft2.address)).to.equal(workTokenBalance.add(amount(8075)));
@@ -517,7 +517,7 @@ describe("GenesisNft", () => {
       const workTokenBalance = await balanceOf(workToken, ownerNft3.address);
       await nft.connect(ownerNft3).destroyNft(nftId3);
       await expectToRevert(nft.ownerOf(nftId2), "ERC721: invalid token ID");
-      expect((await nft.getStaked(nftId3, await nft.getCurrentMonth()))[0]).to.equal(big(0));
+      await expect(nft.getStaked(nftId3, await nft.getCurrentMonth())).to.be.revertedWith("NftNotExists");
       // what is left in the contract is: 164075-6000 = 164075
       expect(await balanceOf(workToken, nft.address)).to.equal(amount(158075));
       expect(await balanceOf(workToken, ownerNft3.address)).to.equal(workTokenBalance.add(amount(6000)));
@@ -878,7 +878,7 @@ describe("GenesisNft", () => {
       await nft.connect(nftMinter8).destroyNft(2);
       expect((await nft.getTotals(3))._totalShares).to.be.equal(63 + 63 + 51);
       expect(await getShares(1, nft)).to.be.equal(big(63));
-      expect(await getShares(2, nft)).to.be.equal(big(0));
+      await expect(getShares(2, nft)).to.be.revertedWith("NftNotExists");
       expect(await getShares(3, nft)).to.be.equal(big(63));
     });
 
