@@ -1,7 +1,7 @@
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
-import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/saleDistribution.constants";
+import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 import { WorkToken } from "../../typings";
 
 // deploys a contract and sets who can sign vouchers and set grants the token distribution contract the right to mint tokens, which is needed for the NFT mint.
@@ -12,8 +12,7 @@ task("nft:deploy").setAction(async (_, hre) => {
   const workToken: WorkToken = (await hre.ethers.getContractFactory("WorkToken")).attach(
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
-  const tokenDistributionAddress =
-    SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES];
+  const tokenDistributionAddress = DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES];
   const [deployer] = await hre.ethers.getSigners();
   let nftVoucherSigner;
   if (process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) {

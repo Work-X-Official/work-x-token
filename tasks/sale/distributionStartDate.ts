@@ -1,12 +1,12 @@
 import { TokenDistribution } from "../../typings";
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
-import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/saleDistribution.constants";
+import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 
-// example: yarn hardhat sale:distribution:getstartdate --network sepolia
-task("sale:distribution:getstartdate", "Prints the startdate").setAction(async ({ _ }, hre) => {
+// example: yarn hardhat distribution:getstartdate --network sepolia
+task("distribution:getstartdate", "Prints the startdate").setAction(async ({ _ }, hre) => {
   const tokenDistribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-    SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
+    DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
   );
   const startTime = Number((await tokenDistribution.startTime()).toString());
   const startTimeDate = new Date(startTime * 1000);
@@ -25,12 +25,12 @@ task("sale:distribution:getstartdate", "Prints the startdate").setAction(async (
   console.log("");
 });
 
-// example yarn hardhat sale:distribution:startdate --starttime 1701615500 --network sepolia
-task("sale:distribution:startdate", "Sets the StartDate")
+// example yarn hardhat distribution:startdate --starttime 1701615500 --network sepolia
+task("distribution:startdate", "Sets the StartDate")
   .addParam("starttime", "Startime in Unix format")
   .setAction(async ({ starttime }, hre) => {
     const tokenDistribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
+      DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
     );
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();

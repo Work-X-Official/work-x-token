@@ -27,12 +27,14 @@ error NftNotExists();
 error UnstakeAmountNotAllowed();
 error AllowanceExceeded(uint256 allowance);
 error TransferFailed();
+error ArrayLengthMismatch();
 
 contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     GenesisNftData private immutable nftData;
     ITokenDistribution private immutable tokenDistribution;
     IWorkToken private immutable token;
 
+    uint256 private constant NFT_MAX_AMOUNT = 999;
     uint256 private constant MAX_LEVEL = 80;
     uint256 public constant BASE_STAKE = 50;
     uint256 private constant TYPE_GUAR = 0;
@@ -82,7 +84,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     event Evolve(uint256 indexed tokenId, uint256 tier);
     event Destroy(uint256 indexed tokenId);
 
-    event InitCompleted(uint256 indexed timestamp);
+    event InitCompleted();
     event IpfsFolderChanged(string indexed ipfsFolder);
     event VoucherSignerSet(address indexed voucherSigner);
     event RewarderSet(address indexed rewarder, bool isRewarder);
@@ -142,6 +144,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert InitHasCompleted();
         }
         imageFolder = _folder;
+        emit BatchMetadataUpdate(0, NFT_MAX_AMOUNT);
         emit IpfsFolderChanged(_folder);
     }
 
@@ -151,7 +154,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function setInitCompleted() external onlyOwner {
         initCompleted = 1;
-        emit InitCompleted(block.timestamp);
+        emit InitCompleted();
     }
 
     /**
@@ -163,13 +166,16 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _encodedAttributes The 11 NFT attributes encoded in a bytes32.
      **/
     function setNftAttributes(uint256[] calldata _tokenId, bytes32[] calldata _encodedAttributes) external onlyOwner {
+        if (_tokenId.length != _encodedAttributes.length || _tokenId.length == 0) {
+            revert ArrayLengthMismatch();
+        }
         if (initCompleted != 0) {
             revert InitHasCompleted();
         }
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
-        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length);
+        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
     }
 
     /**
@@ -213,12 +219,12 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         if (startTime <= block.timestamp) {
             revert StartTimeInvalid();
         }
-        for (uint256 i = nftIdCounter + 1; i <= 999; i++) {
-            _safeMint(owner(), i);
+        for (uint256 i = nftIdCounter + 1; i <= NFT_MAX_AMOUNT; i++) {
+            _mint(owner(), i);
         }
 
-        emit RemainingToTreasuryMinted(999 - nftIdCounter);
-        nftIdCounter = 999;
+        emit RemainingToTreasuryMinted(NFT_MAX_AMOUNT - nftIdCounter);
+        nftIdCounter = uint16(NFT_MAX_AMOUNT);
     }
 
     /****
@@ -282,8 +288,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             }
         }
 
-        nftIdCounter += 1;
         uint256 newCounter = oldCounter + 1;
+        nftIdCounter = uint16(newCounter);
+
         NftInfo storage _nft = nft[newCounter];
         _nft.voucherId = uint16(_voucherId);
         _nft.lockPeriod = uint64(_lockPeriod);

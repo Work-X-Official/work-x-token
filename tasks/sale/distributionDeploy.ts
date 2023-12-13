@@ -3,9 +3,9 @@ import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
 
-// example: yarn hardhat sale:distribution:deploy --network sepolia
+// example: yarn hardhat distribution:deploy --network sepolia
 
-task("sale:distribution:deploy").setAction(async function (_, hre) {
+task("distribution:deploy").setAction(async function (_, hre) {
   // IMPORTANT! Make sure you have previously deployed the WorkToken contract, and added it's address to the constants
   const workToken = (await hre.ethers.getContractFactory("WorkToken")).attach(
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
