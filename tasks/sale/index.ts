@@ -1,4 +1,5 @@
-import "./saleDistributionDeploy";
-import "./saleDistributionStartDate";
-import "./saleDeployBuyMore";
-import "./saleDistributionInfo";
+import "./buyMoreDeploy";
+import "./distributionDeploy";
+import "./distributionStartDate";
+import "./distributionInfo";
+import "./distributionRoles";

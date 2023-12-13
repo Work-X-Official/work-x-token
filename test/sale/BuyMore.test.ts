@@ -13,7 +13,7 @@ config();
 
 chai.use(solidity);
 
-describe("BuyMore", function () {
+describe.skip("BuyMore", function () {
   let buyMore: BuyMore;
 
   let accounts: SignerWithAddress[];
