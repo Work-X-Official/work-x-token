@@ -12,14 +12,15 @@ error InvalidLevel();
 contract GenesisNftData {
     GenesisNftAttributes public immutable attributes;
 
-    uint256 constant ONE_E18 = 10 ** 18;
-    uint256 constant FOUR_E18 = 4 * 10 ** 18;
+    uint256 private constant ONE_E18 = 10 ** 18;
+    uint256 private constant FOUR_E18 = 4 * 10 ** 18;
+    uint256 private constant MAX_LEVEL = 80;
 
     /**
      * @notice The formula is: (175 + level * 2.5) * ( 3 + floor(level / 10))
      * This formula should be run and accumulated for each level up to the current level and then divided by 4 to fit into a uint16
      */
-    uint16[80] private levels = [
+    uint16[MAX_LEVEL] private levels = [
         131,
         264,
         399,
@@ -217,7 +218,7 @@ contract GenesisNftData {
                 }
             }
         }
-        return 80;
+        return MAX_LEVEL;
     }
 
     /**
@@ -242,7 +243,9 @@ contract GenesisNftData {
      * @return The amount of tokens required to reach the level.
      **/
     function getTokensRequiredForLevel(uint256 _level) external view returns (uint256) {
-        if(_level > 80){
+        if (_level < 1) {
+            return 0;
+        } else if (_level > MAX_LEVEL) {
             revert InvalidLevel();
         }
         return levels[_level - 1] * FOUR_E18;
@@ -337,7 +340,7 @@ contract GenesisNftData {
         string calldata _imageUri
     ) external view returns (string memory) {
         string[11] memory attr;
-        if (_startTime > block.timestamp) {
+        if (_startTime < block.timestamp) {
             attr = decodeAttributes(_encodedAttributes);
         } else {
             attr = ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"];
