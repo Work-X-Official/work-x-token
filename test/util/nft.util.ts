@@ -66,14 +66,7 @@ export const _mintNft = async (
     await expect(
       await nft
         .connect(account)
-        .mintNft(
-          account.address,
-          voucher.voucherId,
-          type,
-          voucher.lockPeriod,
-          amount(stakingAmount),
-          voucher.voucherSignature,
-        ),
+        .mintNft(voucher.voucherId, type, voucher.lockPeriod, amount(stakingAmount), voucher.voucherSignature),
     )
       .to.emit(nft, "Transfer")
       .withArgs(ethers.constants.AddressZero, account.address, tokenId);

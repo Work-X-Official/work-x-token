@@ -12,27 +12,32 @@ import "./GenesisNftData.sol";
 import "./../interface/ITokenDistribution.sol";
 import "./../interface/IWorkToken.sol";
 
-error InvalidStartTime();
-error InitCompletedError();
-error NotRewarder();
+error StartTimeInvalid();
+error InitHasCompleted();
+error RewarderRoleNotPresent();
 
-error AccountAlreadyMinted();
-error InvalidSignature();
-error NoMoreSpots(uint256 nftIdCounter);
-error InvalidMintType();
+error AccountMintedPreviously();
+error SignatureInvalid();
+error NftMintUnavailable();
+error MintTypeInvalid();
 
-error NotNftOwner();
-error NftTimeLocked(uint256 lockedTill);
-error NftDoesNotExist();
-error UnableToUnstakeAmount();
-error ExceedsAllowance(uint256 allowance);
+error NftNotOwned();
+error NftLocked(uint256 lockedTill);
+error NftNotExists();
+error UnstakeAmountNotAllowed();
+error AllowanceExceeded(uint256 allowance);
 error TransferFailed();
+error ArrayLengthMismatch();
+error LockPeriodInvalid();
 
 contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     GenesisNftData private immutable nftData;
     ITokenDistribution private immutable tokenDistribution;
     IWorkToken private immutable token;
 
+    uint256 private constant NFT_MAX_LOCK_PERIOD = 550 days;
+    uint256 private constant NFT_MAX_AMOUNT = 999;
+    uint256 private constant MAX_LEVEL = 80;
     uint256 public constant BASE_STAKE = 50;
     uint256 private constant TYPE_GUAR = 0;
     uint256 private constant TYPE_FCFS = 1;
@@ -81,7 +86,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     event Evolve(uint256 indexed tokenId, uint256 tier);
     event Destroy(uint256 indexed tokenId);
 
-    event InitCompleted(uint256 indexed timestamp);
+    event InitCompleted();
     event IpfsFolderChanged(string indexed ipfsFolder);
     event VoucherSignerSet(address indexed voucherSigner);
     event RewarderSet(address indexed rewarder, bool isRewarder);
@@ -106,8 +111,13 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         address _nftDataAddress,
         address _voucherSigner
     ) ERC721(_nftName, _nftSymbol) EIP712(_nftName, "1.0.0") {
-        if (_workTokenAddress == address(0) || _tokenDistributionAddress == address(0) || _nftDataAddress == address(0) || _voucherSigner == address(0)) {
-            revert InvalidAddress();
+        if (
+            _workTokenAddress == address(0) ||
+            _tokenDistributionAddress == address(0) ||
+            _nftDataAddress == address(0) ||
+            _voucherSigner == address(0)
+        ) {
+            revert AddressInvalid();
         }
         token = IWorkToken(_workTokenAddress);
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
@@ -132,7 +142,11 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _folder The folder that will be set.
      **/
     function setIpfsFolder(string calldata _folder) external onlyOwner {
+        if (initCompleted != 0) {
+            revert InitHasCompleted();
+        }
         imageFolder = _folder;
+        emit BatchMetadataUpdate(0, NFT_MAX_AMOUNT);
         emit IpfsFolderChanged(_folder);
     }
 
@@ -142,7 +156,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function setInitCompleted() external onlyOwner {
         initCompleted = 1;
-        emit InitCompleted(block.timestamp);
+        emit InitCompleted();
     }
 
     /**
@@ -154,13 +168,16 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _encodedAttributes The 11 NFT attributes encoded in a bytes32.
      **/
     function setNftAttributes(uint256[] calldata _tokenId, bytes32[] calldata _encodedAttributes) external onlyOwner {
+        if (_tokenId.length != _encodedAttributes.length || _tokenId.length == 0) {
+            revert ArrayLengthMismatch();
+        }
         if (initCompleted != 0) {
-            revert InitCompletedError();
+            revert InitHasCompleted();
         }
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
-        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length);
+        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
     }
 
     /**
@@ -188,7 +205,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     function setStartTime(uint256 _startTime) external onlyOwner {
         _startTime = uint256(uint128(_startTime));
         if (startTime <= block.timestamp || _startTime <= block.timestamp) {
-            revert InvalidStartTime();
+            revert StartTimeInvalid();
         }
         startTime = uint128(_startTime);
         emit StartTimeSet(_startTime);
@@ -199,17 +216,17 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function mintRemainingToTreasury() external onlyOwner {
         if (initCompleted != 0) {
-            revert InitCompletedError();
+            revert InitHasCompleted();
         }
         if (startTime <= block.timestamp) {
-             revert InvalidStartTime();
+            revert StartTimeInvalid();
         }
-        for (uint256 i = nftIdCounter + 1; i <= 999; i++) {
-            _safeMint(owner(), i);
+        for (uint256 i = nftIdCounter + 1; i <= NFT_MAX_AMOUNT; i++) {
+            _mint(owner(), i);
         }
 
-        emit RemainingToTreasuryMinted(999 - nftIdCounter);
-        nftIdCounter = 999;
+        emit RemainingToTreasuryMinted(NFT_MAX_AMOUNT - nftIdCounter);
+        nftIdCounter = uint16(NFT_MAX_AMOUNT);
     }
 
     /****
@@ -220,86 +237,86 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @notice The function mintNft mints the Work X GenesisNft and mints an amount of tokens into the NFT these tokens are locked for a certain amount of time but the NFT is freely tradable.
      *  A voucher is constructed by Work X backend and only callers with a valid voucher can mint the NFT.
      * @dev Before giving out vouchers the tokenDistribution startTime has to be set, otherwise the tokens will not be locked correctly.
-     * @param _account The address of the account that will receive the NFT.
      * @param _voucherId The id of the voucher that will be used to mint the NFT, each voucher can only be used once for an NFT with a tokenID.
      * @param _type The id of the minting type.
      * @param _lockPeriod The amount of time that the tokens will be locked in the NFT from the startTime of the distribution contract.
      * @param _amountToStake The amount of tokens that will be staked into the minted NFT.
      * @param _signature A signature signed by the minter role, to check if a voucher is valid.
      **/
-function mintNft(
-    address _account,
-    uint256 _voucherId,
-    uint256 _type,
-    uint256 _lockPeriod,
-    uint256 _amountToStake,
-    bytes calldata _signature
-) external {
-    if (accountMinted[_account]) {
-        revert AccountAlreadyMinted();
-    }
-    if (msg.sender != _account) {
-            revert NotNftOwner();
-    }
-    bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, _account, _amountToStake);
-    if (!_verify(digest, _signature, voucherSigner)) {
-        revert InvalidSignature();
-    }
-
-    uint256 oldCounter = nftIdCounter;
-    if (_type == TYPE_GUAR) {
-        if (oldCounter >= COUNT_GUAR) {
-            revert NoMoreSpots(oldCounter);
+    function mintNft(
+        uint256 _voucherId,
+        uint256 _type,
+        uint256 _lockPeriod,
+        uint256 _amountToStake,
+        bytes calldata _signature
+    ) external {
+        if (accountMinted[msg.sender]) {
+            revert AccountMintedPreviously();
         }
-    } else if (_type == TYPE_FCFS) {
-        if (oldCounter >= COUNT_GUAR + COUNT_FCFS) {
-            revert NoMoreSpots(oldCounter);
+        bytes32 digest = _hashMint(_voucherId, _type, _lockPeriod, msg.sender, _amountToStake);
+        if (!_verify(digest, _signature, voucherSigner)) {
+            revert SignatureInvalid();
         }
-    } else if (_type == TYPE_INV) {
-        if (oldCounter >= COUNT_GUAR + COUNT_FCFS + COUNT_INV) {
-            revert NoMoreSpots(oldCounter);
+        if (_lockPeriod > NFT_MAX_LOCK_PERIOD) {
+            revert LockPeriodInvalid();
         }
-    } else {
-        revert InvalidMintType();
-    }
 
-
-    accountMinted[_account] = true;
-
-    if (_amountToStake > 0) {
-        if (tokenDistribution.claimedTokens(_account) == 0) {
-            tokenDistribution.setTotalClaimed(_account, _amountToStake);
+        uint256 oldCounter = nftIdCounter;
+        if (_type == TYPE_GUAR) {
+            if (oldCounter >= COUNT_GUAR) {
+                revert NftMintUnavailable();
+            }
+        } else if (_type == TYPE_FCFS) {
+            if (oldCounter >= COUNT_GUAR + COUNT_FCFS) {
+                revert NftMintUnavailable();
+            }
+        } else if (_type == TYPE_INV) {
+            if (oldCounter >= COUNT_GUAR + COUNT_FCFS + COUNT_INV) {
+                revert NftMintUnavailable();
+            }
         } else {
-            _amountToStake = 0;
+            revert MintTypeInvalid();
         }
+
+
+        accountMinted[msg.sender] = true;
+
+        if (_amountToStake > 0) {
+            if (tokenDistribution.claimedTokens(msg.sender) == 0) {
+                tokenDistribution.setTotalClaimed(msg.sender, _amountToStake);
+            } else {
+                _amountToStake = 0;
+            }
+        }
+
+        uint256 newCounter = oldCounter + 1;
+        nftIdCounter = uint16(newCounter);
+        uint128 amountToStake = uint128(_amountToStake);
+        
+        NftInfo storage _nft = nft[newCounter];
+        _nft.voucherId = uint16(_voucherId);
+        _nft.lockPeriod = uint64(_lockPeriod);
+        _nft.stakedAtMint = amountToStake;
+        uint256 level = nftData.getLevel(amountToStake);
+        _nft.tier = uint16(level / 10);
+
+        NftInfoMonth memory _info;
+        _info.staked = amountToStake;
+        _info.minimumStaked = amountToStake;
+        uint256 shares = nftData.shares(level) + BASE_STAKE;
+        _info.shares = uint16(shares);
+        _nft.monthly[0] = _info;
+
+        NftTotalMonth storage totalMonthly = monthlyTotal[0];
+        totalMonthly.minimumStaked += amountToStake;
+        totalMonthly.totalStaked += amountToStake;
+        totalMonthly.totalShares += uint16(shares);
+
+        if (_amountToStake > 0) {
+            token.mint(address(this), uint256(amountToStake));
+        }
+        _safeMint(msg.sender, newCounter);
     }
-
-    nftIdCounter += 1;
-    uint256 newCounter = oldCounter + 1;
-    NftInfo storage _nft = nft[newCounter];
-    _nft.voucherId = uint16(_voucherId);
-    _nft.lockPeriod = uint64(_lockPeriod);
-    _nft.stakedAtMint = uint128(_amountToStake);
-    uint256 level = nftData.getLevel(_amountToStake);
-    _nft.tier = uint16(level / 10);
-
-    NftInfoMonth memory _info;
-    _info.staked = uint128(_amountToStake);
-    _info.minimumStaked = uint128(_amountToStake);
-    uint256 shares = nftData.shares(level) + BASE_STAKE;
-    _info.shares = uint16(shares);
-    _nft.monthly[0] = _info;
-
-    NftTotalMonth storage totalMonthly = monthlyTotal[0];
-    totalMonthly.minimumStaked += uint128(_amountToStake);
-    totalMonthly.totalStaked += uint128(_amountToStake);
-    totalMonthly.totalShares += uint16(shares);
-
-    if (_amountToStake > 0) {
-        token.mint(address(this), _amountToStake);
-    }
-    _safeMint(_account, newCounter);
-}
 
     /**
      * @notice The function destroyNft destroys your NFT and gives you back the tokens in that NFT. Your "Piggy bank will be destroyed forever."
@@ -310,11 +327,11 @@ function mintNft(
      **/
     function destroyNft(uint256 _tokenId) external {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
         uint64 lockPeriod = nft[_tokenId].lockPeriod;
         if (block.timestamp <= lockPeriod + startTime) {
-            revert NftTimeLocked(lockPeriod+startTime);
+            revert NftLocked(lockPeriod + startTime);
         }
         uint256 currentMonth = getCurrentMonth();
         (uint256 stakedAmount, ) = getStaked(_tokenId, currentMonth);
@@ -362,10 +379,10 @@ function mintNft(
      **/
     function reward(uint256 _tokenId, uint256 _amount) external {
         if (!isRewarder[msg.sender]) {
-            revert NotRewarder();
+            revert RewarderRoleNotPresent();
         }
         if (!_exists(_tokenId)) {
-            revert NftDoesNotExist();
+            revert NftNotExists();
         }
         _stake(_tokenId, _amount);
     }
@@ -379,18 +396,18 @@ function mintNft(
      **/
     function unstake(uint256 _tokenId, uint256 _amount) external {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
         NftInfo storage _nft = nft[_tokenId];
         if (block.timestamp <= _nft.lockPeriod + startTime) {
-            revert NftTimeLocked(_nft.lockPeriod + startTime);
+            revert NftLocked(_nft.lockPeriod + startTime);
         }
 
         uint256 currentMonth = getCurrentMonth();
         (uint256 stakedAmount, ) = getStaked(_tokenId, currentMonth);
         uint256 tokensRequiredForMaxLevelInTier = nftData.getTokensRequiredForTier(_nft.tier + 1);
         if (tokensRequiredForMaxLevelInTier + _amount > stakedAmount) {
-            revert UnableToUnstakeAmount();
+            revert UnstakeAmountNotAllowed();
         }
 
         _updateMonthly(_tokenId, false, _amount, currentMonth);
@@ -408,7 +425,7 @@ function mintNft(
      **/
     function evolveTier(uint256 _tokenId) external {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
         _evolveTier(_tokenId);
     }
@@ -516,7 +533,7 @@ function mintNft(
                             _nftMonthToSet.minimumStaked = uint128(_minimumToCheck);
                         }
                     } else {
-                        revert  UnableToUnstakeAmount();
+                        revert UnstakeAmountNotAllowed();
                     }
                 }
 
@@ -537,7 +554,7 @@ function mintNft(
                                     : _monthlyTotal.minimumStaked;
                                 _totalToSet.minimumStaked = uint128(_minimumToCheck - _minimumDecreased);
                             } else {
-                                revert  UnableToUnstakeAmount();
+                                revert UnstakeAmountNotAllowed();
                             }
                         }
                         break;
@@ -574,6 +591,9 @@ function mintNft(
         uint256 _tokenId,
         uint256 _month
     ) public view returns (uint256 stakedAmount, uint256 stakedAmountMinimum) {
+        if (!_exists(_tokenId)) {
+            revert NftNotExists();
+        }
         NftInfo storage _nft = nft[_tokenId];
         for (uint256 i = _month + 1; i >= 1; --i) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
@@ -595,6 +615,9 @@ function mintNft(
      * @return The shares of the NFT.
      **/
     function getShares(uint256 _tokenId, uint256 _month) public view returns (uint256) {
+        if (!_exists(_tokenId)) {
+            revert NftNotExists();
+        }
         NftInfo storage _nft = nft[_tokenId];
         for (uint256 i = _month + 1; i >= 1; i--) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
@@ -613,7 +636,7 @@ function mintNft(
      **/
     function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenUri) {
         if (!_exists(_tokenId)) {
-            revert NftDoesNotExist();
+            revert NftNotExists();
         }
         (uint256 staked, , uint256 shares, , , ) = getNftInfo(_tokenId);
         uint256 level = nftData.getLevelCapped(staked, nft[_tokenId].tier);
@@ -662,6 +685,9 @@ function mintNft(
             uint256 _lockPeriod
         )
     {
+        if (!_exists(_tokenId)) {
+            revert NftNotExists();
+        }
         NftInfo storage _nft = nft[_tokenId];
         uint256 currentMonth = getCurrentMonth();
         for (uint256 i = currentMonth + 1; i >= 1; --i) {
@@ -695,7 +721,7 @@ function mintNft(
         tokenIds = new uint256[](balanceOf(_nftOwner));
         uint256 counter = 0;
         for (uint256 i = 1; i <= nftIdCounter; i++) {
-            if (super._exists(i) && ownerOf(i) == _nftOwner) {
+            if (_exists(i) && ownerOf(i) == _nftOwner) {
                 tokenIds[counter] = i;
                 counter++;
             }
@@ -749,14 +775,14 @@ function mintNft(
      **/
     function _checkAllowance(uint256 _tokenId, uint256 _amount) private view {
         if (msg.sender != ownerOf(_tokenId)) {
-            revert NotNftOwner();
+            revert NftNotOwned();
         }
 
         (uint256 stakedAmount, ) = getStaked(_tokenId, getCurrentMonth());
-        if (nftData.getLevel(stakedAmount) < 80) {
+        if (nftData.getLevel(stakedAmount) < MAX_LEVEL) {
             uint256 allowance = _getStakingAllowance(_tokenId, stakedAmount);
             if (_amount > allowance) {
-                revert ExceedsAllowance(allowance);
+                revert AllowanceExceeded(allowance);
             }
         }
     }
@@ -781,21 +807,15 @@ function mintNft(
         }
     }
 
+    /**
+     * @notice Returns the total shares from all NFTs.
+     * @dev The function loops back to the last month the total shares where updated.
+     * @param _month The month to look at, and from which to loop back.
+     * @return sharesTotal The total amount of shares.
+     **/
     function _getTotalShares(uint256 _month) private view returns (uint256 sharesTotal) {
-        sharesTotal = monthlyTotal[_month].totalShares;
-        if (_month > 0 && sharesTotal == 0) {
-            uint256 i = _month - 1;
-            do {
-                if (monthlyTotal[i].totalShares > 0) {
-                    sharesTotal = monthlyTotal[i].totalShares;
-                    break;
-                }
-                if (i > 0) {
-                    i--;
-                } else {
-                    break;
-                }
-            } while (true);
+        for (uint256 i = _month + 1; i > 0 && sharesTotal == 0; i--) {
+            sharesTotal = monthlyTotal[i - 1].totalShares;
         }
     }
 

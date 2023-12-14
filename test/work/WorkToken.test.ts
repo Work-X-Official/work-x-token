@@ -33,6 +33,7 @@ describe("WorkToken", () => {
         `AccessControl: account ${minter2.address.toLowerCase()} is missing role ${await workToken.MINTER_ROLE()}`,
       );
     });
+
     it("You can mint tokens if you have a minter Role", async () => {
       const balanceBefore = await workToken.balanceOf(minter1.address);
 
@@ -49,8 +50,9 @@ describe("WorkToken", () => {
       expect(balance).to.be.gt(0);
       await expect(
         workToken.connect(minter2).burnFrom(minter1.address, ethers.utils.parseUnits("100", 18)),
-      ).to.be.revertedWith("ERC20: insufficient allowance'");
+      ).to.be.revertedWith("ERC20: insufficient allowance");
     });
+
     it("You can burn your own tokens", async () => {
       const balanceBefore = await workToken.balanceOf(minter1.address);
       expect(balanceBefore).to.be.gt(0);
@@ -60,6 +62,7 @@ describe("WorkToken", () => {
       expect(balanceAfter).to.be.eq(0);
     });
   });
+
   describe("Capped Amount", async () => {
     let cap: BigNumber;
     it("The cap is 100M tokens", async () => {

@@ -33,6 +33,7 @@ describe("GenesisNftMint", () => {
   let nftMinter2: SignerWithAddress;
   let nftMinter3: SignerWithAddress;
   let nftMinter4: SignerWithAddress;
+  let nftMinter5: SignerWithAddress;
 
   let nftId1: number;
   let nftId2: number;
@@ -55,7 +56,7 @@ describe("GenesisNftMint", () => {
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
   });
 
-  describe.skip("Minting Type", async () => {
+  describe("Minting Type", async () => {
     let nftCount = 0;
 
     it("Mint all 349 nfts of type 0, so all but one", async () => {
@@ -80,7 +81,7 @@ describe("GenesisNftMint", () => {
     it("Should revert when trying to mint another nft of type 0", async () => {
       const type = 0;
       await expect(mintNft(network, nft, workToken, accounts[350], 0, 0, type, chainId)).to.be.revertedWith(
-        "NoMoreSpots",
+        "NftMintUnavailable",
       );
     });
     it("Mint all remaining nfts by owner", async () => {
@@ -89,13 +90,19 @@ describe("GenesisNftMint", () => {
       expect(nftCountRead).to.equal(999);
     });
     it("Should revert with All nfts minted", async () => {
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 0, chainId)).to.be.revertedWith("NoMoreSpots");
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 1, chainId)).to.be.revertedWith("NoMoreSpots");
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 2, chainId)).to.be.revertedWith("NoMoreSpots");
+      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 0, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
+      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 1, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
+      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 2, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
     });
     it("Should revert if someone mints with an invalid type", async () => {
       await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 3, chainId)).to.be.revertedWith(
-        "InvalidMintType",
+        "MintTypeInvalid",
       );
     });
   });
@@ -113,6 +120,7 @@ describe("GenesisNftMint", () => {
       nftMinter2 = accounts[1];
       nftMinter3 = accounts[2];
       nftMinter4 = accounts[3];
+      nftMinter5 = accounts[4];
 
       if (!process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) throw new Error("NFT_MESSAGE_SIGNER_PRIVATE_KEY not set");
       nftVoucherSigner = new ethers.Wallet(process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER as string).connect(
@@ -234,6 +242,12 @@ describe("GenesisNftMint", () => {
       expect(balance).to.be.equal(amount(2250000 + 50000));
       const claimed = await distribution.claimedTokens(nftMinter4.address);
       expect(claimed).to.be.equal(amount(100_000));
+    });
+
+    it("Mint NFT with invalid _lockTime", async () => {
+      await expect(
+        mintNft(network, nft, workToken, nftMinter5, 50000, 60 * 60 * 24 * 600, 0, chainId),
+      ).to.be.revertedWith("LockPeriodInvalid");
     });
   });
 });
