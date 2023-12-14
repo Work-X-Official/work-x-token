@@ -1078,7 +1078,7 @@ describe("GenesisNft", () => {
     });
     it("After InitCompleted setNftAttributes reverts", async () => {
       await nft.setInitCompleted();
-      await expect(nft.setNftAttributes([nftId1], [attributes1])).to.be.revertedWith("InitCompletedError");
+      await expect(nft.setNftAttributes([nftId1], [attributes1])).to.be.revertedWith("InitHasCompleted");
     });
   });
 
@@ -1103,7 +1103,7 @@ describe("GenesisNft", () => {
     });
 
     it("Should revert when reward function when account without Reward role calls it", async () => {
-      await expect(nft.connect(nftMinter1).reward(nftId1, 1)).to.be.revertedWith("NotRewarder");
+      await expect(nft.connect(nftMinter1).reward(nftId1, 1)).to.be.revertedWith("RewarderRoleNotPresent");
     });
 
     it("Should revert when non-owner calls setRewarder role", async () => {
@@ -1124,7 +1124,7 @@ describe("GenesisNft", () => {
     });
 
     it("Should revert when trying to reward an non-existent tokenId", async () => {
-      await expect(nft.connect(rewarder).reward(100, 1)).to.be.revertedWith("NftDoesNotExist");
+      await expect(nft.connect(rewarder).reward(100, 1)).to.be.revertedWith("NftNotExists");
     });
     it("Should revert Reward function when not yet approved", async () => {
       await expect(nft.connect(rewarder).reward(nftId1, 1)).to.be.revertedWith("ERC20: insufficient allowance");
@@ -1160,7 +1160,7 @@ describe("GenesisNft", () => {
       expect(stakedMonth1).to.be.equal(amount(11000));
     });
     it("Should revert when trying to stake after a large reward", async () => {
-      await expect(nft.connect(nftMinter2).stake(nftId2, amount(100))).to.be.revertedWith("ExceedsAllowance");
+      await expect(nft.connect(nftMinter2).stake(nftId2, amount(100))).to.be.revertedWith("AllowanceExceeded");
     });
   });
 });
