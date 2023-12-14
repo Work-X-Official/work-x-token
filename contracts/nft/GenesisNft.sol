@@ -489,7 +489,7 @@ function mintNft(
      * @param _amount The amount of tokens staked.
      * @param _amount The month at which we are looking.
      **/
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) public {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) private {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
