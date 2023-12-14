@@ -300,9 +300,9 @@ describe("GenesisNft", () => {
     it("Should revert on mint with an invalid signature", async () => {
       const failingSignature =
         "0x48e26ea2d47b73e8e058325bc0a1c29230d48b18ad04641394a678bf5dfc939b75603ffa49dc5973ca83433f3e07bc9816222a99511ef3047c441adadb8cbc1d1c";
-      await expect(
-        nft.connect(nftMinter1).mintNft(nftMinter1.address, 0, 0, 0, 0, failingSignature),
-      ).to.be.revertedWith("SignatureInvalid");
+      await expect(nft.connect(nftMinter1).mintNft(0, 0, 0, 0, failingSignature)).to.be.revertedWith(
+        "SignatureInvalid",
+      );
     });
     it("Should revert when trying to read the tokenURI of a non existing token", async () => {
       await expect(nft.tokenURI(1)).to.be.revertedWith("NftNotExists");
@@ -774,7 +774,7 @@ describe("GenesisNft", () => {
       await expect(
         await nft
           .connect(ownerNft6)
-          .mintNft(ownerNft6.address, voucher.voucherId, 0, amount(0), voucher.lockPeriod, voucher.voucherSignature),
+          .mintNft(voucher.voucherId, 0, amount(0), voucher.lockPeriod, voucher.voucherSignature),
       )
         .to.emit(nft, "Transfer")
         .withArgs(ethers.constants.AddressZero, ownerNft6.address, nftId6);
@@ -786,7 +786,7 @@ describe("GenesisNft", () => {
 
     it("Check that the voucher cannot be used again", async () => {
       await expect(
-        nft.connect(ownerNft7).mintNft(ownerNft6.address, voucher.voucherId, 0, 0, 0, voucher.voucherSignature),
+        nft.connect(ownerNft6).mintNft(voucher.voucherId, 0, 0, 0, voucher.voucherSignature),
       ).to.be.revertedWith("AccountMintedPreviously");
     });
 
@@ -988,6 +988,182 @@ describe("GenesisNft", () => {
         expect((await nft.getTotals(1))._totalShares).to.be.equal(ethers.BigNumber.from(51));
         expect((await nft.getTotals(2))._totalShares).to.be.equal(ethers.BigNumber.from(51));
       });
+    });
+  });
+  describe("Testing setNftAttributes", async () => {
+    let nftMinter1: SignerWithAddress;
+    let nftMinter2: SignerWithAddress;
+    let nftMinter3: SignerWithAddress;
+    let nftMinter4: SignerWithAddress;
+
+    let nftId1: number;
+    let nftId2: number;
+    let nftId3: number;
+    let nftId4: number;
+
+    let attributes1: string;
+    let attributes2: string;
+    let attributes3: string;
+    let attributes4: string;
+
+    before(async () => {
+      nftMinter1 = accounts[1];
+      nftMinter2 = accounts[2];
+      nftMinter3 = accounts[3];
+      nftMinter4 = accounts[4];
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      await mineDays(12, network);
+
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
+      ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 0, 0, 0, chainId));
+      ({ nftId: nftId4 } = await mintNft(network, nft, workToken, nftMinter4, 0, 0, 0, chainId));
+    });
+
+    it("The attributes are not set yet after minting", async () => {
+      const nftInfo1 = await nft.nft(nftId1);
+      attributes1 = nftInfo1.encodedAttributes;
+      const nftInfo2 = await nft.nft(nftId2);
+      attributes2 = nftInfo2.encodedAttributes;
+      const nftInfo3 = await nft.nft(nftId3);
+      attributes3 = nftInfo3.encodedAttributes;
+
+      expect(attributes1).to.be.equal(ethers.utils.formatBytes32String(""));
+      expect(attributes2).to.be.equal(ethers.utils.formatBytes32String(""));
+      expect(attributes3).to.be.equal(ethers.utils.formatBytes32String(""));
+    });
+    it("setNftAttributes reverts when non contract owner calls it", async () => {
+      const attributeToSet = "0x0104050a1e000000000000".concat("0".repeat(42));
+      await expect(nft.connect(nftMinter1).setNftAttributes([nftId1], [attributeToSet])).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
+    });
+    it("setNftAttributes can be correctly set with attributes for one nft", async () => {
+      const attributeToSet = "0x0104050a1e000000000000".concat("0".repeat(42));
+      await nft.setNftAttributes([nftId1], [attributeToSet]);
+      const nftInfo1 = await nft.nft(nftId1);
+      attributes1 = nftInfo1.encodedAttributes;
+      expect(attributes1).to.be.equal(attributeToSet);
+    });
+    it("setNftAttributes can be correctly set for array of three nfts", async () => {
+      const attributeToSet1 = "0x0101010101000000000000".concat("0".repeat(42));
+      const attributeToSet2 = "0x0202020202000000000000".concat("0".repeat(42));
+      const attributeToSet3 = "0x0303030303000000000000".concat("0".repeat(42));
+      await nft.setNftAttributes([nftId1, nftId2, nftId3], [attributeToSet1, attributeToSet2, attributeToSet3]);
+
+      const nftInfo1 = await nft.nft(nftId1);
+      attributes1 = nftInfo1.encodedAttributes;
+      const nftInfo2 = await nft.nft(nftId2);
+      attributes2 = nftInfo2.encodedAttributes;
+      const nftInfo3 = await nft.nft(nftId3);
+      attributes3 = nftInfo3.encodedAttributes;
+      const nftInfo4 = await nft.nft(nftId4);
+      attributes4 = nftInfo4.encodedAttributes;
+
+      expect(attributes1).to.be.equal(attributeToSet1);
+      expect(attributes2).to.be.equal(attributeToSet2);
+      expect(attributes3).to.be.equal(attributeToSet3);
+      expect(attributes4).to.be.equal(ethers.utils.formatBytes32String(""));
+    });
+    it("The batch event is emitted that checks the correct tokenIds", async () => {
+      const attributeToSet1 = "0x0101010101000000000000".concat("0".repeat(42));
+      const attributeToSet2 = "0x0202020202000000000000".concat("0".repeat(42));
+      const attributeToSet3 = "0x0303030303000000000000".concat("0".repeat(42));
+      const tx = await nft.setNftAttributes(
+        [nftId1, nftId2, nftId3],
+        [attributeToSet1, attributeToSet2, attributeToSet3],
+      );
+      await expect(tx).to.emit(nft, "BatchMetadataUpdate").withArgs(nftId1, nftId3);
+    });
+    it("After InitCompleted setNftAttributes reverts", async () => {
+      await nft.setInitCompleted();
+      await expect(nft.setNftAttributes([nftId1], [attributes1])).to.be.revertedWith("InitHasCompleted");
+    });
+  });
+
+  describe("Testing reward function", async () => {
+    let nftMinter1: SignerWithAddress;
+    let nftMinter2: SignerWithAddress;
+    let rewarder: SignerWithAddress;
+
+    let nftId1: number;
+    let nftId2: number;
+
+    before(async () => {
+      nftMinter1 = accounts[1];
+      nftMinter2 = accounts[2];
+      nftMinter3 = accounts[3];
+      rewarder = accounts[4];
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      await mineDays(12, network);
+
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
+    });
+
+    it("Should revert when reward function when account without Reward role calls it", async () => {
+      await expect(nft.connect(nftMinter1).reward(nftId1, 1)).to.be.revertedWith("RewarderRoleNotPresent");
+    });
+
+    it("Should revert when non-owner calls setRewarder role", async () => {
+      await expect(nft.connect(nftMinter1).setRewarder(rewarder.address, true)).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
+    });
+
+    it("Rewarder correctly does not have the role", async () => {
+      expect(await nft.isRewarder(rewarder.address)).to.be.equal(false);
+    });
+
+    it("Owner should be able to correctly set the rewarder role", async () => {
+      await nft.setRewarder(rewarder.address, true);
+      expect(await nft.isRewarder(rewarder.address)).to.be.equal(true);
+    });
+
+    it("Should emit RewarderSet event for the rewarder and its state", async () => {
+      const tx = await nft.setRewarder(rewarder.address, true);
+      await expect(tx).to.emit(nft, "RewarderSet").withArgs(rewarder.address, true);
+    });
+
+    it("Should revert when trying to reward an non-existent tokenId", async () => {
+      await expect(nft.connect(rewarder).reward(100, 1)).to.be.revertedWith("NftNotExists");
+    });
+
+    it("Should revert Reward function when not yet approved", async () => {
+      await expect(nft.connect(rewarder).reward(nftId1, 1)).to.be.revertedWith("ERC20: insufficient allowance");
+    });
+
+    it("Reward should correctly update the rewarder staked/shares/level", async () => {
+      await approveToken(network, workToken, rewarder, nft.address);
+      await nft.connect(rewarder).reward(nftId1, amount(600));
+      const staked = await nft.getStaked(nftId1, 0);
+      expect(staked[0]).to.be.equal(amount(600));
+      const nftInfo = await nft.getNftInfo(nftId1);
+      expect(nftInfo._staked).to.be.equal(amount(600));
+      expect(nftInfo._shares).to.be.equal(ethers.BigNumber.from(52));
+      expect(nftInfo._level).to.be.equal(1);
+      expect(nftInfo._tier).to.be.equal(0);
+    });
+
+    it("Reward should update all getNftInfo fields except the tier", async () => {
+      await mineDays(30, network);
+      const nftInfoBefore = await nft.getNftInfo(nftId2);
+      expect(nftInfoBefore._stakingAllowance).to.be.equal(amount(294 * 30 + 294));
+      expect(nftInfoBefore._tier).to.be.equal(0);
+      await nft.connect(rewarder).reward(nftId2, amount(11000));
+      const nftInfoAfter = await nft.getNftInfo(nftId2);
+      expect(nftInfoAfter._stakingAllowance).to.be.equal(0);
+      expect(nftInfoAfter._tier).to.be.equal(0);
+      expect(nftInfoAfter._level).to.be.equal(10);
+      expect(nftInfoAfter._shares).to.be.equal(ethers.BigNumber.from(63));
+      expect(nftInfoAfter._staked).to.be.equal(amount(11000));
+      const stakedMonth0 = (await nft.getStaked(nftId2, 0))[0];
+      expect(stakedMonth0).to.be.equal(BigNumber.from(0));
+      const stakedMonth1 = (await nft.getStaked(nftId2, 1))[0];
+      expect(stakedMonth1).to.be.equal(amount(11000));
+    });
+    it("Should revert when trying to stake after a large reward", async () => {
+      await expect(nft.connect(nftMinter2).stake(nftId2, amount(100))).to.be.revertedWith("AllowanceExceeded");
     });
   });
 });
