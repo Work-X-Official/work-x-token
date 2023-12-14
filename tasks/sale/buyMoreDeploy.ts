@@ -2,9 +2,9 @@ import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { STABLECOIN_ADDRESSES, STABLECOIN_NAMES, FUNDS_ADDRESSES } from "../constants/sale.constants";
 
-// example: yarn hardhat sale:deploy:buymore --network sepolia
+// example: yarn hardhat buymore:deploy --network sepolia
 
-task("sale:deploy:buymore").setAction(async function (_, hre) {
+task("buymore:deploy").setAction(async function (_, hre) {
   const stablecoinNames = <string[]>STABLECOIN_NAMES[hre.network.name as keyof typeof STABLECOIN_NAMES];
   const stablecoinAddresses = <string[]>STABLECOIN_ADDRESSES[hre.network.name as keyof typeof STABLECOIN_ADDRESSES];
   const workXFundsAddress = <string>FUNDS_ADDRESSES[hre.network.name as keyof typeof FUNDS_ADDRESSES];

@@ -677,10 +677,10 @@ describe("GenesisNftStaking", () => {
     });
 
     it("Cannot call stakeAndEvolve if you are not the owner", async () => {
-      await expect(nft.connect(nftMinter2).stakeAndEvolve(nftId1, amount(1000))).to.be.revertedWith("NotNftOwner");
+      await expect(nft.connect(nftMinter2).stakeAndEvolve(nftId1, amount(1000))).to.be.revertedWith("NftNotOwned");
     });
     it("Cannot call stakeAndEvolve before the nft startTime (except level 80 people)", async () => {
-      await expect(nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1))).to.be.revertedWith("ExceedsAllowance");
+      await expect(nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1))).to.be.revertedWith("AllowanceExceeded");
       // go to nft Starttime
       await mineDays(12, network);
     });

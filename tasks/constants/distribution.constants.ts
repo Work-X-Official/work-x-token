@@ -1,4 +1,4 @@
-export const SALE_DISTRIBUTION_ADDRESSES = {
+export const DISTRIBUTION_ADDRESSES = {
   goerli: "",
   sepolia: "0xCCe6Fd1799af8366E2fE5C112e39DB606Ef084B3",
   hardhat: "",
