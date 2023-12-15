@@ -24,7 +24,7 @@ describe("GenesisNftData", () => {
     });
 
     it("Test decodeAttributes", async () => {
-      const attributes = await nftData.decodeAttributes("0x0104050A1E000000000000".concat("0".repeat(42)));
+      const attributes = await nftData.decodeAttributes("0x0104050a1e000000000000".concat("0".repeat(42)));
       expect(attributes).to.eql([
         "Female",
         "Caramel",
