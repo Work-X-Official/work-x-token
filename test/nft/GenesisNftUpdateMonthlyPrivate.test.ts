@@ -55,7 +55,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
   /*****************************************************************************
    * The following tests are commented out because they test _updateMonthly    *
    * If you want to use them uncomment them and make _updateMonthly public     *
-
+   *****************************************************************************/
 
   describe("Private Functions: Update monthly staking balances for a tokenId", async () => {
     let nftMinter1: SignerWithAddress;
@@ -160,6 +160,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
       expect(nftInfoMonth.minimumStaked).to.be.equal(amount(1));
     });
   });
+
   describe("Private Functions: Update monthly staking balances, total and minimum", async () => {
     let nftMinter1: SignerWithAddress;
     let nftId1: number;
@@ -583,6 +584,5 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
       staked: ret[0],
       minimumStaked: ret[1],
     };
-    };
-     *****************************************************************************/
+  };
 });
