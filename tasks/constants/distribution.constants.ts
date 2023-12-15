@@ -1,6 +1,6 @@
 export const DISTRIBUTION_ADDRESSES = {
   goerli: "",
-  sepolia: "0xCCe6Fd1799af8366E2fE5C112e39DB606Ef084B3",
+  sepolia: "0x573F5d66bb818Ee49e3AaA9E3BE21aB0AED9FB6e",
   hardhat: "",
   kovan: "",
   mainnet: "0xCCe6Fd1799af8366E2fE5C112e39DB606Ef084B3",
@@ -12,5 +12,5 @@ export const DISTRIBUTION_ADDRESSES = {
   apothem: "",
   polygon: "",
   mumbai: "",
-  scrollSepolia: "0x873dFF5DB8BfFa293Ecc05Ce7be2B447912dDCc7",
+  scrollSepolia: "",
 };

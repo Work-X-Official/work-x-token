@@ -305,9 +305,9 @@ describe("GenesisNft", () => {
     it("Should revert on mint with an invalid signature", async () => {
       const failingSignature =
         "0x48e26ea2d47b73e8e058325bc0a1c29230d48b18ad04641394a678bf5dfc939b75603ffa49dc5973ca83433f3e07bc9816222a99511ef3047c441adadb8cbc1d1c";
-      await expect(
-        nft.connect(nftMinter1).mintNft(nftMinter1.address, 0, 0, 0, 0, failingSignature),
-      ).to.be.revertedWith("SignatureInvalid");
+      await expect(nft.connect(nftMinter1).mintNft(0, 0, 0, 0, failingSignature)).to.be.revertedWith(
+        "SignatureInvalid",
+      );
     });
 
     it("Should revert when trying to read the tokenURI of a non existing token", async () => {
@@ -783,7 +783,7 @@ describe("GenesisNft", () => {
       await expect(
         await nft
           .connect(ownerNft6)
-          .mintNft(ownerNft6.address, voucher.voucherId, 0, amount(0), voucher.lockPeriod, voucher.voucherSignature),
+          .mintNft(voucher.voucherId, 0, amount(0), voucher.lockPeriod, voucher.voucherSignature),
       )
         .to.emit(nft, "Transfer")
         .withArgs(ethers.constants.AddressZero, ownerNft6.address, nftId6);
@@ -795,7 +795,7 @@ describe("GenesisNft", () => {
 
     it("Check that the voucher cannot be used again", async () => {
       await expect(
-        nft.connect(ownerNft7).mintNft(ownerNft6.address, voucher.voucherId, 0, 0, 0, voucher.voucherSignature),
+        nft.connect(ownerNft6).mintNft(voucher.voucherId, 0, 0, 0, voucher.voucherSignature),
       ).to.be.revertedWith("AccountMintedPreviously");
     });
 
@@ -1083,11 +1083,10 @@ describe("GenesisNft", () => {
       const attributeToSet1 = "0x0101010101000000000000".concat("0".repeat(42));
       const attributeToSet2 = "0x0202020202000000000000".concat("0".repeat(42));
       const attributeToSet3 = "0x0303030303000000000000".concat("0".repeat(42));
-      const tx = await nft.setNftAttributes(
-        [nftId1, nftId2, nftId3],
-        [attributeToSet1, attributeToSet2, attributeToSet3],
-      );
-      await expect(tx).to.emit(nft, "BatchMetadataUpdate").withArgs(nftId1, nftId3);
+      await nft.setNftAttributes([nftId1, nftId2, nftId3], [attributeToSet1, attributeToSet2, attributeToSet3]);
+
+      const tx = await nft.setInitCompleted();
+      await expect(tx).to.emit(nft, "BatchMetadataUpdate").withArgs(0, 999);
     });
 
     it("After InitCompleted setNftAttributes reverts", async () => {
@@ -1148,7 +1147,7 @@ describe("GenesisNft", () => {
       await expect(nft.connect(rewarder).reward(nftId1, 1)).to.be.revertedWith("ERC20: insufficient allowance");
     });
 
-    it("reward should correctly update the rewarder staked/shares/level", async () => {
+    it("Reward should correctly update the rewarder staked/shares/level", async () => {
       await approveToken(network, workToken, rewarder, nft.address);
       await nft.connect(rewarder).reward(nftId1, amount(600));
       const staked = await nft.getStaked(nftId1, 0);
@@ -1177,6 +1176,7 @@ describe("GenesisNft", () => {
       const stakedMonth1 = (await nft.getStaked(nftId2, 1))[0];
       expect(stakedMonth1).to.be.equal(amount(11000));
     });
+
     it("Should revert when trying to stake after a large reward", async () => {
       await expect(nft.connect(nftMinter2).stake(nftId2, amount(100))).to.be.revertedWith("AllowanceExceeded");
     });
