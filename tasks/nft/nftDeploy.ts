@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
 import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
-import { WorkToken } from "../../typings";
+import { TokenDistribution, WorkToken } from "../../typings";
 
 // deploys a contract and sets who can sign vouchers and set grants the token distribution contract the right to mint tokens, which is needed for the NFT mint.
 // example:
@@ -12,7 +12,9 @@ task("nft:deploy").setAction(async (_, hre) => {
   const workToken: WorkToken = (await hre.ethers.getContractFactory("WorkToken")).attach(
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
-  const tokenDistributionAddress = DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES];
+  const distribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
+    DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+  );
   const [deployer] = await hre.ethers.getSigners();
   let nftVoucherSigner;
   if (process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) {
@@ -49,7 +51,7 @@ task("nft:deploy").setAction(async (_, hre) => {
       "Work X Genesis NFT",
       "Work X Genesis NFT",
       workToken.address,
-      tokenDistributionAddress,
+      distribution.address,
       nftData.address,
       nftVoucherSigner.address,
     );
@@ -64,8 +66,11 @@ task("nft:deploy").setAction(async (_, hre) => {
 
   const roletx = await workToken.grantRole(await workToken.MINTER_ROLE(), nft.address);
   await roletx.wait();
-
   console.log("║ The GenesisNft was granted the MINTER_ROLE by the WorkToken contract");
+  const roletxx = await distribution.grantRole(await distribution.NFT_ROLE(), nft.address);
+  await roletxx.wait();
+  console.log("║ The GenesisNft was granted the NFT_ROLE by the TokenDistribution contract");
+  console.log("║");
   await hre.run("verify:verify", {
     contract: "contracts/nft/GenesisNft.sol:GenesisNft",
     address: nft.address,
@@ -73,7 +78,7 @@ task("nft:deploy").setAction(async (_, hre) => {
       "Work X Genesis NFT",
       "Work X Genesis NFT",
       workToken.address,
-      tokenDistributionAddress,
+      distribution.address,
       nftData.address,
       nftVoucherSigner.address,
     ],

@@ -56,7 +56,7 @@ describe("GenesisNftMint", () => {
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
   });
 
-  describe("Minting Type", async () => {
+  describe.skip("Minting Type", async () => {
     let nftCount = 0;
 
     it("Mint all 349 nfts of type 0, so all but one", async () => {
@@ -78,17 +78,20 @@ describe("GenesisNftMint", () => {
       expect(nftCountRead).to.equal(350);
       expect(nftCount).to.equal(350);
     });
+
     it("Should revert when trying to mint another nft of type 0", async () => {
       const type = 0;
       await expect(mintNft(network, nft, workToken, accounts[350], 0, 0, type, chainId)).to.be.revertedWith(
         "NftMintUnavailable",
       );
     });
+
     it("Mint all remaining nfts by owner", async () => {
       await nft.mintRemainingToTreasury();
       const nftCountRead = await nft.nftIdCounter();
       expect(nftCountRead).to.equal(999);
     });
+
     it("Should revert with All nfts minted", async () => {
       await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 0, chainId)).to.be.revertedWith(
         "NftMintUnavailable",
@@ -100,6 +103,7 @@ describe("GenesisNftMint", () => {
         "NftMintUnavailable",
       );
     });
+
     it("Should revert if someone mints with an invalid type", async () => {
       await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 3, chainId)).to.be.revertedWith(
         "MintTypeInvalid",

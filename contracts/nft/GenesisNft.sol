@@ -146,7 +146,6 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert InitHasCompleted();
         }
         imageFolder = _folder;
-        emit BatchMetadataUpdate(0, NFT_MAX_AMOUNT);
         emit IpfsFolderChanged(_folder);
     }
 
@@ -157,6 +156,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     function setInitCompleted() external onlyOwner {
         initCompleted = 1;
         emit InitCompleted();
+        emit BatchMetadataUpdate(0, NFT_MAX_AMOUNT);
     }
 
     /**
@@ -177,7 +177,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
-        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
+        // emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
     }
 
     /**
@@ -222,7 +222,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert StartTimeInvalid();
         }
         for (uint256 i = nftIdCounter + 1; i <= NFT_MAX_AMOUNT; i++) {
-            _mint(owner(), i);
+            _mint(msg.sender, i);
         }
 
         emit RemainingToTreasuryMinted(NFT_MAX_AMOUNT - nftIdCounter);
@@ -277,7 +277,6 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         } else {
             revert MintTypeInvalid();
         }
-
 
         accountMinted[msg.sender] = true;
 
@@ -506,7 +505,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _amount The amount of tokens staked.
      * @param _amount The month at which we are looking.
      **/
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) public {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) private {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
@@ -651,7 +650,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
                 shares,
                 _nft.encodedAttributes,
                 _nft.lockPeriod + startTime,
-                startTime,
+                initCompleted,
                 string.concat(imageBaseURI, imageFolder, "/")
             );
     }
@@ -800,8 +799,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         uint256 accumulatedAllowance = (((((block.timestamp - startTime) / 1 days) * DAILY_STAKING_ALLOWANCE) +
             DAILY_STAKING_ALLOWANCE) * ONE_E18);
         NftInfo storage _nft = nft[_tokenId];
-        if (accumulatedAllowance + _nft.stakedAtMint > _staked) {
-            stakingAllowance = accumulatedAllowance + _nft.stakedAtMint - _staked;
+        uint256 allowance = accumulatedAllowance + _nft.stakedAtMint;
+        if (allowance > _staked) {
+            stakingAllowance = allowance - _staked;
         } else {
             return 0;
         }
