@@ -222,7 +222,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert StartTimeInvalid();
         }
         for (uint256 i = nftIdCounter + 1; i <= NFT_MAX_AMOUNT; i++) {
-            _mint(owner(), i);
+            _mint(msg.sender, i);
         }
 
         emit RemainingToTreasuryMinted(NFT_MAX_AMOUNT - nftIdCounter);
@@ -278,7 +278,6 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert MintTypeInvalid();
         }
 
-
         accountMinted[msg.sender] = true;
 
         if (_amountToStake > 0) {
@@ -292,7 +291,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         uint256 newCounter = oldCounter + 1;
         nftIdCounter = uint16(newCounter);
         uint128 amountToStake = uint128(_amountToStake);
-        
+
         NftInfo storage _nft = nft[newCounter];
         _nft.voucherId = uint16(_voucherId);
         _nft.lockPeriod = uint64(_lockPeriod);
@@ -506,7 +505,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _amount The amount of tokens staked.
      * @param _amount The month at which we are looking.
      **/
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) public {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) private {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
@@ -800,8 +799,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         uint256 accumulatedAllowance = (((((block.timestamp - startTime) / 1 days) * DAILY_STAKING_ALLOWANCE) +
             DAILY_STAKING_ALLOWANCE) * ONE_E18);
         NftInfo storage _nft = nft[_tokenId];
-        if (accumulatedAllowance + _nft.stakedAtMint > _staked) {
-            stakingAllowance = accumulatedAllowance + _nft.stakedAtMint - _staked;
+        uint256 allowance = accumulatedAllowance + _nft.stakedAtMint;
+        if (allowance > _staked) {
+            stakingAllowance = allowance - _staked;
         } else {
             return 0;
         }
