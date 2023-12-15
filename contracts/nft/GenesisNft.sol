@@ -292,7 +292,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         uint256 newCounter = oldCounter + 1;
         nftIdCounter = uint16(newCounter);
         uint128 amountToStake = uint128(_amountToStake);
-        
+
         NftInfo storage _nft = nft[newCounter];
         _nft.voucherId = uint16(_voucherId);
         _nft.lockPeriod = uint64(_lockPeriod);
@@ -506,7 +506,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _amount The amount of tokens staked.
      * @param _amount The month at which we are looking.
      **/
-    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) private {
+    function _updateMonthly(uint256 _tokenId, bool _isIncreasingStake, uint256 _amount, uint256 _month) public {
         NftInfo storage _nft = nft[_tokenId];
         NftInfoMonth storage _nftMonthToSet = _nft.monthly[_month];
         NftTotalMonth storage _totalToSet = monthlyTotal[_month];
