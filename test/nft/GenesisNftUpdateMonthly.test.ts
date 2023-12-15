@@ -103,16 +103,16 @@ describe("GenesisNftUpdateMonthly", () => {
     });
 
     it("In month 0, day 0, nftMinter1 will try to unstake 50 but fail", async () => {
-      await expect(nft.connect(nftMinter1).unstake(nftId1, amount(50))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter1).unstake(nftId1, amount(50))).to.be.revertedWith("UnstakeAmountNotAllowed");
     });
 
     it("In month 1, day 30, nftMinter2 tries to unstake but fails", async () => {
       await mineDays(30, network);
-      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(1000))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(1000))).to.be.revertedWith("UnstakeAmountNotAllowed");
     });
 
     it("In month 1, day 30, nftMinter3 unstakes 500 and fails", async () => {
-      await expect(nft.connect(nftMinter3).unstake(nftId3, amount(500))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter3).unstake(nftId3, amount(500))).to.be.revertedWith("UnstakeAmountNotAllowed");
     });
 
     it("In month 1, nftMinter1 will stake 2800", async () => {
@@ -335,9 +335,7 @@ describe("GenesisNftUpdateMonthly", () => {
 
     it("In month 39, nftMinter1 will destroy", async () => {
       await nft.connect(nftMinter1).destroyNft(nftId1);
-      const nftInfoMonth = await getNftInfoAtMonth(nftId1, 39);
-      expect(nftInfoMonth.staked).to.be.equal(amount(0));
-      expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
+      await expect(getNftInfoAtMonth(nftId1, 39)).to.be.revertedWith("NftNotExists");
       const totals = await nft.getTotals(39);
       expect(totals._totalBalance).to.be.equal(amount(332600));
       expect(totals._minimumBalance).to.be.equal(amount(32600));
@@ -346,9 +344,7 @@ describe("GenesisNftUpdateMonthly", () => {
     it("In Month 40, nftMinter2 will will destroy", async () => {
       await mineDays(30, network);
       await nft.connect(nftMinter2).destroyNft(nftId2);
-      const nftInfoMonth = await getNftInfoAtMonth(nftId2, 40);
-      expect(nftInfoMonth.staked).to.be.equal(amount(0));
-      expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
+      await expect(getNftInfoAtMonth(nftId2, 40)).to.be.revertedWith("NftNotExists");
       const totals = await nft.getTotals(40);
       expect(totals._totalBalance).to.be.equal(amount(174000));
       expect(totals._minimumBalance).to.be.equal(amount(174000));
@@ -432,9 +428,7 @@ describe("GenesisNftUpdateMonthly", () => {
     it("In month 2, day 60, nftMinter 2 destroys", async () => {
       await mineDays(30, network);
       await nft.connect(nftMinter2).destroyNft(nftId2);
-      const nftInfoMonth = await getNftInfoAtMonth(nftId2, 2);
-      expect(nftInfoMonth.staked).to.be.equal(amount(0));
-      expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
+      await expect(getNftInfoAtMonth(nftId2, 2)).to.be.revertedWith("NftNotExists");
       const totals = await nft.getTotals(2);
       expect(totals._totalBalance).to.be.equal(amount(319000));
       expect(totals._minimumBalance).to.be.equal(amount(319000));
@@ -453,9 +447,7 @@ describe("GenesisNftUpdateMonthly", () => {
 
     it("In month 3, day 90, nftMinter1 destroys", async () => {
       await nft.connect(nftMinter1).destroyNft(nftId1);
-      const nftInfoMonth = await getNftInfoAtMonth(nftId1, 3);
-      expect(nftInfoMonth.staked).to.be.equal(amount(0));
-      expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
+      await expect(getNftInfoAtMonth(nftId1, 3)).to.be.revertedWith("NftNotExists");
       const totals = await nft.getTotals(3);
       expect(totals._totalBalance).to.be.equal(amount(159000));
       expect(totals._minimumBalance).to.be.equal(amount(159000));
@@ -520,28 +512,26 @@ describe("GenesisNftUpdateMonthly", () => {
       await mineDays(30, network);
       const amountMoreThanUint128 = ethers.BigNumber.from("2").pow(129);
       await expect(nft.connect(nftMinter2).unstake(nftId2, amountMoreThanUint128)).to.be.revertedWith(
-        "UnableToUnstakeAmount",
+        "UnstakeAmountNotAllowed",
       );
     });
 
     it("In month 2, day 60, nftMinter2 unstakes all tokens should revert", async () => {
-      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(161000))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(161000))).to.be.revertedWith(
+        "UnstakeAmountNotAllowed",
+      );
     });
 
     it("In month 2, day 60, nftMinter1 destroys", async () => {
       await nft.connect(nftMinter1).destroyNft(nftId1);
-      const nftInfoMonth = await getNftInfoAtMonth(nftId1, 2);
-      expect(nftInfoMonth.staked).to.be.equal(amount(0));
-      expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
+      await expect(getNftInfoAtMonth(nftId1, 2)).to.be.revertedWith("NftNotExists");
       const totals = await nft.getTotals(2);
       expect(totals._totalBalance).to.be.equal(amount(320000));
       expect(totals._minimumBalance).to.be.equal(amount(320000));
     });
     it("In month 2, day 60, nftMinter2 destroys", async () => {
       await nft.connect(nftMinter2).destroyNft(nftId2);
-      const nftInfoMonth = await getNftInfoAtMonth(nftId2, 2);
-      expect(nftInfoMonth.staked).to.be.equal(amount(0));
-      expect(nftInfoMonth.minimumStaked).to.be.equal(amount(0));
+      await expect(getNftInfoAtMonth(nftId2, 2)).to.be.revertedWith("NftNotExists");
       const totals = await nft.getTotals(2);
       expect(totals._totalBalance).to.be.equal(amount(160000));
       expect(totals._minimumBalance).to.be.equal(amount(160000));
