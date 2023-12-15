@@ -146,7 +146,6 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert InitHasCompleted();
         }
         imageFolder = _folder;
-        emit BatchMetadataUpdate(0, NFT_MAX_AMOUNT);
         emit IpfsFolderChanged(_folder);
     }
 
@@ -157,6 +156,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     function setInitCompleted() external onlyOwner {
         initCompleted = 1;
         emit InitCompleted();
+        emit BatchMetadataUpdate(0, NFT_MAX_AMOUNT);
     }
 
     /**
@@ -177,7 +177,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
-        emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
+        // emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
     }
 
     /**
@@ -650,7 +650,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
                 shares,
                 _nft.encodedAttributes,
                 _nft.lockPeriod + startTime,
-                startTime,
+                initCompleted,
                 string.concat(imageBaseURI, imageFolder, "/")
             );
     }
