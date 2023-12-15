@@ -16,6 +16,7 @@ describe("GenesisNftData", () => {
     const nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", accounts[0])).deploy();
     nftData = await (await ethers.getContractFactory("GenesisNftData", accounts[0])).deploy(nftAttributes.address);
   });
+
   describe("Test Encoding", () => {
     it("Test splitBytes", async () => {
       const result = await nftData.splitBytes("0x0104050A320000000C09580000000000");

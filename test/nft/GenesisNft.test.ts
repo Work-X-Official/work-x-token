@@ -49,7 +49,7 @@ config();
 
 chai.use(solidity);
 
-describe.only("GenesisNft", () => {
+describe("GenesisNft", () => {
   let nft: GenesisNft;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
