@@ -510,7 +510,7 @@ describe("GenesisNftUpdateMonthlyPrivate", () => {
     });
     it("In month 8, nftMinter1 unstake 1500 should revert because only has 1000", async () => {
       await expect(nft.connect(nftMinter1)._updateMonthly(nftId1, false, amount(1500), 8)).to.be.revertedWith(
-        "UnableToUnstakeAmount",
+        "UnstakeAmountNotAllowed",
       );
     });
     it("In month 8, nftMinter1 unstakes 500", async () => {

@@ -103,16 +103,16 @@ describe("GenesisNftUpdateMonthly", () => {
     });
 
     it("In month 0, day 0, nftMinter1 will try to unstake 50 but fail", async () => {
-      await expect(nft.connect(nftMinter1).unstake(nftId1, amount(50))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter1).unstake(nftId1, amount(50))).to.be.revertedWith("UnstakeAmountNotAllowed");
     });
 
     it("In month 1, day 30, nftMinter2 tries to unstake but fails", async () => {
       await mineDays(30, network);
-      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(1000))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(1000))).to.be.revertedWith("UnstakeAmountNotAllowed");
     });
 
     it("In month 1, day 30, nftMinter3 unstakes 500 and fails", async () => {
-      await expect(nft.connect(nftMinter3).unstake(nftId3, amount(500))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter3).unstake(nftId3, amount(500))).to.be.revertedWith("UnstakeAmountNotAllowed");
     });
 
     it("In month 1, nftMinter1 will stake 2800", async () => {
@@ -520,12 +520,14 @@ describe("GenesisNftUpdateMonthly", () => {
       await mineDays(30, network);
       const amountMoreThanUint128 = ethers.BigNumber.from("2").pow(129);
       await expect(nft.connect(nftMinter2).unstake(nftId2, amountMoreThanUint128)).to.be.revertedWith(
-        "UnableToUnstakeAmount",
+        "UnstakeAmountNotAllowed",
       );
     });
 
     it("In month 2, day 60, nftMinter2 unstakes all tokens should revert", async () => {
-      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(161000))).to.be.revertedWith("UnableToUnstakeAmount");
+      await expect(nft.connect(nftMinter2).unstake(nftId2, amount(161000))).to.be.revertedWith(
+        "UnstakeAmountNotAllowed",
+      );
     });
 
     it("In month 2, day 60, nftMinter1 destroys", async () => {
