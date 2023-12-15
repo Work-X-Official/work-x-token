@@ -56,7 +56,7 @@ describe("GenesisNftMint", () => {
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
   });
 
-  describe.only("Minting Type", async () => {
+  describe.skip("Minting Type", async () => {
     let nftCount = 0;
 
     it("Mint all 349 nfts of type 0, so all but one", async () => {

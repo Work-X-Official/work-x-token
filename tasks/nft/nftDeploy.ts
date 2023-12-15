@@ -66,11 +66,11 @@ task("nft:deploy").setAction(async (_, hre) => {
 
   const roletx = await workToken.grantRole(await workToken.MINTER_ROLE(), nft.address);
   await roletx.wait();
-
+  console.log("║ The GenesisNft was granted the MINTER_ROLE by the WorkToken contract");
   const roletxx = await distribution.grantRole(await distribution.NFT_ROLE(), nft.address);
   await roletxx.wait();
-
-  console.log("║ The GenesisNft was granted the MINTER_ROLE by the WorkToken contract");
+  console.log("║ The GenesisNft was granted the NFT_ROLE by the TokenDistribution contract");
+  console.log("║");
   await hre.run("verify:verify", {
     contract: "contracts/nft/GenesisNft.sol:GenesisNft",
     address: nft.address,
