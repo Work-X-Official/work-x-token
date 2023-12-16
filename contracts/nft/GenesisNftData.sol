@@ -336,11 +336,11 @@ contract GenesisNftData {
         uint256 _shares,
         bytes32 _encodedAttributes,
         uint256 _unlockTime,
-        uint256 _startTime,
+        uint256 _initCompleted,
         string calldata _imageUri
     ) external view returns (string memory) {
         string[11] memory attr;
-        if (_startTime < block.timestamp) {
+        if (_initCompleted > 0) {
             attr = decodeAttributes(_encodedAttributes);
         } else {
             attr = ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"];

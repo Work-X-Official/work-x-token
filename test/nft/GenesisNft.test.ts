@@ -104,6 +104,7 @@ describe("GenesisNft", () => {
     let nftAttributes: GenesisNftAttributes;
     let nftData: GenesisNftData;
     let nftFactory: GenesisNft__factory;
+
     before(async () => {
       nftAttributes = await (await ethers.getContractFactory("GenesisNftAttributes", signerImpersonated)).deploy();
       nftData = await (
@@ -150,6 +151,7 @@ describe("GenesisNft", () => {
         ),
       ).to.be.revertedWith("AddressInvalid");
     });
+
     it("Should revert with Invalid Address error when the nftVoucherSigner address is 0x0", async () => {
       await expect(
         nftFactory.deploy(
@@ -166,14 +168,17 @@ describe("GenesisNft", () => {
 
   describe("Testing setStarttime", async () => {
     let startTimeNew = 0;
+
     it("Should revert when starttime is in the past", async () => {
       await expect(nft.setStartTime(0)).to.be.revertedWith("StartTimeInvalid");
     });
+
     it("Should be able to change the starttime to days from now", async () => {
       startTimeNew = (await ethers.provider.getBlock("latest")).timestamp + 10 * 86400;
       await nft.setStartTime(startTimeNew);
       expect(await nft.startTime()).to.equal(startTimeNew);
     });
+
     it("Mine 10 days, should not be able to change after start", async () => {
       await mineDays(10, network);
       await expect(nft.setStartTime(startTimeNew)).to.be.revertedWith("StartTimeInvalid");
@@ -233,7 +238,7 @@ describe("GenesisNft", () => {
         expect(lockTimePresale).to.equal(VESTING_LENGHT_PRESALE_MONTHS * (2 / 3));
       });
 
-      it("Should return 2/3 of full vesting when you stake all your tokens but it is less then the minimum requirement.", () => {
+      it("Should return 2/3 of full vesting when you stake all your tokens but it is less then the minimum requirement", () => {
         const smallInvestment: Investment = { ...zeroInv, seed: 50, seedPool: 50 };
         const amountTokensBought = calculateAmountBoughtTotal(smallInvestment);
         expect(amountTokensBought).to.be.below(MIN_TOKEN_STAKING);
@@ -242,7 +247,7 @@ describe("GenesisNft", () => {
         expect(lockTimeSeed).to.equal(VESTING_LENGHT_SEED_MONTHS * (2 / 3));
       });
 
-      it("Should return full vesting when the minimum requirement plus all buyMore tokens are staked.", () => {
+      it("Should return full vesting when the minimum requirement plus all buyMore tokens are staked", () => {
         const buyMoreTokens = calculateBuyMoreTokenBalance(1000);
         const investment: Investment = { ...zeroInv, priv: 10000, privPool: 10000, buyMore: 1000 };
         const lockTimeSeed = nftLockTimeByStake(buyMoreTokens + MIN_TOKEN_STAKING, investment);
@@ -304,9 +309,11 @@ describe("GenesisNft", () => {
         "SignatureInvalid",
       );
     });
+
     it("Should revert when trying to read the tokenURI of a non existing token", async () => {
       await expect(nft.tokenURI(1)).to.be.revertedWith("NftNotExists");
     });
+
     it("Mint an nft", async () => {
       ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
     });
@@ -541,6 +548,7 @@ describe("GenesisNft", () => {
   describe("Staking allowance", async () => {
     let ownerNft4: SignerWithAddress;
     let nftId4: number;
+
     before(async () => {
       ownerNft4 = accounts[4];
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
@@ -589,6 +597,7 @@ describe("GenesisNft", () => {
   describe("Unstake when the NFT is at max level", async () => {
     let ownerNft5: SignerWithAddress;
     let nftId5: number;
+
     before(async () => {
       ownerNft5 = accounts[5];
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
@@ -608,7 +617,6 @@ describe("GenesisNft", () => {
       await expect(nft.connect(ownerNft5).unstake(nftId5, amount(DAILY_STAKING_ALLOWANCE))).to.be.revertedWith(
         "UnstakeAmountNotAllowed",
       );
-
       // stake more and become lvl 2.
       await nft.connect(ownerNft5).stake(nftId5, amount(511));
       // currently staked 250+294+512 = 1056
@@ -617,6 +625,7 @@ describe("GenesisNft", () => {
         "UnstakeAmountNotAllowed",
       );
     });
+
     // 2. failing to unstake exact maximum amount + 1 when you are max level.
     it("Fail to unstake exact maximum amount + 1 when the NFT is max level", async () => {
       // we will stake extra to become lvl 10 with 5580 staked tokens
@@ -869,7 +878,7 @@ describe("GenesisNft", () => {
       expect((await nft.getTotals(2))._totalShares).to.be.equal(63 + 63 + 51 + 51);
     });
 
-    it("NFT 2 will become level 10, like NFT 1 and then NFT 2 will be destroyed", async () => {
+    it("Nft 2 will become level 10, like NFT 1 and then NFT 2 will be destroyed", async () => {
       await mineDays(40, network);
       await approveToken(network, workToken, nftMinter8, nft.address);
       await nft.connect(nftMinter8).stake(2, amount(10000));
@@ -936,7 +945,7 @@ describe("GenesisNft", () => {
       expect(totalSharesAfter).to.be.gt(totalSharesBefore);
     });
 
-    it("Stake should not increase shares total, if you are already at max level.", async () => {
+    it("Stake should not increase shares total, if you are already at max level", async () => {
       const _nft1 = await nft.getNftInfo(nftId4);
       expect(_nft1._level).to.be.equal(20);
       const totalSharesBefore = (await nft.getTotals(currentMonth))._totalShares;
@@ -990,6 +999,7 @@ describe("GenesisNft", () => {
       });
     });
   });
+
   describe("Testing setNftAttributes", async () => {
     let nftMinter1: SignerWithAddress;
     let nftMinter2: SignerWithAddress;
@@ -1032,12 +1042,14 @@ describe("GenesisNft", () => {
       expect(attributes2).to.be.equal(ethers.utils.formatBytes32String(""));
       expect(attributes3).to.be.equal(ethers.utils.formatBytes32String(""));
     });
+
     it("setNftAttributes reverts when non contract owner calls it", async () => {
       const attributeToSet = "0x0104050a1e000000000000".concat("0".repeat(42));
       await expect(nft.connect(nftMinter1).setNftAttributes([nftId1], [attributeToSet])).to.be.revertedWith(
         "Ownable: caller is not the owner",
       );
     });
+
     it("setNftAttributes can be correctly set with attributes for one nft", async () => {
       const attributeToSet = "0x0104050a1e000000000000".concat("0".repeat(42));
       await nft.setNftAttributes([nftId1], [attributeToSet]);
@@ -1045,6 +1057,7 @@ describe("GenesisNft", () => {
       attributes1 = nftInfo1.encodedAttributes;
       expect(attributes1).to.be.equal(attributeToSet);
     });
+
     it("setNftAttributes can be correctly set for array of three nfts", async () => {
       const attributeToSet1 = "0x0101010101000000000000".concat("0".repeat(42));
       const attributeToSet2 = "0x0202020202000000000000".concat("0".repeat(42));
@@ -1065,16 +1078,17 @@ describe("GenesisNft", () => {
       expect(attributes3).to.be.equal(attributeToSet3);
       expect(attributes4).to.be.equal(ethers.utils.formatBytes32String(""));
     });
+
     it("The batch event is emitted that checks the correct tokenIds", async () => {
       const attributeToSet1 = "0x0101010101000000000000".concat("0".repeat(42));
       const attributeToSet2 = "0x0202020202000000000000".concat("0".repeat(42));
       const attributeToSet3 = "0x0303030303000000000000".concat("0".repeat(42));
-      const tx = await nft.setNftAttributes(
-        [nftId1, nftId2, nftId3],
-        [attributeToSet1, attributeToSet2, attributeToSet3],
-      );
-      await expect(tx).to.emit(nft, "BatchMetadataUpdate").withArgs(nftId1, nftId3);
+      await nft.setNftAttributes([nftId1, nftId2, nftId3], [attributeToSet1, attributeToSet2, attributeToSet3]);
+
+      const tx = await nft.setInitCompleted();
+      await expect(tx).to.emit(nft, "BatchMetadataUpdate").withArgs(0, 999);
     });
+
     it("After InitCompleted setNftAttributes reverts", async () => {
       await nft.setInitCompleted();
       await expect(nft.setNftAttributes([nftId1], [attributes1])).to.be.revertedWith("InitHasCompleted");
@@ -1162,6 +1176,7 @@ describe("GenesisNft", () => {
       const stakedMonth1 = (await nft.getStaked(nftId2, 1))[0];
       expect(stakedMonth1).to.be.equal(amount(11000));
     });
+
     it("Should revert when trying to stake after a large reward", async () => {
       await expect(nft.connect(nftMinter2).stake(nftId2, amount(100))).to.be.revertedWith("AllowanceExceeded");
     });
