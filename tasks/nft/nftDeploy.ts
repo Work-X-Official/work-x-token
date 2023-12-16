@@ -71,18 +71,18 @@ task("nft:deploy").setAction(async (_, hre) => {
   await roletxx.wait();
   console.log("║ The GenesisNft was granted the NFT_ROLE by the TokenDistribution contract");
   console.log("║");
-  await hre.run("verify:verify", {
-    contract: "contracts/nft/GenesisNft.sol:GenesisNft",
-    address: nft.address,
-    constructorArguments: [
-      "Work X Genesis NFT",
-      "Work X Genesis NFT",
-      workToken.address,
-      distribution.address,
-      nftData.address,
-      nftVoucherSigner.address,
-    ],
-  });
+  // await hre.run("verify:verify", {
+  //   contract: "contracts/nft/GenesisNft.sol:GenesisNft",
+  //   address: nft.address,
+  //   constructorArguments: [
+  //     "Work X Genesis NFT",
+  //     "Work X Genesis NFT",
+  //     workToken.address,
+  //     distribution.address,
+  //     nftData.address,
+  //     nftVoucherSigner.address,
+  //   ],
+  // });
   console.log("║");
   console.log("║ The Genesis NFT contract has been verified.");
   console.log("╚══════════════════════════════════════════════════════════════════════");

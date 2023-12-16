@@ -24,7 +24,7 @@ describe("GenesisNftData", () => {
     });
 
     it("Test decodeAttributes", async () => {
-      const attributes = await nftData.decodeAttributes("0x0104050a1e000000000000".concat("0".repeat(42)));
+      const attributes = await nftData.decodeAttributes("0x0104050a1e000000000000".concat("0".repeat(42)), 1);
       expect(attributes).to.eql([
         "Female",
         "Caramel",
@@ -38,6 +38,11 @@ describe("GenesisNftData", () => {
         "None",
         "Business Suit",
       ]);
+    });
+
+    it("Test decodeAttributes not initialized", async () => {
+      const attributes = await nftData.decodeAttributes("0x0104050a1e000000000000".concat("0".repeat(42)), 0);
+      expect(attributes).to.eql(["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"]);
     });
   });
 

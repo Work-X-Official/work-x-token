@@ -60,7 +60,7 @@ export const _mintNft = async (
     chainId,
   );
 
-  const tokenId = (await nft.nftIdCounter()) + 1;
+  const tokenId = await nft.nftIdCounter();
 
   await expect(
     await nft

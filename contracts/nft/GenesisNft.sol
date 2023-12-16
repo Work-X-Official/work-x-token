@@ -43,21 +43,21 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     uint256 private constant TYPE_FCFS = 1;
     uint256 private constant TYPE_INV = 2;
     uint256 public constant DAILY_STAKING_ALLOWANCE = 294;
-    uint256 private constant COUNT_GUAR = 350;
+    uint256 private constant COUNT_GUAR = 400;
     uint256 private constant COUNT_FCFS = 150;
-    uint256 private constant COUNT_INV = 499;
+    uint256 private constant COUNT_INV = 449;
     uint256 private constant ONE_E18 = 10 ** 18;
 
     uint128 public startTime;
     uint16 public nftIdCounter;
-    uint8 public initCompleted = 0;
+    uint8 public initCompleted;
 
     string private imageFolder = "ipfs://QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b/";
     address public voucherSigner;
 
     mapping(address => bool) public accountMinted;
     mapping(address => bool) public isRewarder;
-    mapping(uint256 => NftTotalMonth) public monthlyTotal; // change to uint256
+    mapping(uint256 => NftTotalMonth) public monthlyTotal;
     struct NftTotalMonth {
         uint32 totalShares;
         uint128 totalStaked;
@@ -174,7 +174,6 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         for (uint256 id = 0; id < _tokenId.length; id++) {
             nft[_tokenId[id]].encodedAttributes = _encodedAttributes[id];
         }
-        // emit BatchMetadataUpdate(_tokenId[0], _tokenId[0] + _tokenId.length - 1);
     }
 
     /**
@@ -218,7 +217,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         if (startTime <= block.timestamp) {
             revert StartTimeInvalid();
         }
-        for (uint256 i = nftIdCounter + 1; i <= NFT_MAX_AMOUNT; i++) {
+        for (uint256 i = nftIdCounter; i < NFT_MAX_AMOUNT; i++) {
             _mint(msg.sender, i);
         }
 
@@ -234,7 +233,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @notice The function mintNft mints the Work X GenesisNft and mints an amount of tokens into the NFT these tokens are locked for a certain amount of time but the NFT is freely tradable.
      *  A voucher is constructed by Work X backend and only callers with a valid voucher can mint the NFT.
      * @dev Before giving out vouchers the tokenDistribution startTime has to be set, otherwise the tokens will not be locked correctly.
-     * @param _voucherId The id of the voucher that will be used to mint the NFT, each voucher can only be used once for an NFT with a tokenID.
+     * @param _voucherId The id of the voucher that will be used to mint the NFT.
      * @param _type The id of the minting type.
      * @param _lockPeriod The amount of time that the tokens will be locked in the NFT from the startTime of the distribution contract.
      * @param _amountToStake The amount of tokens that will be staked into the minted NFT.
@@ -285,11 +284,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             }
         }
 
-        uint256 newCounter = oldCounter + 1;
-        nftIdCounter = uint16(newCounter);
         uint128 amountToStake = uint128(_amountToStake);
 
-        NftInfo storage _nft = nft[newCounter];
+        NftInfo storage _nft = nft[oldCounter];
         _nft.voucherId = uint16(_voucherId);
         _nft.lockPeriod = uint64(_lockPeriod);
         _nft.stakedAtMint = amountToStake;
@@ -308,17 +305,17 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         totalMonthly.totalStaked += amountToStake;
         totalMonthly.totalShares += uint16(shares);
 
+        nftIdCounter = uint16(oldCounter + 1);
         if (_amountToStake > 0) {
             token.mint(address(this), uint256(amountToStake));
         }
-        _safeMint(msg.sender, newCounter);
+        _safeMint(msg.sender, oldCounter);
     }
 
     /**
      * @notice The function destroyNft destroys your NFT and gives you back the tokens in that NFT. Your "Piggy bank will be destroyed forever."
-     * @dev In order to destroy an NFT you need to be the owner, the lockPeriod should have passed, and it should be approved.
+     * @dev In order to destroy an NFT you need to be the owner, the lockPeriod should have passed.
      *  Its fine to use the block.timestamp for the comparison because the miner can not manipulate the block.timestamp by a practically significant amount.
-     *  It is oke to use block.timestamp for comparison, because miner
      * @param _tokenId The id of the NFT that will destroyed.
      **/
     function destroyNft(uint256 _tokenId) external {
@@ -346,8 +343,8 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     }
 
     /**
-     * @notice The stake function stakes an amount of tokens into an NFT of the owner.
-     * @dev The amount that can be staked for a specific tokenId builds up over time. You can only stake up to this allowance and you need own enough tokens.
+     * @notice The stake function stakes an amount of tokens into an NFT.
+     * @dev The amount that can be staked for a specific tokenId builds up over time. You can only stake up to this allowance and you need to own enough tokens.
      * @param _tokenId The id of the nft that will receive the tokens.
      * @param _amount The amount of tokens that should be staked.
      **/
@@ -358,7 +355,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
 
     /**
      * @notice The stakeAndEvolve function stakes tokens and afterwards evolves the NFT to the a higher tier if applicable.
-     * @param _tokenId The id of the NFT.
+     * @param _tokenId The id of the nft that will receive the tokens.
      * @param _amount The amount of tokens that should be staked.
      **/
     function stakeAndEvolve(uint256 _tokenId, uint256 _amount) external {
@@ -534,7 +531,6 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
                 }
 
                 for (uint256 ii = _month + 1; ii >= 1; --ii) {
-                    // Update monthly totals
                     NftTotalMonth memory _monthlyTotal = monthlyTotal[ii - 1];
                     if (_monthlyTotal.totalStaked > 0 || ii == 1) {
                         if (_isIncreasingStake) {
