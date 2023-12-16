@@ -62,19 +62,14 @@ export const _mintNft = async (
 
   const tokenId = (await nft.nftIdCounter()) + 1;
 
-  try {
-    await expect(
-      await nft
-        .connect(account)
-        .mintNft(voucher.voucherId, type, voucher.lockPeriod, amount(stakingAmount), voucher.voucherSignature),
-    )
-      .to.emit(nft, "Transfer")
-      .withArgs(ethers.constants.AddressZero, account.address, tokenId);
-  } catch (error) {
-    console.error("Error minting NFT");
-    console.error(error);
-    throw error;
-  }
+  await expect(
+    await nft
+      .connect(account)
+      .mintNft(voucher.voucherId, type, voucher.lockPeriod, amount(stakingAmount), voucher.voucherSignature),
+  )
+    .to.emit(nft, "Transfer")
+    .withArgs(ethers.constants.AddressZero, account.address, tokenId);
+
   expect(await nft.ownerOf(tokenId)).to.be.equal(account.address);
 
   await approveWorkToken(network, workToken, account, nft.address);
