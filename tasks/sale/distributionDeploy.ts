@@ -2,6 +2,8 @@ import "@nomiclabs/hardhat-waffle";
 
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
+import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
+import { TokenDistribution } from "../../typings";
 
 // example: yarn hardhat distribution:deploy --network sepolia
 
@@ -11,7 +13,7 @@ task("distribution:deploy").setAction(async function (_, hre) {
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
   const startTime = (await hre.ethers.provider.getBlock("latest")).timestamp + 60 * 60 * 24 * 14;
-  // const startTime = 1701770400; //
+  // const startTime = 1701770400; //deployed to production with
   const startTimeDate = new Date(startTime * 1000);
   const accounts = await hre.ethers.getSigners();
   const distribution = await (
@@ -41,6 +43,27 @@ task("distribution:deploy").setAction(async function (_, hre) {
     contract: "contracts/sale/TokenDistribution.sol:TokenDistribution",
     address: distribution.address,
     constructorArguments: [workToken.address, startTime],
+  });
+  console.log("");
+  console.log("║ $WORK Distribution contract has been verified.");
+  console.log("╚══════════════════════════════════════════════════════════════════════");
+  console.log("");
+});
+
+task("distribution:verify").setAction(async function (_, hre) {
+  const distribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
+    DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+  );
+  const startTime = 1701770400;
+  const workTokenAddress = await distribution.workToken();
+  console.log("╔══════════════════════════════════════════════════════════════════════");
+  console.log("║ The Token Distribution is being verified");
+  console.log("║ With startTime:", startTime);
+  console.log("║ And $WORK Token Address:", workTokenAddress);
+  await hre.run("verify:verify", {
+    contract: "contracts/sale/TokenDistribution.sol:TokenDistribution",
+    address: distribution.address,
+    constructorArguments: [workTokenAddress, startTime],
   });
   console.log("");
   console.log("║ $WORK Distribution contract has been verified.");

@@ -301,19 +301,26 @@ contract GenesisNftData {
      * @param _encodedAttributes The encoded attributes bytes.
      * @return _attributes The array of attributes.
      **/
-    function decodeAttributes(bytes32 _encodedAttributes) public view returns (string[11] memory _attributes) {
-        uint8[11] memory i = splitBytes(abi.encode(_encodedAttributes));
-        _attributes[0] = bytes32ToString(attributes.gender(i[0]));
-        _attributes[1] = bytes32ToString(attributes.body(i[1]));
-        _attributes[2] = bytes32ToString(attributes.profession(i[2]));
-        _attributes[3] = bytes32ToString(attributes.accessories(i[3]));
-        _attributes[4] = bytes32ToString(attributes.background(i[4]));
-        _attributes[5] = bytes32ToString(attributes.eyes(i[5]));
-        _attributes[6] = bytes32ToString(attributes.hair(i[6]));
-        _attributes[7] = bytes32ToString(attributes.mouth(i[7]));
-        _attributes[8] = bytes32ToString(attributes.complexion(i[8]));
-        _attributes[9] = bytes32ToString(attributes.item(i[9]));
-        _attributes[10] = bytes32ToString(attributes.clothes(i[10]));
+    function decodeAttributes(
+        bytes32 _encodedAttributes,
+        uint256 _initCompleted
+    ) public view returns (string[11] memory _attributes) {
+        if (_initCompleted > 0) {
+            uint8[11] memory i = splitBytes(abi.encode(_encodedAttributes));
+            _attributes[0] = bytes32ToString(attributes.gender(i[0]));
+            _attributes[1] = bytes32ToString(attributes.body(i[1]));
+            _attributes[2] = bytes32ToString(attributes.profession(i[2]));
+            _attributes[3] = bytes32ToString(attributes.accessories(i[3]));
+            _attributes[4] = bytes32ToString(attributes.background(i[4]));
+            _attributes[5] = bytes32ToString(attributes.eyes(i[5]));
+            _attributes[6] = bytes32ToString(attributes.hair(i[6]));
+            _attributes[7] = bytes32ToString(attributes.mouth(i[7]));
+            _attributes[8] = bytes32ToString(attributes.complexion(i[8]));
+            _attributes[9] = bytes32ToString(attributes.item(i[9]));
+            _attributes[10] = bytes32ToString(attributes.clothes(i[10]));
+        } else {
+            _attributes = ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"];
+        }
     }
 
     /**
@@ -325,6 +332,7 @@ contract GenesisNftData {
      * @param _shares The amount of shares.
      * @param _encodedAttributes The encoded attributes string.
      * @param _unlockTime The unlock time of the NFT.
+     * @param _initCompleted Weather the initialization of the NFT has completed.
      * @param _imageUri The image URI of the NFT.
      * @return The token URI for the Genesis NFT.
      **/
@@ -339,34 +347,62 @@ contract GenesisNftData {
         uint256 _initCompleted,
         string calldata _imageUri
     ) external view returns (string memory) {
-        string[11] memory attr;
-        if (_initCompleted > 0) {
-            attr = decodeAttributes(_encodedAttributes);
-        } else {
-            attr = ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"];
-        }
+        return
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            abi.encodePacked(
+                                part1(_tokenId, _level, _tier, _staked, _imageUri, _initCompleted),
+                                part2(_encodedAttributes, _initCompleted, _shares, _unlockTime)
+                            )
+                        )
+                    )
+                )
+            );
+    }
 
-        string memory id = Strings.toString(_tokenId);
+    function part1(
+        uint256 _tokenId,
+        uint256 _level,
+        uint256 _tier,
+        uint256 _staked,
+        string calldata _imageUri,
+        uint256 _initCompleted
+    ) private pure returns (string memory) {
+        string memory img = _getImageUri(_tokenId, _imageUri, _initCompleted);
+        return
+            string(
+                abi.encodePacked(
+                    '{"name":"Work X Genesis #"',
+                    Strings.toString(_tokenId),
+                    ', "description":"This Work X Genesis NFT was obtained by being an early Work X adopter."',
+                    img,
+                    ',"attributes": [{"trait_type":"Level","value":',
+                    Strings.toString(_level),
+                    '},{"trait_type":"Tier","value":',
+                    Strings.toString(_tier),
+                    '},{"trait_type":"$WORK Staked","value":',
+                    Strings.toString(_staked / ONE_E18)
+                )
+            );
+    }
 
-        string memory part1 = string(
+    function part2(
+        bytes32 _encodedAttributes,
+        uint256 _initCompleted,
+        uint256 _shares,
+        uint256 _unlockTime
+    ) private view returns (string memory) {
+        string[11] memory attr = decodeAttributes(_encodedAttributes, _initCompleted);
+
+        string memory p1 = string(
             abi.encodePacked(
-                '{"name":"Work X Genesis NFT", "description":"This Work X Genesis NFT was obtained by being an early Work X adopter.", "image":"',
-                string.concat(_imageUri, id),
-                '.png","attributes": [{"trait_type":"Level","value":',
-                Strings.toString(_level),
-                '},{"trait_type":"Tier","value":',
-                Strings.toString(_tier),
-                '},{"trait_type":"$WORK Staked","value":',
-                Strings.toString(_staked / ONE_E18),
                 '},{"trait_type":"Gender","value":"',
                 attr[0],
                 '"},{"trait_type":"Body","value":"',
-                attr[1]
-            )
-        );
-
-        string memory part2 = string(
-            abi.encodePacked(
+                attr[1],
                 '"},{"trait_type":"Profession","value":"',
                 attr[2],
                 '"},{"trait_type":"Accessories","value":"',
@@ -374,22 +410,27 @@ contract GenesisNftData {
                 '"},{"trait_type":"Background","value":"',
                 attr[4],
                 '"},{"trait_type":"Eyes","value":"',
-                attr[5],
-                '"},{"trait_type":"Hair","value":"',
-                attr[6],
-                '"},{"trait_type":"Mouth","value":"',
-                attr[7]
+                attr[5]
             )
         );
 
-        string memory part3 = string(
+        string memory p2 = string(
             abi.encodePacked(
+                '"},{"trait_type":"Hair","value":"',
+                attr[6],
+                '"},{"trait_type":"Mouth","value":"',
+                attr[7],
                 '"},{"trait_type":"Complexion","value":"',
                 attr[8],
                 '"},{"trait_type":"Item","value":"',
                 attr[9],
                 '"},{"trait_type":"Clothes","value":"',
-                attr[10],
+                attr[10]
+            )
+        );
+
+        string memory p3 = string(
+            abi.encodePacked(
                 '"},{"display_type": "boost_number", "trait_type": "Shares","value":',
                 Strings.toString(_shares),
                 '},{"display_type": "date", "trait_type": "Tokens Unlock","value":',
@@ -398,12 +439,18 @@ contract GenesisNftData {
             )
         );
 
-        return
-            string(
-                abi.encodePacked(
-                    "data:application/json;base64,",
-                    Base64.encode(bytes(abi.encodePacked(part1, part2, part3)))
-                )
-            );
+        return string(abi.encodePacked(p1, p2, p3));
+    }
+
+    function _getImageUri(
+        uint256 _tokenId,
+        string calldata _image,
+        uint256 _initCompleted
+    ) private pure returns (string memory img) {
+        if (_initCompleted > 0) {
+            img = string.concat(',"image":"', _image, Strings.toString(_tokenId), 'png"');
+        } else {
+            img = '"image": "https://content.workx.io/video/Work-X-Lockup.mp4"';
+        }
     }
 }

@@ -224,6 +224,7 @@ describe("GenesisNftMint", () => {
         "NftMintUnavailable",
       );
     });
+
     it("Half of the guaranteed will be minted then half of the fcfs will be minted, then the investors can mint the rest", async () => {
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
       nftCount = 0;

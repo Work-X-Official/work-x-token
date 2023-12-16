@@ -779,7 +779,7 @@ describe("GenesisNft", () => {
     });
 
     it("Check that the voucher works and is set to used", async () => {
-      nftId6 = (await nft.nftIdCounter()) + 1;
+      nftId6 = await nft.nftIdCounter();
       await expect(
         await nft
           .connect(ownerNft6)
@@ -834,20 +834,20 @@ describe("GenesisNft", () => {
 
     it("Pre-condition check, the current month is 0, the NFTs each have 51 shares, the total shares is correct", async () => {
       expect(await nft.getCurrentMonth()).to.be.equal(0);
+      expect(await getShares(0, nft)).to.be.equal(51);
       expect(await getShares(1, nft)).to.be.equal(51);
       expect(await getShares(2, nft)).to.be.equal(51);
       expect(await getShares(3, nft)).to.be.equal(51);
-      expect(await getShares(4, nft)).to.be.equal(51);
       expect((await nft.getTotals(0))._totalShares).to.be.equal(51 + 51 + 51 + 51);
     });
 
     it("The updateShares is updated correctly, the current month is 0, the shares of id 1 and 2 are equal and total shares are equal to the shares of 1 + 2", async () => {
       await mineDays(10, network);
       expect(await nft.getCurrentMonth()).to.be.equal(0);
+      expect(await getShares(0, nft)).to.be.equal(big(51));
       expect(await getShares(1, nft)).to.be.equal(big(51));
       expect(await getShares(2, nft)).to.be.equal(big(51));
       expect(await getShares(3, nft)).to.be.equal(big(51));
-      expect(await getShares(4, nft)).to.be.equal(big(51));
       expect((await nft.getTotals(0))._totalShares).to.be.equal(51 + 51 + 51 + 51);
     });
 
@@ -855,19 +855,19 @@ describe("GenesisNft", () => {
       await mineDays(30, network);
       expect(await nft.getCurrentMonth()).to.be.equal(1);
       await approveToken(network, workToken, nftMinter9, nft.address);
-      await nft.connect(nftMinter9).stake(3, amount(10000));
+      await nft.connect(nftMinter9).stake(2, amount(10000));
+      expect(await getShares(0, nft)).to.be.equal(big(51));
       expect(await getShares(1, nft)).to.be.equal(big(51));
-      expect(await getShares(2, nft)).to.be.equal(big(51));
-      expect(await getShares(3, nft)).to.be.equal(big(63));
-      expect(await getShares(4, nft)).to.be.equal(big(51));
+      expect(await getShares(2, nft)).to.be.equal(big(63));
+      expect(await getShares(3, nft)).to.be.equal(big(51));
       await mineDays(30, network);
       expect(await nft.getCurrentMonth()).to.be.equal(2);
       await approveToken(network, workToken, nftMinter7, nft.address);
-      await nft.connect(nftMinter7).stake(1, amount(10000));
-      expect(await getShares(1, nft)).to.be.equal(big(63));
-      expect(await getShares(2, nft)).to.be.equal(big(51));
-      expect(await getShares(3, nft)).to.be.equal(big(63));
-      expect(await getShares(4, nft)).to.be.equal(big(51));
+      await nft.connect(nftMinter7).stake(0, amount(10000));
+      expect(await getShares(0, nft)).to.be.equal(big(63));
+      expect(await getShares(1, nft)).to.be.equal(big(51));
+      expect(await getShares(2, nft)).to.be.equal(big(63));
+      expect(await getShares(3, nft)).to.be.equal(big(51));
     });
 
     it("The total shares at month 2 is now 63 + 51 + 51", async () => {
@@ -881,14 +881,14 @@ describe("GenesisNft", () => {
     it("Nft 2 will become level 10, like NFT 1 and then NFT 2 will be destroyed", async () => {
       await mineDays(40, network);
       await approveToken(network, workToken, nftMinter8, nft.address);
-      await nft.connect(nftMinter8).stake(2, amount(10000));
+      await nft.connect(nftMinter8).stake(1, amount(10000));
       expect((await nft.getTotals(3))._totalShares).to.be.equal(63 + 63 + 63 + 51);
 
-      await nft.connect(nftMinter8).destroyNft(2);
+      await nft.connect(nftMinter8).destroyNft(1);
       expect((await nft.getTotals(3))._totalShares).to.be.equal(63 + 63 + 51);
-      expect(await getShares(1, nft)).to.be.equal(big(63));
-      await expect(getShares(2, nft)).to.be.revertedWith("NftNotExists");
-      expect(await getShares(3, nft)).to.be.equal(big(63));
+      expect(await getShares(0, nft)).to.be.equal(big(63));
+      await expect(getShares(1, nft)).to.be.revertedWith("NftNotExists");
+      expect(await getShares(2, nft)).to.be.equal(big(63));
     });
 
     it("Two months later, the current month is 5, total remains the same (tests looping back)", async () => {
@@ -899,7 +899,7 @@ describe("GenesisNft", () => {
 
     it("Two months later, the current month is 7 and nft 1 will be destroyed, the total shares will be 63", async () => {
       await mineDays(60, network);
-      await nft.connect(nftMinter7).destroyNft(1);
+      await nft.connect(nftMinter7).destroyNft(0);
       expect(await nft.getCurrentMonth()).to.be.equal(7);
       expect((await nft.getTotals(7))._totalShares).to.be.equal(63 + 51);
     });
@@ -992,7 +992,7 @@ describe("GenesisNft", () => {
       it("The updateShares is updated correctly, the current month is 2, the shares of id 1 51", async () => {
         expect(await nft.getCurrentMonth()).to.be.equal(2);
         // 1 for level 0 + 5 for base stake for investing 1k
-        expect(await getShares(1, nft)).to.be.equal(ethers.BigNumber.from(51));
+        expect(await getShares(0, nft)).to.be.equal(ethers.BigNumber.from(51));
         expect((await nft.getTotals(0))._totalShares).to.be.equal(ethers.BigNumber.from(51));
         expect((await nft.getTotals(1))._totalShares).to.be.equal(ethers.BigNumber.from(51));
         expect((await nft.getTotals(2))._totalShares).to.be.equal(ethers.BigNumber.from(51));
