@@ -49,7 +49,7 @@ config();
 
 chai.use(solidity);
 
-describe("GenesisNft", () => {
+describe.only("GenesisNft", () => {
   let nft: GenesisNft;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
@@ -316,6 +316,8 @@ describe("GenesisNft", () => {
 
     it("Mint an nft", async () => {
       ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+      console.log("Minted nft with token id", nftId1);
+      console.log("TokenURI:", await nft.tokenURI(nftId1));
     });
 
     it("The nft contract should have the MINTER_ROLE", async () => {

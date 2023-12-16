@@ -375,9 +375,9 @@ contract GenesisNftData {
         return
             string(
                 abi.encodePacked(
-                    '{"name":"Work X Genesis #"',
+                    '{"name":"Work X Genesis #',
                     Strings.toString(_tokenId),
-                    ', "description":"This Work X Genesis NFT was obtained by being an early Work X adopter."',
+                    '", "description":"This Work X Genesis NFT was obtained by being an early Work X adopter."',
                     img,
                     ',"attributes": [{"trait_type":"Level","value":',
                     Strings.toString(_level),
@@ -450,7 +450,7 @@ contract GenesisNftData {
         if (_initCompleted > 0) {
             img = string.concat(',"image":"', _image, Strings.toString(_tokenId), 'png"');
         } else {
-            img = '"image": "https://content.workx.io/video/Work-X-Lockup.mp4"';
+            img = ',"image": "https://content.workx.io/video/Work-X-Lockup.mp4"';
         }
     }
 }
