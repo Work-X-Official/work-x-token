@@ -9,6 +9,7 @@ import { _mintNft, mintNft, mintNftMany, regenerateNft } from "../util/nft.util"
 import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
 import { regenerateTokenDistribution } from "../util/distribution.util";
 import { amount, getImpersonateAccounts, mineDays } from "../util/helpers.util";
+import { COUNT_FCFS, COUNT_GUAR, COUNT_INV } from "../constants";
 
 config();
 
@@ -44,7 +45,10 @@ describe("GenesisNftMint", () => {
   let stablecoinDecimals: number;
 
   before(async () => {
+    const acc = await getImpersonateAccounts(network);
     chainId = (await ethers.provider.getNetwork()).chainId;
+    signerImpersonated = await ethers.getSigner(acc.signerImpersonatedAddress);
+
     accounts = await ethers.getSigners();
 
     if (!process.env.PRIVATE_KEY_NFT_VOUCHER_SIGNER) throw new Error("NFT_MESSAGE_SIGNER_PRIVATE_KEY not set");
@@ -56,59 +60,277 @@ describe("GenesisNftMint", () => {
     nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
   });
 
-  describe.skip("Minting Type", async () => {
+  describe("Minting Type Simple", async () => {
     let nftCount = 0;
 
-    it("Mint all 349 nfts of type 0, so all but one", async () => {
-      const quantity = 349;
+    it("Mint all but 1 of nfts of type guaranteed", async () => {
+      const quantity = COUNT_GUAR - 1;
       const type = 0;
       const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, type, chainId);
       nftCount += nftIds.length;
       const nftCountRead = await nft.nftIdCounter();
-      expect(nftCountRead).to.equal(349);
-      expect(nftCount).to.equal(349);
+      expect(nftCountRead).to.equal(quantity);
+      expect(nftCount).to.equal(quantity);
     }).timeout(1000000);
 
-    it("Mint the last nft of type 0, so making the total 350", async () => {
+    it("Mint the last nft of type guaranteed", async () => {
       const quantity = 1;
       const type = 0;
       const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, type, chainId);
       nftCount += nftIds.length;
       const nftCountRead = await nft.nftIdCounter();
-      expect(nftCountRead).to.equal(350);
-      expect(nftCount).to.equal(350);
+      expect(nftCountRead).to.equal(COUNT_GUAR);
+      expect(nftCount).to.equal(COUNT_GUAR);
     });
 
-    it("Should revert when trying to mint another nft of type 0", async () => {
+    it("Should revert when trying to mint another nft of type guaranteed", async () => {
       const type = 0;
-      await expect(mintNft(network, nft, workToken, accounts[350], 0, 0, type, chainId)).to.be.revertedWith(
+      await expect(mintNft(network, nft, workToken, accounts[COUNT_GUAR], 0, 0, type, chainId)).to.be.revertedWith(
         "NftMintUnavailable",
       );
     });
 
-    it("Mint all remaining nfts by owner", async () => {
-      await nft.mintRemainingToTreasury();
+    it("Mint all but 1 of nfts of type fcfs", async () => {
+      const quantity = COUNT_FCFS - 1;
+      const type = 1;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, type, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(COUNT_GUAR + quantity);
+      expect(nftCount).to.equal(COUNT_GUAR + quantity);
+    }).timeout(1000000);
+
+    it("Mint the last nft of type fcfs", async () => {
+      const quantity = 1;
+      const type = 1;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, type, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(COUNT_GUAR + COUNT_FCFS);
+      expect(nftCount).to.equal(COUNT_GUAR + COUNT_FCFS);
+    });
+
+    it("Should revert when trying to mint another nft of type fcfs", async () => {
+      const type = 1;
+      await expect(mintNft(network, nft, workToken, accounts[COUNT_GUAR + COUNT_FCFS], 0, 0, type, chainId)).to.be
+        .reverted;
+    });
+
+    it("Mint all but 1 of nfts of type investor", async () => {
+      const quantity = COUNT_INV - 1;
+      const type = 2;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, type, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(COUNT_GUAR + COUNT_FCFS + quantity);
+      expect(nftCount).to.equal(COUNT_GUAR + COUNT_FCFS + quantity);
+    }).timeout(1000000);
+
+    it("Mint the last nft of type investor", async () => {
+      const quantity = 1;
+      const type = 2;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, type, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(COUNT_GUAR + COUNT_FCFS + COUNT_INV);
+      expect(nftCount).to.equal(COUNT_GUAR + COUNT_FCFS + COUNT_INV);
+    });
+
+    it("Should revert when trying to mint another nft of type investor", async () => {
+      const type = 2;
+      await expect(mintNft(network, nft, workToken, accounts[COUNT_GUAR + COUNT_FCFS + COUNT_INV], 0, 0, type, chainId))
+        .to.be.reverted;
+    });
+
+    it("After minting 999 nfts should be minted", async () => {
+      expect(nftCount).to.equal(999);
       const nftCountRead = await nft.nftIdCounter();
       expect(nftCountRead).to.equal(999);
     });
 
-    it("Should revert with All nfts minted", async () => {
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 0, chainId)).to.be.revertedWith(
-        "NftMintUnavailable",
-      );
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 1, chainId)).to.be.revertedWith(
-        "NftMintUnavailable",
-      );
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 2, chainId)).to.be.revertedWith(
-        "NftMintUnavailable",
-      );
-    });
-
     it("Should revert if someone mints with an invalid type", async () => {
-      await expect(mintNft(network, nft, workToken, accounts[356], 0, 0, 3, chainId)).to.be.revertedWith(
+      await expect(mintNft(network, nft, workToken, signerImpersonated, 0, 0, 3, chainId)).to.be.revertedWith(
         "MintTypeInvalid",
       );
     });
+
+    it("Calling mintRemainingToTreasury should emit event of 0 amount minted", async () => {
+      await expect(nft.mintRemainingToTreasury()).to.emit(nft, "RemainingToTreasuryMinted").withArgs(0);
+    });
+  });
+
+  describe("Mint type combinations", async () => {
+    let nftCount = 0;
+
+    it("Only 1 guaranteed is minted then fcfs should be able the rest of guaranteed and all fcfs", async () => {
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      const quantityGuaranteed = 1;
+      const typeGuaranteed = 0;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantityGuaranteed, typeGuaranteed, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(quantityGuaranteed);
+      expect(nftCount).to.equal(quantityGuaranteed);
+
+      const quantityFcfs = COUNT_GUAR + COUNT_FCFS - quantityGuaranteed;
+      const typeFcfs = 1;
+      const nftIds2 = await mintNftMany(network, nft, workToken, accounts, quantityFcfs, typeFcfs, chainId);
+      nftCount += nftIds2.length;
+      const nftCountRead2 = await nft.nftIdCounter();
+      expect(nftCountRead2).to.equal(COUNT_GUAR + COUNT_FCFS);
+    }).timeout(1000000);
+
+    it("Fcfs will not be able to mint more", async () => {
+      const type = 1;
+      await expect(mintNft(network, nft, workToken, accounts[COUNT_GUAR + COUNT_FCFS], 0, 0, type, chainId)).to.be
+        .reverted;
+    }).timeout(1000000);
+
+    it("Half of the guaranteed will be minted then half of the fcfs will be minted, then the investors can mint the rest", async () => {
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      nftCount = 0;
+
+      const quantityGuaranteed = COUNT_GUAR / 2;
+      const typeGuaranteed = 0;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantityGuaranteed, typeGuaranteed, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(quantityGuaranteed);
+      expect(nftCount).to.equal(quantityGuaranteed);
+
+      const quantityFcfs = COUNT_FCFS / 2;
+      const typeFcfs = 1;
+      const nftIds2 = await mintNftMany(network, nft, workToken, accounts, quantityFcfs, typeFcfs, chainId);
+      nftCount += nftIds2.length;
+      const nftCountRead2 = await nft.nftIdCounter();
+      expect(nftCountRead2).to.equal(quantityGuaranteed + quantityFcfs);
+
+      const quantityInvestors = COUNT_INV + quantityGuaranteed + quantityFcfs;
+      const typeInvestors = 2;
+      const nftIds3 = await mintNftMany(network, nft, workToken, accounts, quantityInvestors, typeInvestors, chainId);
+      nftCount += nftIds3.length;
+      const nftCountRead3 = await nft.nftIdCounter();
+      expect(nftCountRead3).to.equal(999);
+    }).timeout(1000000);
+
+    it("Should revert when all nft are minted", async () => {
+      await expect(mintNft(network, nft, workToken, signerImpersonated, 0, 0, 0, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
+      await expect(mintNft(network, nft, workToken, signerImpersonated, 0, 0, 1, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
+      await expect(mintNft(network, nft, workToken, signerImpersonated, 0, 0, 2, chainId)).to.be.revertedWith(
+        "NftMintUnavailable",
+      );
+    });
+    it("Half of the guaranteed will be minted then half of the fcfs will be minted, then the investors can mint the rest", async () => {
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      nftCount = 0;
+
+      const quantityGuaranteed = COUNT_GUAR / 2;
+      const typeGuaranteed = 0;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantityGuaranteed, typeGuaranteed, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(quantityGuaranteed);
+      expect(nftCount).to.equal(quantityGuaranteed);
+
+      const quantityFcfs = COUNT_FCFS / 2;
+      const typeFcfs = 1;
+      const nftIds2 = await mintNftMany(network, nft, workToken, accounts, quantityFcfs, typeFcfs, chainId);
+      nftCount += nftIds2.length;
+      const nftCountRead2 = await nft.nftIdCounter();
+      expect(nftCountRead2).to.equal(quantityGuaranteed + quantityFcfs);
+
+      const quantityInvestors = COUNT_INV + quantityGuaranteed + quantityFcfs;
+      const typeInvestors = 2;
+      const nftIds3 = await mintNftMany(network, nft, workToken, accounts, quantityInvestors, typeInvestors, chainId);
+      nftCount += nftIds3.length;
+      const nftCountRead3 = await nft.nftIdCounter();
+      expect(nftCountRead3).to.equal(999);
+    }).timeout(1000000);
+
+    it("Investors will mint all the nfts", async () => {
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+      nftCount = 0;
+
+      const quantity = COUNT_GUAR + COUNT_FCFS + COUNT_INV;
+      const typeInvestor = 2;
+      const nftIds = await mintNftMany(network, nft, workToken, accounts, quantity, typeInvestor, chainId);
+      nftCount += nftIds.length;
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(quantity);
+      expect(nftCount).to.equal(quantity);
+    }).timeout(1000000);
+  });
+
+  describe("MintRemainingToTreasury different quantities", async () => {
+    beforeEach(async () => {
+      nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+    });
+
+    it("MintRemaining to treasury with 0 nfts previously minted", async () => {
+      await nft.mintRemainingToTreasury();
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(999);
+    }).timeout(1000000);
+
+    it("MintRemaining to treasury with all guaranteed first minted", async () => {
+      await mintNftMany(network, nft, workToken, accounts, COUNT_GUAR, 0, chainId);
+      const nftCountReadBefore = await nft.nftIdCounter();
+      expect(nftCountReadBefore).to.equal(COUNT_GUAR);
+      await nft.mintRemainingToTreasury();
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(999);
+      const Ids = await nft.getIdsFromWallet(signerImpersonated.address);
+      expect(Ids.length).to.equal(999 - COUNT_GUAR);
+    }).timeout(1000000);
+
+    it("MintRemaining to treasury with only fcfs first minted", async () => {
+      await mintNftMany(network, nft, workToken, accounts, COUNT_FCFS, 1, chainId);
+      const nftCountReadBefore = await nft.nftIdCounter();
+      expect(nftCountReadBefore).to.equal(COUNT_FCFS);
+      await nft.mintRemainingToTreasury();
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(999);
+      const Ids = await nft.getIdsFromWallet(signerImpersonated.address);
+      expect(Ids.length).to.equal(999 - COUNT_FCFS);
+    }).timeout(1000000);
+
+    it("MintRemaining to treasury with first guaranteed and then fcfs minted", async () => {
+      await mintNftMany(network, nft, workToken, accounts, COUNT_GUAR, 0, chainId);
+      await mintNftMany(network, nft, workToken, accounts, COUNT_FCFS, 1, chainId);
+      const nftCountReadBefore = await nft.nftIdCounter();
+      expect(nftCountReadBefore).to.equal(COUNT_GUAR + COUNT_FCFS);
+      await nft.mintRemainingToTreasury();
+      const nftCountRead = await nft.nftIdCounter();
+      expect(nftCountRead).to.equal(999);
+      const Ids = await nft.getIdsFromWallet(signerImpersonated.address);
+      expect(Ids.length).to.equal(999 - COUNT_GUAR - COUNT_FCFS);
+    }).timeout("1000000");
+
+    it("MintRemaining when guaranteed, fcfs and investors, all but 1 are minted, then MintRemaining should still mint", async () => {
+      await mintNftMany(network, nft, workToken, accounts, COUNT_GUAR, 0, chainId);
+      await mintNftMany(network, nft, workToken, accounts, COUNT_FCFS, 1, chainId);
+      await mintNftMany(network, nft, workToken, accounts, COUNT_INV - 1, 2, chainId);
+      const nftCountReadBefore = await nft.nftIdCounter();
+      expect(nftCountReadBefore).to.equal(COUNT_GUAR + COUNT_FCFS + COUNT_INV - 1);
+      const tx = await nft.mintRemainingToTreasury();
+      await expect(tx).to.emit(nft, "Transfer");
+      const Ids = await nft.getIdsFromWallet(signerImpersonated.address);
+      expect(Ids.length).to.equal(1);
+    }).timeout(1000000);
+
+    it("Should not mint when all nfts are minted", async () => {
+      await nft.mintRemainingToTreasury();
+      const tx = await nft.mintRemainingToTreasury();
+      const receipt = await tx.wait();
+      const transferEvent = receipt.events?.filter(x => {
+        return x.event === "Transfer";
+      });
+      expect(transferEvent).to.eql([]);
+    }).timeout(1000000);
   });
 
   describe("Minting Nft with $WORK Tokens", async () => {
@@ -166,7 +388,7 @@ describe("GenesisNftMint", () => {
       expect(balanceAfterMinter3).to.be.gt(balanceBeforeMinter3);
     });
 
-    it("At day 6, NftMinter 1 claims his nft, and will try to stake tokens in it, but it will be minted without any tokens within it.", async () => {
+    it("At day 6, NftMinter 1 claims his nft, and will try to stake tokens in it, but it will be minted without any tokens within it", async () => {
       ({ nftId: nftId1 } = await _mintNft(network, nft, workToken, nftMinter1, 5000, 0, 0, chainId));
       const _tokenIdInfoAtMonth = await nft.getStaked(nftId1, 0);
       expect(_tokenIdInfoAtMonth[0]).to.be.equal(amount(0));
