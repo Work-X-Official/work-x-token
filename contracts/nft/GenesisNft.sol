@@ -52,8 +52,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     uint16 public nftIdCounter;
     uint8 public initCompleted = 0;
 
-    string private constant imageBaseURI = "ipfs://";
-    string private imageFolder = "QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b";
+    string private imageFolder = "ipfs://QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b/";
     address public voucherSigner;
 
     mapping(address => bool) public accountMinted;
@@ -142,11 +141,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _folder The folder that will be set.
      **/
     function setIpfsFolder(string calldata _folder) external onlyOwner {
-        if (initCompleted != 0) {
-            revert InitHasCompleted();
-        }
         imageFolder = _folder;
         emit IpfsFolderChanged(_folder);
+        emit BatchMetadataUpdate(0, NFT_MAX_AMOUNT);
     }
 
     /**
@@ -651,7 +648,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
                 _nft.encodedAttributes,
                 _nft.lockPeriod + startTime,
                 initCompleted,
-                string.concat(imageBaseURI, imageFolder, "/")
+                imageFolder
             );
     }
 
