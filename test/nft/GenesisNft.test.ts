@@ -49,15 +49,13 @@ config();
 
 chai.use(solidity);
 
-describe.only("GenesisNft", () => {
+describe("GenesisNft", () => {
   let nft: GenesisNft;
   let signerImpersonated: SignerWithAddress;
   let stablecoin: ERC20;
   let stablecoinDecimals: number;
   let accounts: SignerWithAddress[];
   let nftMinter1: SignerWithAddress;
-  let nftMinter2: SignerWithAddress;
-  let nftMinter3: SignerWithAddress;
   let nftVoucherSigner: Wallet;
   let distribution: TokenDistribution;
   let workToken: WorkToken;
@@ -74,8 +72,6 @@ describe.only("GenesisNft", () => {
     accounts = await ethers.getSigners();
 
     nftMinter1 = accounts[3];
-    nftMinter2 = accounts[4];
-    nftMinter3 = accounts[5];
     nftVoucherSigner = getVoucherSigner();
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
@@ -316,8 +312,6 @@ describe.only("GenesisNft", () => {
 
     it("Mint an nft", async () => {
       ({ nftId: nftId1, voucherId: voucherId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
-      console.log("Minted nft with token id", nftId1);
-      console.log("TokenURI:", await nft.tokenURI(nftId1));
     });
 
     it("The nft contract should have the MINTER_ROLE", async () => {
@@ -761,11 +755,9 @@ describe.only("GenesisNft", () => {
     let tokenIdsOwnedBeforeMint: BigNumber[];
     let nftId6: number;
     let ownerNft6: SignerWithAddress;
-    let ownerNft7: SignerWithAddress;
 
     before(async () => {
       ownerNft6 = accounts[6];
-      ownerNft7 = accounts[7];
 
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
@@ -812,9 +804,6 @@ describe.only("GenesisNft", () => {
     let nftMinter8: SignerWithAddress;
     let nftMinter9: SignerWithAddress;
 
-    let nftId1: number;
-    let nftId2: number;
-    let nftId3: number;
     let nftId4: number;
 
     let currentMonth: number;
@@ -829,8 +818,8 @@ describe.only("GenesisNft", () => {
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
 
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter7, 0, 0, 0, chainId));
-      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter8, 0, 0, 0, chainId));
-      ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter9, 0, 0, 0, chainId));
+      await mintNft(network, nft, workToken, nftMinter8, 0, 0, 0, chainId);
+      await mintNft(network, nft, workToken, nftMinter9, 0, 0, 0, chainId);
       ({ nftId: nftId4 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
     });
 
@@ -1108,7 +1097,6 @@ describe.only("GenesisNft", () => {
     before(async () => {
       nftMinter1 = accounts[1];
       nftMinter2 = accounts[2];
-      nftMinter3 = accounts[3];
       rewarder = accounts[4];
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
       await mineDays(12, network);
