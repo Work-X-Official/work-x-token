@@ -29,6 +29,7 @@ error AllowanceExceeded(uint256 allowance);
 error TransferFailed();
 error ArrayLengthMismatch();
 error LockPeriodInvalid();
+error StakeAtMintMaxExceeded();
 
 contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     GenesisNftData private immutable nftData;
@@ -47,6 +48,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     uint256 private constant COUNT_FCFS = 150;
     uint256 private constant COUNT_INV = 449;
     uint256 private constant ONE_E18 = 10 ** 18;
+    uint256 private constant TOTAL_STAKE_AT_MINT_MAX = 24000000 * ONE_E18;
 
     uint128 public startTime;
     uint16 public nftIdCounter;
@@ -293,17 +295,20 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         uint256 level = nftData.getLevel(amountToStake);
         _nft.tier = uint16(level / 10);
 
-        NftInfoMonth memory _info;
-        _info.staked = amountToStake;
-        _info.minimumStaked = amountToStake;
         uint256 shares = nftData.shares(level) + BASE_STAKE;
-        _info.shares = uint16(shares);
+        NftInfoMonth memory _info = NftInfoMonth(uint16(shares), 0, amountToStake, amountToStake);
         _nft.monthly[0] = _info;
 
-        NftTotalMonth storage totalMonthly = monthlyTotal[0];
-        totalMonthly.minimumStaked += amountToStake;
-        totalMonthly.totalStaked += amountToStake;
-        totalMonthly.totalShares += uint16(shares);
+        NftTotalMonth memory totalMonthly = monthlyTotal[0];
+        if (totalMonthly.totalStaked + amountToStake > TOTAL_STAKE_AT_MINT_MAX) {
+            revert StakeAtMintMaxExceeded();
+        }
+        NftTotalMonth memory _monthTotal = NftTotalMonth(
+            totalMonthly.totalShares + uint32(shares),
+            uint128(totalMonthly.totalStaked + amountToStake),
+            uint128(totalMonthly.minimumStaked + amountToStake)
+        );
+        monthlyTotal[0] = _monthTotal;
 
         nftIdCounter = uint16(oldCounter + 1);
         if (_amountToStake > 0) {
@@ -517,11 +522,12 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
                     }
                 } else {
                     if (_nftMonth.staked >= _amount) {
-                        _nftMonthToSet.staked = _nftMonth.staked - uint128(_amount);
+                        uint128 stakedToSet = _nftMonth.staked - uint128(_amount);
+                        _nftMonthToSet.staked = stakedToSet;
                         _minimumToCheck = i < _month + 1 ? _nftMonth.staked : _nftMonth.minimumStaked;
-                        if (_nftMonthToSet.staked < _minimumToCheck) {
-                            _nftMonthToSet.minimumStaked = _nftMonthToSet.staked;
-                            _minimumDecreased = _minimumToCheck - _nftMonthToSet.staked;
+                        if (stakedToSet < _minimumToCheck) {
+                            _nftMonthToSet.minimumStaked = stakedToSet;
+                            _minimumDecreased = _minimumToCheck - stakedToSet;
                         } else {
                             _nftMonthToSet.minimumStaked = uint128(_minimumToCheck);
                         }
@@ -788,11 +794,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      **/
     function _getStakingAllowance(uint256 _tokenId, uint256 _staked) private view returns (uint256 stakingAllowance) {
         if (startTime > block.timestamp) return 0;
-
-        uint256 accumulatedAllowance = (((((block.timestamp - startTime) / 1 days) * DAILY_STAKING_ALLOWANCE) +
-            DAILY_STAKING_ALLOWANCE) * ONE_E18);
         NftInfo storage _nft = nft[_tokenId];
-        uint256 allowance = accumulatedAllowance + _nft.stakedAtMint;
+        uint256 allowance = (((((block.timestamp - startTime) / 1 days) * DAILY_STAKING_ALLOWANCE) +
+            DAILY_STAKING_ALLOWANCE) * ONE_E18) + _nft.stakedAtMint;
         if (allowance > _staked) {
             stakingAllowance = allowance - _staked;
         } else {
