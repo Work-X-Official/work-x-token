@@ -64,7 +64,7 @@ describe("GenesisNftStaking", () => {
     await distribution.setWalletClaimable([nftMinter3.address], [500], [0], [0], [0]);
     await distribution.setWalletClaimable([nftMinter4.address], [10000], [0], [0], [0]);
     await distribution.setWalletClaimable([nftMinter5.address], [100000], [0], [0], [0]);
-    await mineDays(12, network);
+    await mineDays(22, network);
     ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
     ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
     ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 500, 0, 0, chainId));
@@ -682,7 +682,7 @@ describe("GenesisNftStaking", () => {
     it("Cannot call stakeAndEvolve before the nft startTime (except level 80 people)", async () => {
       await expect(nft.connect(nftMinter1).stakeAndEvolve(nftId1, amount(1))).to.be.revertedWith("AllowanceExceeded");
       // go to nft Starttime
-      await mineDays(12, network);
+      await mineDays(22, network);
     });
 
     it("StakeAndEvolve nftId1 at day 20 increase stake nftInfo is correct(did not evolve to tier 1)", async () => {
@@ -755,7 +755,7 @@ describe("GenesisNftStaking", () => {
       await distribution.setWalletClaimable([nftMinter1.address], [10000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [10000], [0], [0], [0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 10000, 0, 0, chainId));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 10000, 0, 0, chainId));
       amountStaked = ethers.utils.parseEther("20000");
