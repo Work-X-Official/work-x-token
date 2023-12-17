@@ -204,12 +204,12 @@ contract GenesisNftData {
      * @return The level of the NFT.
      **/
     function getLevel(uint256 _staked) public view returns (uint256) {
-        for (uint256 s1 = 1; s1 <= 4; s1++) {
+        for (uint256 s1 = 1; s1 <= 4; ++s1) {
             if (_staked < uint256(levels[s1 * 20 - 1]) * FOUR_E18) {
-                for (uint256 s2 = 1; s2 <= 4; s2++) {
+                for (uint256 s2 = 1; s2 <= 4; ++s2) {
                     if (_staked <= uint256(levels[(s1 - 1) * 20 + (s2) * 5 - 1]) * FOUR_E18) {
                         uint256 ls = (s1 - 1) * 20 + (s2 - 1) * 5;
-                        for (uint256 level = ls; level <= ls + 4; level++) {
+                        for (uint256 level = ls; level <= ls + 4; ++level) {
                             if (_staked < uint256(levels[level]) * FOUR_E18) {
                                 return level;
                             }

@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/interfaces/IERC4906.sol";
+import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import "./GenesisNftData.sol";
 import "./../interface/ITokenDistribution.sol";
@@ -124,7 +125,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
         voucherSigner = _voucherSigner;
-        startTime = uint128(block.timestamp + 12 days);
+        startTime = uint128(block.timestamp + 22 days);
     }
 
     /**
@@ -225,6 +226,29 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
 
         emit RemainingToTreasuryMinted(NFT_MAX_AMOUNT - nftIdCounter);
         nftIdCounter = uint16(NFT_MAX_AMOUNT);
+    }
+
+    /**
+     * @notice Rescue function to withdraw ETH mistakenly sent to the contract.
+     * @param _amount Amount of ETH to withdraw.
+     **/
+    function withdraw(uint256 _amount) external payable onlyOwner {
+        msg.sender.call{ value: _amount }("");
+    }
+
+    /**
+     * @notice Rescue function to withdraw any ERC20 token mistakenly sent to the contract, except the $WORK token after init has completed.
+     * @param _tokenAddress Address of the ERC20 token contract.
+     * @param _amount Amount of the ERC20 token to withdraw.
+     **/
+    function withdrawTokens(address _tokenAddress, uint256 _amount) external payable onlyOwner {
+        if (initCompleted == 0) {
+            IERC20(_tokenAddress).transfer(msg.sender, _amount);
+        } else {
+            if (_tokenAddress != address(token)) {
+                IERC20(_tokenAddress).transfer(msg.sender, _amount);
+            }
+        }
     }
 
     /****
@@ -617,7 +641,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             revert NftNotExists();
         }
         NftInfo storage _nft = nft[_tokenId];
-        for (uint256 i = _month + 1; i >= 1; i--) {
+        for (uint256 i = _month + 1; i >= 1; --i) {
             NftInfoMonth storage _nftMonth = _nft.monthly[i - 1];
             if (_nftMonth.shares > 0 || (_nftMonth.hasWithdrawn == 1 && _nftMonth.staked == 0)) {
                 return _nftMonth.shares;
@@ -718,7 +742,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     function getIdsFromWallet(address _nftOwner) external view returns (uint256[] memory tokenIds) {
         tokenIds = new uint256[](balanceOf(_nftOwner));
         uint256 counter = 0;
-        for (uint256 i = 1; i <= nftIdCounter; i++) {
+        for (uint256 i = 1; i <= nftIdCounter; ++i) {
             if (_exists(i) && ownerOf(i) == _nftOwner) {
                 tokenIds[counter] = i;
                 counter++;
@@ -742,7 +766,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         _totalBalance = monthlyTotal[_month].totalStaked;
         _minimumBalance = monthlyTotal[_month].minimumStaked;
         if (_month > 0 && _totalBalance == 0) {
-            for (uint256 i = _month + 1; i >= 1; i--) {
+            for (uint256 i = _month + 1; i >= 1; --i) {
                 NftTotalMonth storage _monthlyTotal = monthlyTotal[i - 1];
                 if (_monthlyTotal.totalStaked > 0 || i <= 1) {
                     _totalBalance = _monthlyTotal.totalStaked;
@@ -752,7 +776,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
             }
         }
         if (_month > 0 && _totalShares == 0) {
-            for (uint256 i = _month + 1; i >= 1; i--) {
+            for (uint256 i = _month + 1; i >= 1; --i) {
                 NftTotalMonth storage _monthlyTotal = monthlyTotal[i - 1];
                 if (_monthlyTotal.totalShares > 0 || i <= 1) {
                     _totalShares = _monthlyTotal.totalShares;
@@ -811,7 +835,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @return sharesTotal The total amount of shares.
      **/
     function _getTotalShares(uint256 _month) private view returns (uint256 sharesTotal) {
-        for (uint256 i = _month + 1; i > 0 && sharesTotal == 0; i--) {
+        for (uint256 i = _month + 1; i > 0 && sharesTotal == 0; --i) {
             sharesTotal = monthlyTotal[i - 1].totalShares;
         }
     }
