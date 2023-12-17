@@ -90,7 +90,7 @@ const config: HardhatUserConfig = {
       // Disable the optimizer when debugging
       optimizer: {
         enabled: true,
-        runs: 1000,
+        runs: 800,
       },
     },
   },
