@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/interfaces/IERC4906.sol";
+import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import "./GenesisNftData.sol";
 import "./../interface/ITokenDistribution.sol";
@@ -167,9 +168,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _encodedAttributes The 11 NFT attributes encoded in a bytes32.
      **/
     function setNftAttributes(uint256[] calldata _tokenId, bytes32[] calldata _encodedAttributes) external onlyOwner {
-        if (_tokenId.length != _encodedAttributes.length || _tokenId.length == 0) {
-            revert ArrayLengthMismatch();
-        }
+        // if (_tokenId.length != _encodedAttributes.length || _tokenId.length == 0) {
+        //     revert ArrayLengthMismatch();
+        // }
         if (initCompleted != 0) {
             revert InitHasCompleted();
         }
@@ -201,6 +202,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
      * @param _startTime The new start time.
      **/
     function setStartTime(uint256 _startTime) external onlyOwner {
+        // if (initCompleted != 0) {
+        //     revert InitHasCompleted();
+        // }
         _startTime = uint256(uint128(_startTime));
         if (startTime <= block.timestamp || _startTime <= block.timestamp) {
             revert StartTimeInvalid();
@@ -225,6 +229,20 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
 
         emit RemainingToTreasuryMinted(NFT_MAX_AMOUNT - nftIdCounter);
         nftIdCounter = uint16(NFT_MAX_AMOUNT);
+    }
+
+    function withdraw(uint256 amount) external payable onlyOwner {
+        msg.sender.call{ value: amount }("");
+    }
+
+    function withdrawTokens(address tokenAddress, uint256 amount) external payable onlyOwner {
+        if (initCompleted == 0) {
+            IERC20(tokenAddress).transfer(msg.sender, amount);
+        } else {
+            if (tokenAddress != address(token)) {
+                IERC20(tokenAddress).transfer(msg.sender, amount);
+            }
+        }
     }
 
     /****
