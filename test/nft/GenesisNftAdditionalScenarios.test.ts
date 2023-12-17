@@ -58,7 +58,7 @@ describe("GenesisNftAdditionalScenarios", () => {
     await distribution.setWalletClaimable([nftMinter1.address], [500], [0], [0], [0]);
     await distribution.setWalletClaimable([nftMinter2.address], [10000], [0], [0], [0]);
     await distribution.setWalletClaimable([nftMinter3.address], [200000], [0], [0], [0]);
-    await mineDays(12, network);
+    await mineDays(22, network);
     ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
     ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 10, 0, 0, chainId));
     ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 200000, 0, 0, chainId));
@@ -324,7 +324,7 @@ describe("GenesisNftAdditionalScenarios", () => {
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       await distribution.setWalletClaimable([nftMinter1.address], [155000], [0], [0], [0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
     });
@@ -611,7 +611,7 @@ describe("GenesisNftAdditionalScenarios", () => {
       await distribution.setWalletClaimable([nftMinter1.address], [5000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [20000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter3.address], [70000], [0], [0], [0]);
-      await mineDays(12, network);
+      await mineDays(22, network);
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 5000, 0, 0, chainId));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 20000, 0, 0, chainId));
       ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 60000, 0, 0, chainId));
@@ -748,7 +748,7 @@ describe("GenesisNftAdditionalScenarios", () => {
         nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
         await distribution.setWalletClaimable([nftMinter1.address], [5000], [0], [0], [0]);
         await distribution.setWalletClaimable([nftMinter2.address], [20000], [0], [0], [0]);
-        await mineDays(12, network);
+        await mineDays(22, network);
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 5000, 0, 0, chainId));
         ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 20000, 0, 0, chainId));
         await mineDays(365 * 2, network);
@@ -915,7 +915,7 @@ describe("GenesisNftAdditionalScenarios", () => {
         nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
         await distribution.setWalletClaimable([nftMinter1.address], [5000], [0], [0], [0]);
         await distribution.setWalletClaimable([nftMinter2.address], [20000], [0], [0], [0]);
-        await mineDays(12, network);
+        await mineDays(22, network);
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 5000, 0, 0, chainId));
         ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 20000, 0, 0, chainId));
         await mineDays(365 * 2, network);
@@ -1055,7 +1055,7 @@ describe("GenesisNftAdditionalScenarios", () => {
         nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
         await distribution.setWalletClaimable([nftMinter1.address], [5000], [0], [0], [0]);
         await distribution.setWalletClaimable([nftMinter2.address], [20000], [0], [0], [0]);
-        await mineDays(12, network);
+        await mineDays(22, network);
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 5000, 0, 0, chainId));
         ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 20000, 0, 0, chainId));
         await mineDays(365 * 2, network);
@@ -1186,7 +1186,7 @@ describe("GenesisNftAdditionalScenarios", () => {
         await distribution.setWalletClaimable([nftMinter3.address], [80000], [0], [0], [0]);
         await distribution.setWalletClaimable([nftMinter4.address], [110000], [0], [0], [0]);
         await distribution.setWalletClaimable([nftMinter5.address], [150000], [0], [0], [0]);
-        await mineDays(12, network);
+        await mineDays(22, network);
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
         ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 60000, 0, 0, chainId));
         ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, 80000, 0, 0, chainId));

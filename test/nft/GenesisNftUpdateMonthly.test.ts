@@ -82,7 +82,7 @@ describe("GenesisNftUpdateMonthly", () => {
     });
 
     it("In month 0, day 0, nftMinter1 will stake 100", async () => {
-      await mineDays(12, network);
+      await mineDays(22, network);
       await nft.connect(nftMinter1).stake(nftId1, amount(100));
       const nftInfoMonth = await getNftInfoAtMonth(nftId1, 0);
       expect(nftInfoMonth.staked).to.be.equal(amount(100));
@@ -395,7 +395,7 @@ describe("GenesisNftUpdateMonthly", () => {
     });
 
     it("In month 0, day 0, nftMinter1 unstakes 1000", async () => {
-      await mineDays(12, network);
+      await mineDays(22, network);
       await nft.connect(nftMinter1).unstake(nftId1, amount(1000));
       const nftInfoMonth = await getNftInfoAtMonth(nftId1, 0);
       expect(nftInfoMonth.staked).to.be.equal(amount(159000));
@@ -487,7 +487,7 @@ describe("GenesisNftUpdateMonthly", () => {
     });
 
     it("In month 0, day 0, nftMinter1 stakes 1000", async () => {
-      await mineDays(12, network);
+      await mineDays(22, network);
       await nft.connect(nftMinter1).stake(nftId1, amount(1000));
       const nftInfoMonth = await getNftInfoAtMonth(nftId1, 0);
       expect(nftInfoMonth.staked).to.be.equal(amount(161000));

@@ -358,7 +358,7 @@ describe("GenesisNft", () => {
 
   describe("Increasing the Level of the NFT", async () => {
     it("Testing staking and lvl increase", async () => {
-      await mineDays(12, network);
+      await mineDays(22, network);
       await nft.connect(nftMinter1).stake(nftId1, amount(3075));
       // There should be now 2500+3075=5575 #oftokensStaked in token 1.
       const _nft = await nft.getNftInfo(nftId1);
@@ -444,7 +444,7 @@ describe("GenesisNft", () => {
       await distribution.setWalletClaimable([nftMinter1.address], [158075], [0], [0], [0]);
       await distribution.setWalletClaimable([ownerNft2.address], [10000], [0], [0], [0]);
       await distribution.setWalletClaimable([ownerNft3.address], [10000], [0], [0], [0]);
-      await mineDays(12, network);
+      await mineDays(22, network);
       await mintNft(network, nft, workToken, nftMinter1, 158075, 0, 0, chainId);
       lockPeriod2 = monthsToSeconds(nftLockTimeByStake(5000, seed1kInv));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, ownerNft2, 5000, lockPeriod2, 0, chainId));
@@ -550,7 +550,7 @@ describe("GenesisNft", () => {
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
       ({ nftId: nftId4 } = await mintNft(network, nft, workToken, ownerNft4, 0, 0, 0, chainId));
     });
 
@@ -600,7 +600,7 @@ describe("GenesisNft", () => {
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
       await distribution.setWalletClaimable([ownerNft5.address], [251], [0], [0], [0]);
-      await mineDays(12, network);
+      await mineDays(22, network);
       const lockPeriod = monthsToSeconds(nftLockTimeByStake(251, seed251Inv));
       ({ nftId: nftId5 } = await mintNft(network, nft, workToken, ownerNft5, 251, lockPeriod, 0, chainId));
       await mineDays(1000, network);
@@ -762,7 +762,7 @@ describe("GenesisNft", () => {
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
       voucher = await nftMintVoucherGenerateLocal(ownerNft6.address, 0, nft.address, 0, 0, chainId);
     });
 
@@ -813,7 +813,7 @@ describe("GenesisNft", () => {
       nftMinter8 = accounts[8];
       nftMinter9 = accounts[9];
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
 
@@ -971,7 +971,7 @@ describe("GenesisNft", () => {
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 8;
       distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
     });
 
     describe("Minting after two months", async () => {
@@ -1013,7 +1013,7 @@ describe("GenesisNft", () => {
       nftMinter3 = accounts[3];
       nftMinter4 = accounts[4];
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
 
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
@@ -1099,7 +1099,7 @@ describe("GenesisNft", () => {
       nftMinter2 = accounts[2];
       rewarder = accounts[4];
       nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
-      await mineDays(12, network);
+      await mineDays(22, network);
 
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 0, 0, 0, chainId));
