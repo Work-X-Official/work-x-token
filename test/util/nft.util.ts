@@ -230,11 +230,21 @@ export const mintNftMany = async (
   nftMintQuantity: number,
   type: number,
   chainId: number,
+  amountToStake?: number,
 ): Promise<NftIds[]> => {
   const nftIds: NftIds[] = [];
   const nftCountCurrent = await nft.nftIdCounter();
   for (let i = 0; i < nftMintQuantity; i++) {
-    const nftId = await mintNft(network, nft, workToken, accounts[i + nftCountCurrent], 0, 0, type, chainId);
+    const nftId = await mintNft(
+      network,
+      nft,
+      workToken,
+      accounts[i + nftCountCurrent],
+      amountToStake ? amountToStake : 0,
+      0,
+      type,
+      chainId,
+    );
     nftIds.push(nftId);
   }
   return nftIds;
