@@ -297,10 +297,12 @@ describe("GenesisNftMint", () => {
         nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
       });
 
-      it("MintRemaining to treasury with 0 nfts previously minted", async () => {
+      it("MintRemaining to treasury with 0 nfts previously minted, and getIdsFromWallet works with 999 nfts", async () => {
         await nft.mintRemainingToTreasury();
         const nftCountRead = await nft.nftIdCounter();
         expect(nftCountRead).to.equal(999);
+        const Ids = await nft.getIdsFromWallet(signerImpersonated.address);
+        expect(Ids.length).to.equal(999);
       }).timeout(1000000);
 
       it("MintRemaining to treasury with all guaranteed first minted", async () => {
