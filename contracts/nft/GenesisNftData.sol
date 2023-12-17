@@ -448,7 +448,7 @@ contract GenesisNftData {
         uint256 _initCompleted
     ) private pure returns (string memory img) {
         if (_initCompleted > 0) {
-            img = string.concat(',"image":"', _image, Strings.toString(_tokenId), 'png"');
+            img = string.concat(',"image":"', _image, Strings.toString(_tokenId), '.png"');
         } else {
             img = ',"image": "https://content.workx.io/video/Work-X-Lockup.mp4"';
         }
