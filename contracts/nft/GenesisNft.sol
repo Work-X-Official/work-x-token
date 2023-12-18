@@ -229,14 +229,6 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     }
 
     /**
-     * @notice Rescue function to withdraw ETH mistakenly sent to the contract.
-     * @param _amount Amount of ETH to withdraw.
-     **/
-    function withdraw(uint256 _amount) external payable onlyOwner {
-        msg.sender.call{ value: _amount }("");
-    }
-
-    /**
      * @notice Rescue function to withdraw any ERC20 token mistakenly sent to the contract, except the $WORK token after init has completed.
      * @param _tokenAddress Address of the ERC20 token contract.
      * @param _amount Amount of the ERC20 token to withdraw.
@@ -247,6 +239,8 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         } else {
             if (_tokenAddress != address(token)) {
                 IERC20(_tokenAddress).transfer(msg.sender, _amount);
+            } else {
+                revert InitHasCompleted();
             }
         }
     }
