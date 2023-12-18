@@ -12,5 +12,5 @@ export const WORK_TOKEN_ADDRESSES = {
   apothem: "",
   polygon: "",
   mumbai: "",
-  scrollSepolia: "0xeA3a521Ffd0910Cb02A0EDE22439cDE572793557",
+  scrollSepolia: "",
 };
