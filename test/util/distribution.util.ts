@@ -47,6 +47,22 @@ export const setClaimable = async (
   await distribution.setWalletClaimable([account.address], [amount1], [amount2], [amount3], [0]);
 };
 
+export const setClaimableMany = async (
+  accounts: string[],
+  round: number,
+  amount: string,
+  distribution: TokenDistribution,
+) => {
+  const amount1 = round == 0 ? amount : "0";
+  const arr1 = new Array(accounts.length).fill(amount1);
+  const amount2 = round == 1 ? amount : "0";
+  const arr2 = new Array(accounts.length).fill(amount2);
+  const amount3 = round == 2 ? amount : "0";
+  const arr3 = new Array(accounts.length).fill(amount3);
+  const arr4 = new Array(accounts.length).fill(0);
+  await distribution.setWalletClaimable(accounts, arr1, arr2, arr3, arr4);
+};
+
 export const setClaimableByInvestment = async (
   wallet: string,
   invests: number[],

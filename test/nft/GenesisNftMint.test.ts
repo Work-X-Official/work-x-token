@@ -7,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Wallet } from "ethers";
 import { _mintNft, mintNft, mintNftMany, regenerateNft } from "../util/nft.util";
 import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
-import { regenerateTokenDistribution } from "../util/distribution.util";
+import { regenerateTokenDistribution, setClaimable, setClaimableMany } from "../util/distribution.util";
 import { amount, getImpersonateAccounts, mineDays } from "../util/helpers.util";
 import { COUNT_FCFS, COUNT_GUAR, COUNT_INV } from "../constants";
 
@@ -297,10 +297,12 @@ describe("GenesisNftMint", () => {
         nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
       });
 
-      it("MintRemaining to treasury with 0 nfts previously minted", async () => {
+      it("MintRemaining to treasury with 0 nfts previously minted, and getIdsFromWallet works with 999 nfts", async () => {
         await nft.mintRemainingToTreasury();
         const nftCountRead = await nft.nftIdCounter();
         expect(nftCountRead).to.equal(999);
+        const Ids = await nft.getIdsFromWallet(signerImpersonated.address);
+        expect(Ids.length).to.equal(999);
       }).timeout(1000000);
 
       it("MintRemaining to treasury with all guaranteed first minted", async () => {
@@ -358,6 +360,103 @@ describe("GenesisNftMint", () => {
         });
         expect(transferEvent).to.eql([]);
       }).timeout(1000000);
+    });
+
+    describe("Mint many nfts with different amounts", async () => {
+      it("100 nfts can be minted with amount 1000", async () => {
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 107;
+        distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
+        const mintQuantity = 100;
+        const accounts0 = accounts.slice(0, mintQuantity).map(x => x.address);
+        await setClaimableMany(accounts0, 0, "1000", distribution);
+        nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+        const type = 0;
+        await mintNftMany(network, nft, workToken, accounts, mintQuantity, type, chainId, 1000);
+        const nftCountRead = await nft.nftIdCounter();
+        expect(nftCountRead).to.equal(mintQuantity);
+      }).timeout(1000000);
+
+      it("Totals and getStaked are correct for these nfts with 1000", async () => {
+        const totals = await nft.getTotals(0);
+        expect(totals[0]).to.equal(100 * 52);
+        expect(totals[1]).to.equal(amount(100 * 1000));
+        expect(totals[2]).to.equal(amount(100 * 1000));
+
+        for (let i = 0; i < 100; i++) {
+          const getStaked = await nft.getStaked(i, 0);
+          expect(getStaked[0]).to.equal(amount(1000));
+          expect(getStaked[1]).to.equal(amount(1000));
+        }
+      });
+
+      it("200 can be minted with amount 10000, and 300 nfts can be minted with amount 200000", async () => {
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 507;
+        distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
+        const mintQuantity0 = 200;
+        const accounts0 = accounts.slice(0, mintQuantity0).map(x => x.address);
+        await setClaimableMany(accounts0, 0, "10000", distribution);
+
+        const mintQuantity1 = 300;
+        const accounts1 = accounts.slice(mintQuantity0, mintQuantity0 + mintQuantity1).map(x => x.address);
+        await setClaimableMany(accounts1, 0, "40000", distribution);
+        nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+        await mintNftMany(network, nft, workToken, accounts, mintQuantity0, 0, chainId, 10000);
+        await mintNftMany(network, nft, workToken, accounts, mintQuantity1, 1, chainId, 40000);
+        const nftCountRead = await nft.nftIdCounter();
+        expect(nftCountRead).to.equal(mintQuantity0 + mintQuantity1);
+      }).timeout(1000000);
+
+      it("Totals and getStaked are correct for these nfts with 10000 and 40000", async () => {
+        const totals = await nft.getTotals(0);
+        expect(totals[0]).to.equal(200 * 71 + 300 * 134);
+        expect(totals[1]).to.equal(amount(200 * 10000 + 300 * 40000));
+        expect(totals[2]).to.equal(amount(200 * 10000 + 300 * 40000));
+
+        for (let i = 0; i < 200; i++) {
+          const getStaked = await nft.getStaked(i, 0);
+          expect(getStaked[0]).to.equal(amount(10000));
+          expect(getStaked[1]).to.equal(amount(10000));
+        }
+        for (let i = 200; i < 500; i++) {
+          const getStaked = await nft.getStaked(i, 0);
+          expect(getStaked[0]).to.equal(amount(40000));
+          expect(getStaked[1]).to.equal(amount(40000));
+        }
+      });
+
+      it("The maximum stake at mint amount is 240000 00, so minting 100 nfts with 240_000 works", async () => {
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 108;
+        distribution = await regenerateTokenDistribution(startTime, workToken, accounts[0]);
+        const mintQuantity = 100;
+        const accounts0 = accounts.slice(0, mintQuantity).map(x => x.address);
+        await setClaimableMany(accounts0, 0, "240000", distribution);
+        await setClaimable(accounts[100], 0, "1", distribution);
+        nft = await regenerateNft(signerImpersonated, workToken, distribution, nftVoucherSigner.address);
+        const type = 0;
+        await mintNftMany(network, nft, workToken, accounts, mintQuantity, type, chainId, 240000);
+        const nftCountRead = await nft.nftIdCounter();
+        expect(nftCountRead).to.equal(mintQuantity);
+      }).timeout(1000000);
+
+      it("Totals and getStaked are correct for these nfts with 240_000", async () => {
+        const totals = await nft.getTotals(0);
+        expect(totals[0]).to.equal(100 * 370);
+        expect(totals[1]).to.equal(amount(100 * 240_000));
+        expect(totals[2]).to.equal(amount(100 * 240_000));
+
+        for (let i = 0; i < 100; i++) {
+          const getStaked = await nft.getStaked(i, 0);
+          expect(getStaked[0]).to.equal(amount(240_000));
+          expect(getStaked[1]).to.equal(amount(240_000));
+        }
+      });
+
+      it("Should revert when trying to mint nft number 100 while trying to stake 1 in it. ", async () => {
+        const type = 0;
+        await expect(mintNft(network, nft, workToken, accounts[100], 1, 0, type, chainId)).to.be.revertedWith(
+          "StakeAtMintMaxExceeded",
+        );
+      });
     });
   });
 
