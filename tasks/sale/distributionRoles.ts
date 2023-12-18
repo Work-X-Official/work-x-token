@@ -6,7 +6,7 @@ import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 
 // example: yarn hardhat distribution:role:nft --address 0x0 --network sepolia
 task("distribution:role:nft")
-  .addParam("address", "the addres you want to grant the MINTER_ROLE to")
+  .addParam("address", "the addres you want to grant the NFT_ROLE to")
   .setAction(async ({ address }, hre) => {
     const distribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
       DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
