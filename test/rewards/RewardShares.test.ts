@@ -1,14 +1,11 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
-
 import { RewardShares, GenesisNft, WorkToken, TokenDistribution } from "../../typings";
-
 import { ethers, network } from "hardhat";
-
+import { BigNumber } from "ethers";
 import { mineDays, amount } from "../util/helpers.util";
 import { regenerateContracts } from "../util/contract.util";
 import { mintNft } from "../util/nft.util";
-
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { REWARDS } from "../constants/rewards.constants";
@@ -70,7 +67,7 @@ describe("RewardShares", () => {
     });
   });
 
-  describe("Testing the Total Reward from Shares", async () => {
+  describe("Testing the Total Reward from Shares, getRewardTotalMonth", async () => {
     it("getRewardTotalMonth is correct month 0, 0", async () => {
       expect(await reward.getRewardTotalMonth(0)).to.equal(0);
     });
@@ -127,7 +124,7 @@ describe("RewardShares", () => {
     });
   });
 
-  describe("getRewardNftIdMonth", async () => {
+  describe("Testing Reward per nft per month from Shares, getRewardNftIdMonth", async () => {
     describe("getRewardNftIdMonth when there are no nfts", async () => {
       it("Before minting, the rewards are 0 for any month", async () => {
         expect(await reward.getRewardNftIdMonth(0, 0)).to.equal(0);
@@ -144,7 +141,7 @@ describe("RewardShares", () => {
       });
     });
 
-    describe("getRewardNftIdMonth with different amounts with a single nft so receives all rewards", async () => {
+    describe("getRewardNftIdMonth with single nft receives all rewards", async () => {
       it("Minting an nft", async () => {
         const amountMint1 = 25000;
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountMint1, 0, 0, chainId));
@@ -180,6 +177,113 @@ describe("RewardShares", () => {
       });
       it("getRewardsNftIdMonth is 0 at month 41", async () => {
         expect(await reward.getRewardNftIdMonth(nftId1, 41)).to.equal(0);
+      });
+    });
+
+    describe("getRewardNftIdMonth with multiple nfts share rewards", async () => {
+      let shares1: BigNumber;
+      let shares2: BigNumber;
+      let shares3: BigNumber;
+      let totalShares: BigNumber;
+
+      it("Minting another nft nft", async () => {
+        const amountMint2 = 50000;
+        ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountMint2, 0, 0, chainId));
+        expect(await nft.ownerOf(nftId2)).to.be.equal(nftMinter2.address);
+        const amountMint3 = 150000;
+        ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, amountMint3, 0, 0, chainId));
+        expect(await nft.ownerOf(nftId3)).to.be.equal(nftMinter3.address);
+
+        shares1 = (await nft.getNftInfo(nftId1))._shares;
+        shares2 = (await nft.getNftInfo(nftId2))._shares;
+        shares3 = (await nft.getNftInfo(nftId3))._shares;
+        totalShares = shares1.add(shares2).add(shares3);
+      });
+
+      it("After minting shares, getRewardNftIdMonth returns zero in month 0 for all nfts", async () => {
+        expect(await reward.getRewardNftIdMonth(nftId1, 0)).to.equal(0);
+        expect(await reward.getRewardNftIdMonth(nftId2, 0)).to.equal(0);
+        expect(await reward.getRewardNftIdMonth(nftId3, 0)).to.equal(0);
+      });
+
+      it("In months 1- 4, all nfts get their poolFraction of the rewards", async () => {
+        expect(await reward.getRewardNftIdMonth(nftId1, 1)).to.equal(amount(REWARDS[0]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 1)).to.equal(amount(REWARDS[0]).mul(shares2).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId3, 1)).to.equal(amount(REWARDS[0]).mul(shares3).div(totalShares));
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 2)).to.equal(amount(REWARDS[1]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 2)).to.equal(amount(REWARDS[1]).mul(shares2).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId3, 2)).to.equal(amount(REWARDS[1]).mul(shares3).div(totalShares));
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 3)).to.equal(amount(REWARDS[2]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 3)).to.equal(amount(REWARDS[2]).mul(shares2).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId3, 3)).to.equal(amount(REWARDS[2]).mul(shares3).div(totalShares));
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 4)).to.equal(amount(REWARDS[3]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 4)).to.equal(amount(REWARDS[3]).mul(shares2).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId3, 4)).to.equal(amount(REWARDS[3]).mul(shares3).div(totalShares));
+      });
+
+      it("In month 37-41, all nfts get their poolFraction of the rewards", async () => {
+        expect(await reward.getRewardNftIdMonth(nftId1, 37)).to.equal(
+          amount(REWARDS[36]).mul(shares1).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId2, 37)).to.equal(
+          amount(REWARDS[36]).mul(shares2).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId3, 37)).to.equal(
+          amount(REWARDS[36]).mul(shares3).div(totalShares),
+        );
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 38)).to.equal(
+          amount(REWARDS[37]).mul(shares1).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId2, 38)).to.equal(
+          amount(REWARDS[37]).mul(shares2).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId3, 38)).to.equal(
+          amount(REWARDS[37]).mul(shares3).div(totalShares),
+        );
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 39)).to.equal(
+          amount(REWARDS[38]).mul(shares1).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId2, 39)).to.equal(
+          amount(REWARDS[38]).mul(shares2).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId3, 39)).to.equal(
+          amount(REWARDS[38]).mul(shares3).div(totalShares),
+        );
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 40)).to.equal(
+          amount(REWARDS[39]).mul(shares1).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId2, 40)).to.equal(
+          amount(REWARDS[39]).mul(shares2).div(totalShares),
+        );
+        expect(await reward.getRewardNftIdMonth(nftId3, 40)).to.equal(
+          amount(REWARDS[39]).mul(shares3).div(totalShares),
+        );
+      });
+      it("getRewardsNftIdMonth is 0 at month 41", async () => {
+        expect(await reward.getRewardNftIdMonth(nftId1, 41)).to.equal(0);
+        expect(await reward.getRewardNftIdMonth(nftId2, 41)).to.equal(0);
+        expect(await reward.getRewardNftIdMonth(nftId3, 41)).to.equal(0);
+      });
+    });
+
+    describe("After destroying an nft getRewardNftIdMonth reverts", async () => {
+      it("The nft is eligible for rewards", async () => {
+        await mineDays(22, network);
+        await mineDays(30, network);
+        expect(await nft.getCurrentMonth()).to.equal(1);
+        expect(await reward.getRewardNftIdMonth(nftId1, 1)).to.not.be.equal(0);
+        expect(await reward.getRewardNftIdMonth(nftId1, 2)).to.not.be.equal(0);
+      });
+      it("The nft is destroyed now in month 0, so would not get rewards in month 2", async () => {
+        await nft.connect(nftMinter1).destroyNft(nftId1);
+        await expect(reward.getRewardNftIdMonth(nftId1, 1)).to.be.reverted;
+        await expect(reward.getRewardNftIdMonth(nftId1, 2)).to.be.reverted;
       });
     });
   });
