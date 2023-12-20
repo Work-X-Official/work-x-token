@@ -9,7 +9,7 @@ import { _mintNft, mintNft, mintNftMany, regenerateNft } from "../util/nft.util"
 import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
 import { regenerateTokenDistribution, setClaimable, setClaimableMany } from "../util/distribution.util";
 import { amount, getImpersonateAccounts, mineDays } from "../util/helpers.util";
-import { COUNT_FCFS, COUNT_GUAR, COUNT_INV } from "../constants";
+import { COUNT_FCFS, COUNT_GUAR, COUNT_INV } from "../constants/nft.constants";
 
 config();
 

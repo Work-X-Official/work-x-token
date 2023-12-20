@@ -15,7 +15,7 @@ import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, Wallet } from "ethers";
 import { amount } from "../util/helpers.util";
-import { DAILY_STAKING_ALLOWANCE } from "../constants";
+import { DAILY_STAKING_ALLOWANCE } from "../constants/nft.constants";
 import {
   Voucher,
   approveGenesisNft,

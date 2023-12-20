@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { BUY_MORE_PRICE } from "../../tasks/constants/sale.constants";
 import { BuyMore } from "../../typings";
-import { CONSTANTS } from "../constants";
+import { CONSTANTS } from "../constants/sale.constants";
 import { daysToSeconds } from "./helpers.util";
 import { BigNumber } from "ethers";
 import { workBought } from "../../tasks/util/utils";

@@ -1,0 +1,33 @@
+export const REWARD_SHARES_ADDRESSES = {
+  goerli: "",
+  sepolia: "",
+  hardhat: "",
+  kovan: "",
+  mainnet: "",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+  scrollSepolia: "",
+};
+
+export const REWARD_TOKENS_ADDRESSES = {
+  goerli: "",
+  sepolia: "",
+  hardhat: "",
+  kovan: "",
+  mainnet: "",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+  scrollSepolia: "",
+};

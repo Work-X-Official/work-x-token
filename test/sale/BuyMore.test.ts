@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai, { expect } from "chai";
 import { config } from "dotenv";
 import { ethers, network } from "hardhat";
-import { CONSTANTS } from "../constants";
+import { CONSTANTS } from "../constants/sale.constants";
 import { amount, expectToRevert } from "../util/helpers.util";
 import { BuyMore } from "../../typings";
 import { solidity } from "ethereum-waffle";
