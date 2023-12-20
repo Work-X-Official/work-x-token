@@ -1,0 +1,28 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { WorkToken, TokenDistribution, GenesisNft, RewardShares } from "../../typings";
+import { regenerateTokenDistribution } from "./distribution.util";
+import { regenerateNft, getVoucherSigner } from "./nft.util";
+import { regenerateWorkToken } from "./worktoken.util";
+import { regenerateRewardShares } from "./rewards.util";
+
+export const regenerateContracts = async (
+  accounts: SignerWithAddress[],
+  minter = accounts[0].address,
+  startTimeDistribution: number,
+): Promise<{
+  workToken: WorkToken;
+  distribution: TokenDistribution;
+  nft: GenesisNft;
+  rewardShares: RewardShares;
+}> => {
+  const workToken = await regenerateWorkToken(accounts, minter);
+  const distribution = await regenerateTokenDistribution(startTimeDistribution, workToken, accounts[0]);
+  const nft = await regenerateNft(accounts[0], workToken, distribution, getVoucherSigner().address);
+  const rewardShares = await regenerateRewardShares(accounts[0], workToken, nft);
+  return {
+    workToken,
+    distribution,
+    nft,
+    rewardShares,
+  };
+};
