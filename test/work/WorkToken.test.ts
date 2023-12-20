@@ -19,8 +19,8 @@ describe("WorkToken", () => {
 
   before(async () => {
     accounts = await ethers.getSigners();
-    minter1 = accounts[3];
-    minter2 = accounts[4];
+    minter1 = accounts[0];
+    minter2 = accounts[1];
 
     workToken = await regenerateWorkToken(accounts, accounts[0].address);
   });

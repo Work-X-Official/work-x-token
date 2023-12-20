@@ -71,7 +71,7 @@ describe("GenesisNft", () => {
     stablecoinDecimals = await stablecoin.decimals();
     accounts = await ethers.getSigners();
 
-    nftMinter1 = accounts[3];
+    nftMinter1 = accounts[0];
     nftVoucherSigner = getVoucherSigner();
 
     await sendTokens(network, signerImpersonated, accounts, stablecoinDecimals, stablecoin);
