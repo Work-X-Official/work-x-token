@@ -14,7 +14,6 @@ error TransferFailed();
 contract RewardShares is Ownable, ReentrancyGuard {
     IGenesisNft public nft;
     IERC20 public workToken;
-    uint256 public startTime = 0;
 
     mapping(uint256 => uint256) public claimed;
 
@@ -68,7 +67,6 @@ contract RewardShares is Ownable, ReentrancyGuard {
         1258
     ];
 
-    event StartTimeSet(uint256 indexed startTime);
     event Claimed(uint256 indexed nftId, address indexed claimer, uint256 amountClaimed);
 
     /**
@@ -82,8 +80,6 @@ contract RewardShares is Ownable, ReentrancyGuard {
     constructor(address _genesisNftAddress, address _workTokenAddress) {
         nft = IGenesisNft(_genesisNftAddress);
         workToken = IERC20(_workTokenAddress);
-        startTime = nft.startTime();
-        emit StartTimeSet(startTime);
     }
 
     /****
@@ -107,15 +103,6 @@ contract RewardShares is Ownable, ReentrancyGuard {
      **/
     function approve(address _spender, uint256 _amount) external onlyOwner {
         workToken.approve(_spender, _amount);
-    }
-
-    /**
-     * @notice sync the starttime with the nft contract when the starttime is changed there, only callable by the owner.
-     * @dev this needs to be called when the starttime changed in the nft contract.
-     */
-    function syncStartTime() external onlyOwner {
-        startTime = nft.startTime();
-        emit StartTimeSet(startTime);
     }
 
     /****
@@ -159,8 +146,13 @@ contract RewardShares is Ownable, ReentrancyGuard {
      * @return The total amount that a nftId can claim.
      */
     function getRewardNftId(uint256 _nftId) public view returns (uint256) {
+        uint256 currentMonth = nft.getCurrentMonth();
+        if(currentMonth == 0) {
+            return 0;
+        }
         uint256 totalClaimable = 0;
-        for (uint256 i = 1; i <= getCurrentMonth(); i++) {
+
+        for (uint256 i = 1; i <= currentMonth; i++) {
             totalClaimable += getRewardNftIdMonth(_nftId, i);
         }
         return totalClaimable;
@@ -206,25 +198,5 @@ contract RewardShares is Ownable, ReentrancyGuard {
         }
         uint256 rewardTotalMonth = rewards[_month - 1] * ONE_E18;
         return rewardTotalMonth;
-    }
-
-    /**
-     * @notice Get the start time of the reward period.
-     * @return The start time of the reward period.
-     **/
-    function getStartTime() public view returns (uint256) {
-        return startTime;
-    }
-
-    /**
-     * @notice Get the current month number since the reward period has started.
-     * @return The current month.
-     **/
-    function getCurrentMonth() public view returns (uint256) {
-        if (block.timestamp < startTime) {
-            return 0;
-        } else {
-            return (block.timestamp - startTime) / 30 days;
-        }
     }
 }

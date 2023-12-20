@@ -15,4 +15,6 @@ interface IGenesisNft {
     function startTime() external view returns (uint128);
 
     function ownerOf(uint256 tokenId) external view returns (address);
+
+    function getCurrentMonth() external view returns (uint256);
 }

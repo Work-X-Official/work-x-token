@@ -47,7 +47,7 @@ describe("RewardShares", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 28;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 29;
     ({
       workToken,
       distribution,
@@ -61,27 +61,12 @@ describe("RewardShares", () => {
   });
 
   describe("Startime Testing", async () => {
-    it("The nft and reward startTime are initially the same", async () => {
-      const nftStartTime = await reward.startTime();
-      const rewardStartTime = await reward.startTime();
-      expect(nftStartTime).to.not.equal(0);
-      expect(nftStartTime).to.equal(rewardStartTime);
-    });
-    it("The nft starttime can be changed then the reward starttime is different", async () => {
+    it("The nft starttime can be updated", async () => {
       const currentBlockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
       const dayAheadTimeStamp = currentBlockTimestamp + 86400;
       await nft.setStartTime(dayAheadTimeStamp);
       const nftStartTime = await nft.startTime();
-      const rewardStartTime = await reward.startTime();
-      expect(nftStartTime).to.not.equal(rewardStartTime);
       expect(nftStartTime).to.equal(dayAheadTimeStamp);
-    });
-
-    it("The reward starttime can become synced again, but calling the sync function", async () => {
-      const nftStartTime = await nft.startTime();
-      await reward.syncStartTime();
-      const rewardStartTime = await reward.startTime();
-      expect(nftStartTime).to.equal(rewardStartTime);
     });
   });
 
@@ -202,6 +187,7 @@ describe("RewardShares", () => {
   describe("Mint and Simple Claim", async () => {
     before(async () => {
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 29;
+      console.log("Accounts again");
       ({
         workToken,
         distribution,
@@ -247,7 +233,7 @@ describe("RewardShares", () => {
 
     it("On day 30, after 1 month, the getCurrentMonth correctly returns 1", async () => {
       await mineDays(10, network);
-      const currentMonth = await reward.getCurrentMonth();
+      const currentMonth = await nft.getCurrentMonth();
       expect(currentMonth).to.equal(1);
     });
 
