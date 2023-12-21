@@ -6,6 +6,8 @@ interface IGenesisNft {
 
     function getShares(uint256 _tokenId, uint256 _month) external view returns (uint256);
 
+    function getStaked(uint256 _tokenId, uint256 _month) external view returns (uint256 stakedAmount, uint256 stakedAmountMinimum);
+
     function getTotals(
         uint256 _month
     ) external view returns (uint256 _totalShares, uint256 _totalBalance, uint256 _minimumBalance);
