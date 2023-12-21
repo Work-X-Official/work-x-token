@@ -2,14 +2,14 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 
 import { task } from "hardhat/config";
-import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 
 // example: yarn hardhat distribution:role:nft --address 0x0 --network sepolia
 task("distribution:role:nft")
   .addParam("address", "the addres you want to grant the NFT_ROLE to")
   .setAction(async ({ address }, hre) => {
     const distribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-      DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
     );
 
     console.log("╔══════════════════════════════════════════════════════════════════════");
@@ -29,7 +29,7 @@ task("distribution:role:defaultadmin")
   .addParam("address", "the addres you want to grant the DEFAULT_ADMIN_ROLE to")
   .setAction(async ({ address }, hre) => {
     const distribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-      DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
     );
 
     console.log("╔══════════════════════════════════════════════════════════════════════");

@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-waffle";
 
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
-import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 import { TokenDistribution } from "../../typings";
 
 // example: yarn hardhat distribution:deploy --network sepolia
@@ -52,7 +52,7 @@ task("distribution:deploy").setAction(async function (_, hre) {
 
 task("distribution:verify").setAction(async function (_, hre) {
   const distribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-    DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+    SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
   );
   const startTime = 1701770400;
   const workTokenAddress = await distribution.workToken();

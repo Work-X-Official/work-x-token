@@ -7,7 +7,7 @@ import { amount } from "./helpers.util";
 import { approveWorkToken } from "./worktoken.util";
 import { Investment, calculateAmountBoughtTotal, calculateBuyMoreTokenBalance } from "./sale.util";
 import { MIN_TOKEN_STAKING, VESTING_LENGHT_BUY_MORE_MONTHS } from "../../tasks/constants/sale.constants";
-import { avgMonthsVest, maxLockLength } from "./distribution.util";
+import { avgMonthsVest, maxLockLength } from "./sale-distribution.util";
 import { ethers } from "hardhat";
 
 interface NftIds {

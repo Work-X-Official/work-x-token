@@ -9,7 +9,7 @@ import { Wallet } from "ethers";
 import { amount } from "../util/helpers.util";
 import { approveGenesisNft, mintNft, regenerateNft } from "../util/nft.util";
 import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
-import { regenerateTokenDistribution } from "../util/distribution.util";
+import { regenerateTokenDistribution } from "../util/sale-distribution.util";
 
 config();
 

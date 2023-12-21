@@ -33,3 +33,22 @@ task("nft:mint").setAction(async (_, hre) => {
   );
   console.log("╚═════�");
 });
+
+// yarn hardhat nft:minttreasury --network sepolia
+task("nft:minttreasury").setAction(async (_, hre) => {
+  const nft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
+    GENISIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENISIS_NFT_ADDRESSES],
+  );
+
+  const [deployer] = await hre.ethers.getSigners();
+  const net = await hre.ethers.provider.getNetwork();
+  const chainId = net.chainId;
+
+  console.log("");
+  console.log("╔══════════════════════════════════════════════════════════════════════");
+  console.log("║" + " Minting remaining NFTs to treasury" + deployer.address);
+  console.log("║" + " On chain id" + chainId);
+  await nft.mintRemainingToTreasury();
+  console.log("║" + " Done");
+  console.log("╚══════════════════════════════════════════════════════════════════════");
+});

@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TokenDistribution, WorkToken } from "../../typings";
+import { ProjectDistribution, TokenDistribution, WorkToken } from "../../typings";
 import { Investment, vestingPeriod3Cliff, vestingPeriods } from "./sale.util";
 import { BigNumber } from "ethers";
 import { amount, big } from "./helpers.util";
@@ -24,6 +24,17 @@ export const regenerateTokenDistribution = async (
   ).deploy(workToken.address, _startTime)) as TokenDistribution;
   await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
   await distribution.grantRole(await distribution.INIT_ROLE(), deployer.address);
+  return distribution;
+};
+
+export const regenerateProjectDistribution = async (
+  workToken: WorkToken,
+  signers: SignerWithAddress[],
+): Promise<ProjectDistribution> => {
+  const distribution = (await (
+    await ethers.getContractFactory("ProjectDistribution")
+  ).deploy(workToken.address, signers.map(s => s.address).splice(0, 8))) as ProjectDistribution;
+  await workToken.grantRole(await workToken.MINTER_ROLE(), distribution.address);
   return distribution;
 };
 

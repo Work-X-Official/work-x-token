@@ -9,7 +9,7 @@ import { BigNumber, Wallet } from "ethers";
 import { amount } from "../util/helpers.util";
 import { mintNft, regenerateNft } from "../util/nft.util";
 import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
-import { regenerateTokenDistribution } from "../util/distribution.util";
+import { regenerateTokenDistribution } from "../util/sale-distribution.util";
 
 config();
 

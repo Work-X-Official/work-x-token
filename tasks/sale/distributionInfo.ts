@@ -1,14 +1,14 @@
 import { TokenDistribution } from "../../typings";
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
-import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 
 // example: yarn hardhat distribution:info --network sepolia
 task("distribution:info", "Gets info about the distribution of an address")
   .addParam("address", "the addres you want to mint tokens to")
   .setAction(async ({ address }, hre) => {
     const distribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-      DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
     );
     const startTime = Number((await distribution.startTime()).toString());
     const startTimeDate = new Date(startTime * 1000);

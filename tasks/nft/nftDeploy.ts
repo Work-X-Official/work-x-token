@@ -1,7 +1,7 @@
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
-import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 import { TokenDistribution, WorkToken } from "../../typings";
 import {
   GENESIS_NFT_ATTRIBUTES_ADDRESSES,
@@ -18,7 +18,7 @@ task("nft:deploy").setAction(async (_, hre) => {
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
   const distribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-    DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+    SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
   );
   const nftAttributesAddress =
     GENESIS_NFT_ATTRIBUTES_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ATTRIBUTES_ADDRESSES];
@@ -107,7 +107,7 @@ task("nft:verify").setAction(async (_, hre) => {
       "Work X Genesis NFT",
       "Work X Genesis NFT",
       WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
-      DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
       GENESIS_NFT_DATA_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_DATA_ADDRESSES],
       nftVoucherSigner.address,
     ],
