@@ -548,12 +548,14 @@ describe("RewardShares", () => {
       await testRewardClaimed(nftId2, nftMinter2);
       await testRewardClaimed(nftId3, nftMinter3);
     });
+
     it("Go to month 11, getRewardNftId returns for each the reward of month 0", async () => {
       await mineDays(30 * 11, network);
       await testRewardClaimed(nftId1, nftMinter1);
       await testRewardClaimed(nftId2, nftMinter2);
       await testRewardClaimed(nftId3, nftMinter3);
     });
+
     it("Go to month 40, getRewardNftId returns for each the reward of month 0", async () => {
       await mineDays(30 * 29, network);
       await testRewardClaimed(nftId1, nftMinter1);

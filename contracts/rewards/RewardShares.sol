@@ -3,14 +3,11 @@ pragma solidity 0.8.22;
 
 import "./../interface/IGenesisNft.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 
 error NftNotOwned();
 
-contract RewardShares is Ownable, ReentrancyGuard {
+contract RewardShares is Ownable {
     IGenesisNft public nft;
     IERC20 public workToken;
 
@@ -70,9 +67,6 @@ contract RewardShares is Ownable, ReentrancyGuard {
 
     /**
      * @notice initializes the contract with the nft and workToken addresses and the start time of the nft.
-     * @dev Be sure that before deploying this contract that the start time is set in the nft contract, this had to be defined in the other contract,
-     *  because the start time is used to in which month stakers update their shares.
-     *  security wise, because constructors are only called once, so no reentrancy issue.
      * @param _genesisNftAddress The address of the contract that is staked in on which the rewards will be based, the nft contract.
      * @param _workTokenAddress The address of the WORK token contract.
      */
@@ -109,9 +103,7 @@ contract RewardShares is Ownable, ReentrancyGuard {
      ****/
 
     /**
-     * @notice Claim the amount that you are eligble for that you have not claimed yet.
-     * @dev This function calls a function that calls the calculateClaimAmountForNftId function to get the amount you want to stake.
-     *  Then transfers the elibible amount to the caller.
+     * @notice Claim the amount the nft is eligble for into the nft.
      * @param _nftId The id of the nft for which you want to claim the rewards.
      */
     function claim(uint256 _nftId) external returns (bool) {
@@ -119,13 +111,12 @@ contract RewardShares is Ownable, ReentrancyGuard {
             revert NftNotOwned();
         }
 
-        uint reward = getRewardNftId(_nftId);
-        uint256 claimable = reward - claimed[_nftId];
+        uint256 nftIdClaimable = claimable(_nftId);
 
-        if (claimable > 0) {
-            claimed[_nftId] += claimable;
-            nft.reward(_nftId, claimable);
-            emit Claimed(_nftId, msg.sender, claimable);
+        if (nftIdClaimable > 0) {
+            claimed[_nftId] += nftIdClaimable;
+            nft.reward(_nftId, nftIdClaimable);
+            emit Claimed(_nftId, msg.sender, nftIdClaimable);
         }
         return true;
     }
@@ -135,9 +126,18 @@ contract RewardShares is Ownable, ReentrancyGuard {
      ****/
 
     /**
+     * @notice How much tokens are currently claimable.
+     * @param _nftId The id of the nft for which you want to check the claimable amount for.
+     */
+    function claimable(uint256 _nftId) public view returns (uint256 _claimable) {
+        _claimable = getRewardNftId(_nftId) - claimed[_nftId];
+    }
+
+
+    /**
      * @notice Calculates how much a nftId is allowed to claim by finding how much you can claim for each month summed.
      * @dev It loops of all previous months and callls the function that calculates the reward for a specific month,
-     *  starting at the 1 first month, since in the first month you cannot claim anything.
+     *  starting at the 1 first month, since in month 0 you cannot claim anything.
      * @param _nftId The id of the nft for which you want to claim the rewards.
      * @return The total amount that a nftId can claim.
      */
@@ -156,10 +156,8 @@ contract RewardShares is Ownable, ReentrancyGuard {
 
     /**
      * @notice Calculates how much a nftId is allowed to claim for a specific month by taking into account
-     *  the rewards of this month, the userShares and the totalShares at the end of the previous month, because this amount has been staked for at least this whole month.
+     *  the rewards of this month, the nftIdShares and the totalShares at the end of the previous month, because this amount has been staked for at least this whole month.
      * @dev The amount of shares of a user is divided by the total shares. To find his percentage of the rewards of that month.
-     *  For security, it is oke to use the external call in the loop, because the nft is a trusted contract.
-     * The loop over the months from current to previous months is done to find the last time a user staked that will be his stake in the most recent month, or the last time he staked.
      * @param _nftId The id of the nft for which you want to find the claimable amount.
      * @param _month The month for which you want to find the claimable amount.
      * @return The amount that a nftId can claim for a specific month.
@@ -168,17 +166,19 @@ contract RewardShares is Ownable, ReentrancyGuard {
         if (_month == 0) {
             return 0;
         }
-        (uint256 sharesTotal, , ) = nft.getTotals(_month);
-        if (sharesTotal == 0) {
+        (uint256 totalShares, , ) = nft.getTotals(_month);
+
+        if (totalShares == 0) {
             return 0;
         }
-        uint256 sharesNftId = nft.getShares(_nftId, _month);
-        if (sharesNftId == 0) {
+        uint256 nftIdShares = nft.getShares(_nftId, _month);
+        if (nftIdShares == 0) {
             return 0;
         }
+
         uint256 rewardTotalMonth = getRewardTotalMonth(_month);
 
-        uint nftIdRewardMonth = (sharesNftId * rewardTotalMonth) / sharesTotal;
+        uint nftIdRewardMonth = (nftIdShares * rewardTotalMonth) / totalShares;
 
         return nftIdRewardMonth;
     }
