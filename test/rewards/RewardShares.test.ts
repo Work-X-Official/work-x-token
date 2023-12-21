@@ -9,6 +9,7 @@ import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { REWARDS } from "../constants/rewards.constants";
+import { getRewardsTotal } from "../util/rewards.util";
 
 config();
 
@@ -31,6 +32,13 @@ describe("RewardShares", () => {
   let reward: RewardShares;
 
   let chainId: number;
+
+  const testRewardClaimed = async (nftId: number, account: SignerWithAddress) => {
+    const rewardNftId = await reward.connect(account).getRewardNftId(nftId);
+    await reward.connect(account).claim(nftId);
+    const claimed = await reward.connect(account).claimed(nftId);
+    expect(rewardNftId).to.equal(claimed);
+  };
 
   before(async () => {
     accounts = await ethers.getSigners();
@@ -336,24 +344,18 @@ describe("RewardShares", () => {
 
       it("Go to month 40, getRewardNftId returns also the last month rewards", async () => {
         await mineDays(30, network);
-        let sumRewards = 0;
-        for (const value of REWARDS) {
-          sumRewards += value;
-        }
-        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(sumRewards));
+        const rewardsTotal = getRewardsTotal();
+        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(rewardsTotal));
       });
 
       it("Later months the reward does not increase", async () => {
         await mineDays(30, network);
-        let sumRewards = 0;
-        for (const value of REWARDS) {
-          sumRewards += value;
-        }
-        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(sumRewards));
+        const rewardsTotal = getRewardsTotal();
+        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(rewardsTotal));
         await mineDays(30, network);
-        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(sumRewards));
+        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(rewardsTotal));
         await mineDays(30, network);
-        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(sumRewards));
+        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(rewardsTotal));
         await mineDays(30 * 1000, network);
       });
     });
@@ -458,7 +460,60 @@ describe("RewardShares", () => {
     });
   });
 
-  describe("Mint and Simple Claim", async () => {
+  describe("Simple Claim, Error and Events", async () => {
+    before(async () => {
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 38;
+      ({
+        workToken,
+        distribution,
+        nft,
+        rewardShares: reward,
+      } = await regenerateContracts(accounts, accounts[0].address, startTime));
+      await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
+      await reward.approve(nft.address, amount(1000000));
+    });
+
+    it("Cannot claim when the token does not exists", async () => {
+      await expect(reward.connect(nftMinter1).claim("0")).to.be.revertedWith("ERC721: invalid token ID");
+    });
+
+    it("Mint nft 1 and go to startime", async () => {
+      const amountMint1 = 25000;
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountMint1, 0, 0, chainId));
+      expect(await nft.ownerOf(nftId1)).to.be.equal(nftMinter1.address);
+
+      await mineDays(22, network);
+    });
+
+    it("Should revert when you are not the owner", async () => {
+      await expect(reward.connect(nftMinter2).claim(nftId1)).to.be.revertedWith("NftNotOwned");
+    });
+
+    it("Right after mint you cannot claim yet, so nothing is transfered", async () => {
+      await expect(reward.connect(nftMinter1).claim(nftId1)).to.not.emit(nft, "Transfer");
+      await expect(reward.connect(nftMinter1).claim(nftId1)).to.not.emit(reward, "Claimed");
+    });
+
+    it("During first month (on day 20), nothing to claim", async () => {
+      await mineDays(20, network);
+      await expect(reward.connect(nftMinter1).claim(nftId1)).to.not.emit(nft, "Transfer");
+    });
+
+    it("On day 30, after 1 month, the getCurrentMonth correctly returns 1", async () => {
+      await mineDays(10, network);
+      const currentMonth = await nft.getCurrentMonth();
+      expect(currentMonth).to.equal(1);
+    });
+
+    it("Claim emits a Claimed event and increases the staked of the nft", async () => {
+      const stakedBeforeNft1 = Number(ethers.utils.formatEther((await nft.getStaked(nftId1, 1))[0]));
+      await expect(reward.connect(nftMinter1).claim(nftId1)).to.emit(reward, "Claimed");
+      const stakedAfterNft1 = Number(ethers.utils.formatEther((await nft.getStaked(nftId1, 1))[0]));
+      expect(stakedAfterNft1).to.be.gt(stakedBeforeNft1);
+    });
+  });
+
+  describe("Test claim function, claimed va claimable", async () => {
     before(async () => {
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 30;
       ({
@@ -470,11 +525,7 @@ describe("RewardShares", () => {
       await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [50000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter3.address], [150000], [0], [0], [0]);
-      await reward.approve(nft.address, amount(1000000));
-    });
-
-    it("Cannot claim when the token does not exists", async () => {
-      await expect(reward.connect(nftMinter1).claim("0")).to.be.revertedWith("ERC721: invalid token ID");
+      await reward.approve(nft.address, amount(1400000));
     });
 
     it("Mint nft 1,2, 3 and go to startime", async () => {
@@ -491,45 +542,39 @@ describe("RewardShares", () => {
       await mineDays(22, network);
     });
 
-    it("Right after mint you cannot claim yet, so nothing is transfered", async () => {
-      await expect(reward.connect(nftMinter1).claim(nftId1)).to.not.emit(nft, "Transfer");
-      await expect(reward.connect(nftMinter1).claim(nftId1)).to.not.emit(reward, "Claimed");
-      await expect(reward.connect(nftMinter2).claim(nftId2)).to.not.emit(nft, "Transfer");
-      await expect(reward.connect(nftMinter2).claim(nftId2)).to.not.emit(reward, "Claimed");
-      await expect(reward.connect(nftMinter3).claim(nftId3)).to.not.emit(nft, "Transfer");
-      await expect(reward.connect(nftMinter3).claim(nftId3)).to.not.emit(reward, "Claimed");
+    it("Go to month 1, getRewardNftId returns for each the reward of month 0", async () => {
+      await mineDays(30, network);
+      await testRewardClaimed(nftId1, nftMinter1);
+      await testRewardClaimed(nftId2, nftMinter2);
+      await testRewardClaimed(nftId3, nftMinter3);
+    });
+    it("Go to month 11, getRewardNftId returns for each the reward of month 0", async () => {
+      await mineDays(30 * 11, network);
+      await testRewardClaimed(nftId1, nftMinter1);
+      await testRewardClaimed(nftId2, nftMinter2);
+      await testRewardClaimed(nftId3, nftMinter3);
+    });
+    it("Go to month 40, getRewardNftId returns for each the reward of month 0", async () => {
+      await mineDays(30 * 29, network);
+      await testRewardClaimed(nftId1, nftMinter1);
+      await testRewardClaimed(nftId2, nftMinter2);
+      await testRewardClaimed(nftId3, nftMinter3);
     });
 
-    it("During first month (on day 20), nothing to claim", async () => {
-      await mineDays(20, network);
-      await expect(reward.connect(nftMinter1).claim(nftId1)).to.not.emit(nft, "Transfer");
+    it("Go to month 45 and claim", async () => {
+      await mineDays(30 * 5, network);
+      await testRewardClaimed(nftId1, nftMinter1);
+      await testRewardClaimed(nftId2, nftMinter2);
+      await testRewardClaimed(nftId3, nftMinter3);
     });
 
-    it("On day 30, after 1 month, the getCurrentMonth correctly returns 1", async () => {
-      await mineDays(10, network);
-      const currentMonth = await nft.getCurrentMonth();
-      expect(currentMonth).to.equal(1);
-    });
-
-    it("The levels and shares the nfts are correct", async () => {
-      const nftInfo1 = await nft.getNftInfo(nftId1);
-      expect(nftInfo1._level).to.equal(29);
-      expect(nftInfo1._shares).to.equal(50 + 52);
-
-      const nftInfo2 = await nft.getNftInfo(nftId2);
-      expect(nftInfo2._level).to.equal(44);
-      expect(nftInfo2._shares).to.equal(50 + 104);
-
-      const nftInfo3 = await nft.getNftInfo(nftId3);
-      expect(nftInfo3._shares).to.equal(50 + 307);
-      expect(nftInfo3._level).to.equal(79);
-    });
-
-    it("Claim emits a Claimed event and increases the staked of the nft", async () => {
-      const stakedBeforeNft1 = Number(ethers.utils.formatEther((await nft.getStaked(nftId1, 1))[0]));
-      await expect(reward.connect(nftMinter1).claim(nftId1)).to.emit(reward, "Claimed");
-      const stakedAfterNft1 = Number(ethers.utils.formatEther((await nft.getStaked(nftId1, 1))[0]));
-      expect(stakedAfterNft1).to.be.gt(stakedBeforeNft1);
+    it("Total claimed is equal to the total rewards, each claim in each month are rounded down so they are roughly equal", async () => {
+      const claimed1 = await reward.connect(nftMinter1).claimed(nftId1);
+      const claimed2 = await reward.connect(nftMinter2).claimed(nftId2);
+      const claimed3 = await reward.connect(nftMinter3).claimed(nftId3);
+      const claimedTotal = claimed1.add(claimed2).add(claimed3);
+      const rewardsTotal = getRewardsTotal();
+      expect(claimedTotal).to.closeTo(amount(rewardsTotal), amount(1));
     });
   });
 });

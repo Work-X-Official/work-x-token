@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Signer, ethers } from "ethers";
+import { BigNumber, Signer, ethers } from "ethers";
 import { Network } from "hardhat/types/runtime";
 
 export type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
@@ -11,6 +11,7 @@ type ImpersonatedAccounts = {
 
 export const amount = (a: number) => ethers.utils.parseUnits(a.toString(), 18);
 export const amountFromString = (a: string) => ethers.utils.parseUnits(a, 18);
+export const amountFormatted = (a: BigNumber): number => Number(ethers.utils.formatUnits(a, 18));
 export const big = (a: number) => ethers.BigNumber.from(a.toString());
 
 export const mineDays = async (days: number, network: Network) => {

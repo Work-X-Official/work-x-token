@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 error NftNotOwned();
-error TransferFailed();
 
 contract RewardShares is Ownable, ReentrancyGuard {
     IGenesisNft public nft;
@@ -125,9 +124,6 @@ contract RewardShares is Ownable, ReentrancyGuard {
 
         if (claimable > 0) {
             claimed[_nftId] += claimable;
-            if (!workToken.transfer(msg.sender, claimable)) {
-                revert TransferFailed();
-            }
             nft.reward(_nftId, claimable);
             emit Claimed(_nftId, msg.sender, claimable);
         }
