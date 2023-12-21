@@ -57,7 +57,7 @@ describe("WorkToken", () => {
       const balanceBefore = await workToken.balanceOf(minter1.address);
       expect(balanceBefore).to.be.gt(0);
 
-      await workToken.connect(minter1).burn(ethers.utils.parseUnits("2250100", 18));
+      await workToken.connect(minter1).burn(ethers.utils.parseUnits("3250100", 18));
       const balanceAfter = await workToken.balanceOf(minter1.address);
       expect(balanceAfter).to.be.eq(0);
     });

@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { GenesisNft, RewardShares, WorkToken } from "../../typings";
+import { GenesisNft, RewardShares, RewardTokens, WorkToken } from "../../typings";
 import { ethers } from "hardhat";
 import { REWARDS } from "../constants/rewards.constants";
 
@@ -24,4 +24,19 @@ export const getRewardsTotal = (): number => {
     rewardsTotal += value;
   }
   return rewardsTotal;
+};
+
+export const regenerateRewardTokens = async (
+  ownerRewards: SignerWithAddress,
+  workToken: WorkToken,
+  nft: GenesisNft,
+): Promise<RewardTokens> => {
+  const rewardTokens = await (
+    await ethers.getContractFactory("RewardTokens", ownerRewards)
+  ).deploy(nft.address, workToken.address);
+  await rewardTokens.deployed();
+
+  await workToken.connect(ownerRewards).transfer(rewardTokens.address, ethers.utils.parseEther("1500000"));
+  await nft.setRewarder(rewardTokens.address, true);
+  return rewardTokens;
 };
