@@ -1,8 +1,11 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { GenesisNft, RewardShares, RewardTokens, WorkToken } from "../../typings";
 import { ethers } from "hardhat";
+import { Signer } from "ethers";
 import { REWARDS } from "../constants/rewards.constants";
 import { expect } from "chai";
+import { Network } from "hardhat/types/runtime";
+import { mineDays } from "./helpers.util";
 
 export const regenerateRewardShares = async (
   ownerRewards: SignerWithAddress,
@@ -51,4 +54,17 @@ export const getRewardsTotal = (): number => {
     rewardsTotal += value;
   }
   return rewardsTotal;
+};
+
+export const mineStakeMonths = async (
+  account: Signer,
+  nft: GenesisNft,
+  nftId: number,
+  months: number,
+  network: Network,
+) => {
+  for (let i = 0; i < months; i++) {
+    await nft.connect(account).stake(nftId, 0);
+    await mineDays(30, network);
+  }
 };

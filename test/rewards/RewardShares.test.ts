@@ -9,7 +9,7 @@ import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { REWARDS } from "../constants/rewards.constants";
-import { getRewardsTotal } from "../util/rewards.util";
+import { getRewardsTotal, testRewardClaimed } from "../util/rewards.util";
 
 config();
 
@@ -33,13 +33,6 @@ describe("RewardShares", () => {
 
   let chainId: number;
 
-  const testRewardClaimed = async (nftId: number, account: SignerWithAddress) => {
-    const rewardNftId = await reward.connect(account).getRewardNftId(nftId);
-    await reward.connect(account).claim(nftId);
-    const claimed = await reward.connect(account).claimed(nftId);
-    expect(rewardNftId).to.equal(claimed);
-  };
-
   before(async () => {
     accounts = await ethers.getSigners();
     chainId = (await ethers.provider.getNetwork()).chainId;
@@ -48,7 +41,7 @@ describe("RewardShares", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 29;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
     ({
       workToken,
       distribution,
@@ -298,7 +291,7 @@ describe("RewardShares", () => {
   describe("Testing getRewardNftId", async () => {
     describe("Simple test getRewardNftId when there is only 1 nft", async () => {
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 29;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 31;
         ({
           workToken,
           distribution,
@@ -335,11 +328,8 @@ describe("RewardShares", () => {
       it("Go to month 39, getRewardNftId returns rewards from month 1 to month 39", async () => {
         await mineDays(30 * 37, network);
         expect(await nft.getCurrentMonth()).to.equal(39);
-        let sumRewards = 0;
-        for (const value of REWARDS) {
-          sumRewards += value;
-        }
-        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(sumRewards - REWARDS[39]));
+        const rewardsTotal = getRewardsTotal();
+        expect(await reward.getRewardNftId(nftId1)).to.equal(amount(rewardsTotal - REWARDS[39]));
       });
 
       it("Go to month 40, getRewardNftId returns also the last month rewards", async () => {
@@ -367,7 +357,7 @@ describe("RewardShares", () => {
       let totalShares: BigNumber;
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 29;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 31;
         ({
           workToken,
           distribution,
@@ -430,7 +420,7 @@ describe("RewardShares", () => {
 
   describe("Testing the approve function", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 30;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 31;
       ({
         workToken,
         distribution,
@@ -462,7 +452,7 @@ describe("RewardShares", () => {
 
   describe("Simple Claim, Error and Events", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 38;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 40;
       ({
         workToken,
         distribution,
@@ -515,7 +505,7 @@ describe("RewardShares", () => {
 
   describe("Test claim function, claimed va claimable", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 30;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
       ({
         workToken,
         distribution,
@@ -542,32 +532,32 @@ describe("RewardShares", () => {
       await mineDays(22, network);
     });
 
-    it("Go to month 1, getRewardNftId returns for each the reward of month 0", async () => {
+    it("Go to month 1, claims for each nft the claimable reward", async () => {
       await mineDays(30, network);
-      await testRewardClaimed(nftId1, nftMinter1);
-      await testRewardClaimed(nftId2, nftMinter2);
-      await testRewardClaimed(nftId3, nftMinter3);
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
     });
 
-    it("Go to month 11, getRewardNftId returns for each the reward of month 0", async () => {
+    it("Go to month 11, claims for each nft the claimable reward", async () => {
       await mineDays(30 * 11, network);
-      await testRewardClaimed(nftId1, nftMinter1);
-      await testRewardClaimed(nftId2, nftMinter2);
-      await testRewardClaimed(nftId3, nftMinter3);
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
     });
 
-    it("Go to month 40, getRewardNftId returns for each the reward of month 0", async () => {
+    it("Go to month 40, claims for each nft the claimable reward", async () => {
       await mineDays(30 * 29, network);
-      await testRewardClaimed(nftId1, nftMinter1);
-      await testRewardClaimed(nftId2, nftMinter2);
-      await testRewardClaimed(nftId3, nftMinter3);
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
     });
 
     it("Go to month 45 and claim", async () => {
       await mineDays(30 * 5, network);
-      await testRewardClaimed(nftId1, nftMinter1);
-      await testRewardClaimed(nftId2, nftMinter2);
-      await testRewardClaimed(nftId3, nftMinter3);
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
     });
 
     it("Total claimed is equal to the total rewards, each claim in each month are rounded down so they are roughly equal", async () => {

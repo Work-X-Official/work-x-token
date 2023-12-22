@@ -163,12 +163,12 @@ contract RewardTokens is Ownable {
             return 0;
         }
 
-        (, , uint256 totalMinimum) = nft.getTotals(_month);
+        (, , uint256 totalMinimum) = nft.getTotals(_month-1);
         if(totalMinimum == 0) {
             return 0;
         }
 
-        (, uint256 nftIdMinimum) = nft.getStaked(_nftId, _month);
+        (, uint256 nftIdMinimum) = nft.getStaked(_nftId, _month-1);
         if (nftIdMinimum == 0) {
             return 0;
         }
