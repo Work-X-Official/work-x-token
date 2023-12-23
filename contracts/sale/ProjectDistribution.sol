@@ -22,11 +22,11 @@ contract ProjectDistribution {
 
     uint64 public constant VEST_AMOUNT_DAO = 12000000;
     uint64 public constant VEST_AMOUNT_PLATFORM = 9500000;
-    uint64 public constant VEST_AMOUNT_ECOSYSTEM = 15000000;
+    uint64 public constant VEST_AMOUNT_ECOSYSTEM = 14000000;
     uint64 public constant VEST_AMOUNT_TEAM = 5000000;
     uint64 public constant VEST_AMOUNT_FOUNDER = 2500000;
     uint64 public constant VEST_AMOUNT_ADVISORY = 2500000;
-    uint64 public constant VEST_AMOUNT_STRATEGIC = 5000000;
+    uint64 public constant VEST_AMOUNT_STRATEGIC = 4000000;
 
     event ClaimTokens(address indexed beneficiary, uint256 amount);
 
