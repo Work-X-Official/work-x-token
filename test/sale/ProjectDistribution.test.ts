@@ -55,12 +55,15 @@ describe.only("ProjectDistribution", function () {
   const testClaimableAmount = async (account: SignerWithAddress, days: number) => {
     const balance = await distribution.balance(account.address);
     const claimed = await distribution.claimedTokens(account.address);
-    const claimable = (await distribution.claimableTokens(account.address)).sub(claimed);
+    const vested = await distribution.vestedTokens(account.address);
+    const claimable2 = vested.sub(claimed);
+    const claimable = await distribution.claimableTokens(account.address);
+    expect(claimable2).to.equal(claimable);
     const expected = big(days * 60 * 60 * 24).lte(balance._period)
       ? balance._total.mul(days * 60 * 60 * 24).div(balance._period)
       : balance._total;
     //console.log(account.address + " claimable after " + days + " days", far(claimable));
-    expect(claimable).to.equal(expected);
+    expect(claimable2).to.equal(expected.sub(claimed));
   };
 
   const testClaimableAll = async (days: number) => {
@@ -69,7 +72,7 @@ describe.only("ProjectDistribution", function () {
     }
   };
 
-  const testClaim = async (account: SignerWithAddress) => {
+  const testClaim = async (account: SignerWithAddress, days: number) => {
     const balance = await distribution.balance(account.address);
     const oneBlockAmount = balance._total.mul(1).div(balance._period);
     const claimedBefore = await distribution.claimedTokens(account.address);
@@ -77,15 +80,17 @@ describe.only("ProjectDistribution", function () {
     await distribution.connect(account).claimTokens();
     const claimedAfter = await distribution.claimedTokens(account.address);
     console.log(account.address + " claimed", far(claimedAfter));
-    const expectedClaimAfter = far(claimedBefore.add(claimableBefore).add(oneBlockAmount));
-    // expect(far(claimedAfter)).to.equal();
+    const expectedClaimAfter = big(days * 60 * 60 * 24).lte(balance._period)
+      ? claimedBefore.add(claimableBefore).add(oneBlockAmount)
+      : claimedBefore.add(claimableBefore);
+    expect(claimedAfter).to.equal(expectedClaimAfter);
     const claimableAfter = await distribution.claimableTokens(account.address);
     expect(claimableAfter).to.equal(big(0));
   };
 
-  const testClaimAll = async () => {
+  const testClaimAll = async (days: number) => {
     for (let i = 0; i < 8; i++) {
-      await testClaim(accounts[i]);
+      await testClaim(accounts[i], days);
     }
   };
 
@@ -209,10 +214,118 @@ describe.only("ProjectDistribution", function () {
       });
     });
 
+    // describe("Claim Tokens", () => {
+    //   it("Should return the correct amounts for all types", async () => {
+    //     console.log("Claiming after " + days + " days");
+    //     await testClaimAll();
+    //   });
+    // });
+  });
+
+  describe("After 730 days", () => {
+    const days = 730;
+    before(async () => {
+      await network.provider.send("evm_setNextBlockTimestamp", [startTime + 60 * 60 * 24 * days]);
+      await network.provider.send("evm_mine");
+    });
+
+    describe("Vested Tokens", () => {
+      it("Should return the correct Vested amounts for all types", async () => {
+        await testVestedAll(days);
+      });
+    });
+
+    describe("Claimable Tokens", () => {
+      it("Should return the correct Claimable amounts for all types", async () => {
+        await testClaimableAll(days);
+      });
+    });
+
+    // describe("Claim Tokens", () => {
+    //   it("Should return the correct amounts for all types", async () => {
+    //     console.log("Claiming after " + days + " days");
+    //     await testClaimAll();
+    //   });
+    // });
+  });
+
+  describe("After 1460 days", () => {
+    const days = 1460;
+    before(async () => {
+      await network.provider.send("evm_setNextBlockTimestamp", [startTime + 60 * 60 * 24 * days]);
+      await network.provider.send("evm_mine");
+    });
+
+    describe("Vested Tokens", () => {
+      it("Should return the correct Vested amounts for all types", async () => {
+        await testVestedAll(days);
+      });
+    });
+
+    describe("Claimable Tokens", () => {
+      it("Should return the correct Claimable amounts for all types", async () => {
+        await testClaimableAll(days);
+      });
+    });
+
     describe("Claim Tokens", () => {
       it("Should return the correct amounts for all types", async () => {
         console.log("Claiming after " + days + " days");
-        await testClaimAll();
+        await testClaimAll(days);
+      });
+    });
+  });
+
+  describe("After 1825 days", () => {
+    const days = 1825;
+    before(async () => {
+      await network.provider.send("evm_setNextBlockTimestamp", [startTime + 60 * 60 * 24 * days]);
+      await network.provider.send("evm_mine");
+    });
+
+    describe("Vested Tokens", () => {
+      it("Should return the correct Vested amounts for all types", async () => {
+        await testVestedAll(days);
+      });
+    });
+
+    describe("Claimable Tokens", () => {
+      it("Should return the correct Claimable amounts for all types", async () => {
+        await testClaimableAll(days);
+      });
+    });
+
+    // describe("Claim Tokens", () => {
+    //   it("Should return the correct amounts for all types", async () => {
+    //     console.log("Claiming after " + days + " days");
+    //     await testClaimAll(days);
+    //   });
+    // });
+  });
+
+  describe("After 18250 days", () => {
+    const days = 18250;
+    before(async () => {
+      await network.provider.send("evm_setNextBlockTimestamp", [startTime + 60 * 60 * 24 * days]);
+      await network.provider.send("evm_mine");
+    });
+
+    describe("Vested Tokens", () => {
+      it("Should return the correct Vested amounts for all types", async () => {
+        await testVestedAll(days);
+      });
+    });
+
+    describe("Claimable Tokens", () => {
+      it("Should return the correct Claimable amounts for all types", async () => {
+        await testClaimableAll(days);
+      });
+    });
+
+    describe("Claim Tokens", () => {
+      it("Should return the correct amounts for all types", async () => {
+        console.log("Claiming after " + days + " days");
+        await testClaimAll(days);
       });
     });
   });
