@@ -77,7 +77,7 @@ describe.only("ProjectDistribution", function () {
     const oneBlockAmount = balance._total.mul(1).div(balance._period);
     const claimedBefore = await distribution.claimedTokens(account.address);
     const claimableBefore = await distribution.claimableTokens(account.address);
-    await distribution.connect(account).claimTokens();
+    await distribution.connect(account).claimTokens(claimableBefore);
     const claimedAfter = await distribution.claimedTokens(account.address);
     console.log(account.address + " claimed", far(claimedAfter));
     const expectedClaimAfter = big(days * 60 * 60 * 24).lte(balance._period)
