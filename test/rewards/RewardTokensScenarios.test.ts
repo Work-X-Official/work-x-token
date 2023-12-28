@@ -8,7 +8,7 @@ import { regenerateContracts } from "../util/contract.util";
 import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { mineStakeMonths } from "../util/rewards.util";
+import { getRewardsTotal, mineStakeMonths, testRewardClaimed } from "../util/rewards.util";
 
 config();
 
@@ -58,7 +58,7 @@ describe.only("RewardTokensScenarios", () => {
   });
 
   describe("Staking/unstaking testing getRewardNftId, getRewardNftIdMonth", async () => {
-    it("Mint nft 1,2,3 and go to startime", async () => {
+    before("Mint nft 1,2,3 and go to startime", async () => {
       amountStaked1 = 10000;
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountStaked1, 0, 0, chainId));
       amountStaked2 = 50000;
@@ -243,6 +243,105 @@ describe.only("RewardTokensScenarios", () => {
       await testGetRewardNftIdMonth(nftId1, amountStaked1 - 1000, minimumBalance);
       await testGetRewardNftIdMonth(nftId3, amountStaked3, minimumBalance);
       await testGetRewardNfts([nftId1, nftId3]);
+    });
+  });
+
+  describe("Test Claim, claimed vs getRewardNftId with stake/unstake.", async () => {
+    before("Generate contracts and mint nft 1,2,3 and go to startime", async () => {
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 31;
+      ({
+        workToken,
+        distribution,
+        nft,
+        rewardTokens: reward,
+      } = await regenerateContracts(accounts, accounts[0].address, startTime));
+
+      await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
+      await distribution.setWalletClaimable([nftMinter2.address], [50000], [0], [0], [0]);
+      await distribution.setWalletClaimable([nftMinter3.address], [150000], [0], [0], [0]);
+
+      await reward.approve(nft.address, amount(1400000));
+
+      amountStaked1 = 10000;
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountStaked1, 0, 0, chainId));
+      amountStaked2 = 50000;
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountStaked2, 0, 0, chainId));
+      amountStaked3 = 100;
+      ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, amountStaked3, 0, 0, chainId));
+
+      await mineDays(22, network);
+    });
+
+    it("In month 0, on day 5, nftId1 stakes 1000", async () => {
+      await mineDays(5, network);
+      const amountStake = 1000;
+      await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
+    });
+
+    it("In month 1, on day 35, nftId2 stakes 3000, and then claims", async () => {
+      await mineDays(30, network);
+      const amountStake = 3000;
+      await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+    });
+
+    it("In month 2, on day 65, nftId1 claims, and then unstakes 1000", async () => {
+      await mineDays(30, network);
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      const amountUnstake = 1000;
+      await nft.connect(nftMinter1).unstake(nftId1, amount(amountUnstake));
+    });
+
+    it("In month 3, nftId3 claims and then stakes 1000", async () => {
+      await mineDays(30, network);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
+      const amountStake = 1000;
+      await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
+    });
+
+    it("In month 4, nftId 1,2 claim", async () => {
+      await mineDays(30, network);
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+    });
+
+    it("In month 6, nftId 2,3 stake 1000 and then 1,2 claim", async () => {
+      await mineStakeMonths(nftMinter1, nft, nftId1, 2, network);
+      const amountStake = 1000;
+      await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
+      await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+    });
+
+    it("In month 16, nftId 3 claims, and nftId1 stakes", async () => {
+      await mineStakeMonths(nftMinter1, nft, nftId1, 10, network);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
+      const amountStake = 1000;
+      await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
+    });
+
+    it("Go to month 30, all nfts claim everything, nftId 1 destroys", async () => {
+      await mineStakeMonths(nftMinter1, nft, nftId1, 14, network);
+      await testRewardClaimed(reward, nftId1, nftMinter1);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
+      await nft.connect(nftMinter1).destroyNft(nftId1);
+    });
+
+    it("Go to month 41, the remaining nfts claim", async () => {
+      await mineStakeMonths(nftMinter2, nft, nftId2, 11, network);
+      await testRewardClaimed(reward, nftId2, nftMinter2);
+      await testRewardClaimed(reward, nftId3, nftMinter3);
+    });
+
+    it("Total claimed is equal to the total rewards, each claim in each month are rounded down so they are roughly equal", async () => {
+      const claimed1 = await reward.connect(nftMinter1).claimed(nftId1);
+      const claimed2 = await reward.connect(nftMinter2).claimed(nftId2);
+      const claimed3 = await reward.connect(nftMinter3).claimed(nftId3);
+      const claimedTotal = claimed1.add(claimed2).add(claimed3);
+      const rewardsTotal = getRewardsTotal();
+      expect(claimedTotal).to.closeTo(amount(rewardsTotal), amount(1));
     });
   });
 
