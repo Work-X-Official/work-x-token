@@ -8,6 +8,7 @@ import { regenerateContracts } from "../util/contract.util";
 import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { mineStakeMonths } from "../util/rewards.util";
 
 config();
 
@@ -68,7 +69,7 @@ describe.only("RewardTokensScenarios", () => {
       await mineDays(22, network);
     });
 
-    it("In month 0, on day 5 nftId1 stakes 1000", async () => {
+    it("In month 0, on day 5, nftId1 stakes 1000", async () => {
       await mineDays(5, network);
       const amountStake = 1000;
       await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
@@ -89,7 +90,7 @@ describe.only("RewardTokensScenarios", () => {
       await testGetRewardNfts([nftId1, nftId2, nftId3]);
     });
 
-    it("In month 1, on day 35 the GetRewardNftIdMonth is correct", async () => {
+    it("In month 1, on day 35, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
       await mineDays(30, network);
       const minimumBalance = amountStaked1 - 1000 + amountStaked2 + amountStaked3;
       await testGetRewardNftIdMonth(nftId1, amountStaked1 - 1000, minimumBalance);
@@ -98,8 +99,8 @@ describe.only("RewardTokensScenarios", () => {
       await testGetRewardNfts([nftId1, nftId2, nftId3]);
     });
 
-    it("In month 1, on day 35, nftId2 and nftId3 both stake 3000", async () => {
-      const amountStake = 3000;
+    it("In month 1, on day 35, nftId2 and nftId3 both stake 8000", async () => {
+      const amountStake = 8000;
       await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
       await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
       await testStaked(nftId1, amountStaked1, amountStaked1);
@@ -110,6 +111,138 @@ describe.only("RewardTokensScenarios", () => {
       amountStaked3 += amountStake;
       const _totalBalanceExpected = amountStaked1 + amountStaked2 + amountStaked3;
       await testTotals(_totalBalanceExpected, _minimumBalanceExpected);
+    });
+
+    it("In month 2, on day 65, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      await mineDays(30, network);
+      const minimumBalance = amountStaked1 + amountStaked2 - 8000 + amountStaked3 - 8000;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1, minimumBalance);
+      await testGetRewardNftIdMonth(nftId2, amountStaked2 - 8000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3 - 8000, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId2, nftId3]);
+    });
+
+    it("In month 2, on day 65, nftId3 unstake 100 and nftId1 stakes 5000", async () => {
+      const amountUnstake = 100;
+      const amountStake = 6000;
+      await nft.connect(nftMinter3).unstake(nftId3, amount(amountUnstake));
+      await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
+      await testStaked(nftId1, amountStaked1 + amountStake, amountStaked1);
+      await testStaked(nftId2, amountStaked2, amountStaked2);
+      await testStaked(nftId3, amountStaked3 - amountUnstake, amountStaked3 - amountUnstake);
+      amountStaked3 -= amountUnstake;
+      const _minimumBalanceExpected = amountStaked1 + amountStaked2 + amountStaked3;
+      amountStaked1 += amountStake;
+      const _totalBalanceExpected = amountStaked1 + amountStaked2 + amountStaked3;
+      await testTotals(_totalBalanceExpected, _minimumBalanceExpected);
+    });
+
+    it("In month 2, on day 65, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      const minimumBalance = amountStaked1 - 6000 + amountStaked2 - 8000 + amountStaked3 - 8000 + 100;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1 - 6000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId2, amountStaked2 - 8000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3 - 8000 + 100, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId2, nftId3]);
+    });
+
+    it("In month 3, on day 95, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      await mineDays(30, network);
+      const minimumBalance = amountStaked1 - 6000 + amountStaked2 + amountStaked3;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1 - 6000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId2, amountStaked2, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId2, nftId3]);
+    });
+
+    it("In month 3, on day 95, nftId2 stakes 1000 and nftId1 unstakes 2000", async () => {
+      const amountStake = 1000;
+      const amountUnstake = 2000;
+      await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
+      await nft.connect(nftMinter1).unstake(nftId1, amount(amountUnstake));
+      await testStaked(nftId1, amountStaked1 - amountUnstake, amountStaked1 - amountUnstake);
+      await testStaked(nftId2, amountStaked2 + amountStake, amountStaked2);
+      await testStaked(nftId3, amountStaked3, amountStaked3);
+      amountStaked1 -= amountUnstake;
+      const _minimumBalanceExpected = amountStaked1 + amountStaked2 + amountStaked3;
+      amountStaked2 += amountStake;
+      const _totalBalanceExpected = amountStaked1 + amountStaked2 + amountStaked3;
+      await testTotals(_totalBalanceExpected, _minimumBalanceExpected);
+    });
+
+    it("In month 3, on day 95, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      const minimumBalance = amountStaked1 - 6000 + 2000 + amountStaked2 - 1000 + amountStaked3;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1 - 6000 + 2000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId2, amountStaked2 - 1000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId2, nftId3]);
+    });
+
+    it("In month 4, on day 125, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      await mineDays(30, network);
+      const minimumBalance = amountStaked1 + amountStaked2 - 1000 + amountStaked3;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1, minimumBalance);
+      await testGetRewardNftIdMonth(nftId2, amountStaked2 - 1000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId2, nftId3]);
+    });
+
+    it("In month 4, the balances do not change and we go to month 14", async () => {
+      await mineStakeMonths(nftMinter1, nft, nftId1, 10, network);
+    });
+
+    it("In month 14, on day 425, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      const minimumBalance = amountStaked1 + amountStaked2 + amountStaked3;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1, minimumBalance);
+      await testGetRewardNftIdMonth(nftId2, amountStaked2, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId2, nftId3]);
+    });
+
+    it("In month 14, on day 425,  nftId 1,2,3 all stake 100.000", async () => {
+      const amountStake = 100000;
+      await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
+      await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
+      await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
+      await testStaked(nftId1, amountStaked1 + amountStake, amountStaked1);
+      await testStaked(nftId2, amountStaked2 + amountStake, amountStaked2);
+      await testStaked(nftId3, amountStaked3 + amountStake, amountStaked3);
+      const _minimumBalanceExpected = amountStaked1 + amountStaked2 + amountStaked3;
+      amountStaked1 += amountStake;
+      amountStaked2 += amountStake;
+      amountStaked3 += amountStake;
+      const _totalBalanceExpected = amountStaked1 + amountStaked2 + amountStaked3;
+      await testTotals(_totalBalanceExpected, _minimumBalanceExpected);
+    });
+
+    it("In month 15, on day 455, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      await mineDays(30, network);
+      const amountLarge = 100000;
+      const minimumBalance = amountStaked1 - amountLarge + amountStaked2 - amountLarge + amountStaked3 - amountLarge;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1 - amountLarge, minimumBalance);
+      await testGetRewardNftIdMonth(nftId2, amountStaked2 - amountLarge, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3 - amountLarge, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId2, nftId3]);
+    });
+
+    it("In month 15, on day 455, nftId1 stakes 1000, nftId2 is destroyed", async () => {
+      const amountStake = 1000;
+      await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
+      await nft.connect(nftMinter2).destroyNft(nftId2);
+      await testStaked(nftId1, amountStaked1 + amountStake, amountStaked1);
+      await expect(testStaked(nftId2, 0, 0)).to.be.revertedWith("NftNotExists");
+      await testStaked(nftId3, amountStaked3, amountStaked3);
+      const _minimumBalanceExpected = amountStaked1 + amountStaked3;
+      amountStaked1 += amountStake;
+      const _totalBalanceExpected = amountStaked1 + amountStaked3;
+      await testTotals(_totalBalanceExpected, _minimumBalanceExpected);
+    });
+
+    it("In month 16, on day 485, the GetRewardNftIdMonth and getRewardNftId are correct", async () => {
+      await mineDays(30, network);
+      const minimumBalance = amountStaked1 - 1000 + amountStaked3;
+      await testGetRewardNftIdMonth(nftId1, amountStaked1 - 1000, minimumBalance);
+      await testGetRewardNftIdMonth(nftId3, amountStaked3, minimumBalance);
+      await testGetRewardNfts([nftId1, nftId3]);
     });
   });
 
