@@ -1,4 +1,4 @@
-export const GENISIS_NFT_ADDRESSES = {
+export const GENESIS_NFT_ADDRESSES = {
   goerli: "",
   sepolia: "0xb288a42a41dc37C1c5E23D99F440a126CB0Bcd3d",
   hardhat: "",

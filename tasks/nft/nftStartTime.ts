@@ -1,13 +1,13 @@
 import { GenesisNft } from "../../typings";
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
-import { GENISIS_NFT_ADDRESSES } from "../constants/nft.constants";
+import { GENESIS_NFT_ADDRESSES } from "../constants/nft.constants";
 import { big } from "../../test/util/helpers.util";
 
 // example: yarn hardhat nft:getstarttime --network sepolia
 task("nft:getstarttime", "Prints the startdate").setAction(async ({ _ }, hre) => {
   const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
-    GENISIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENISIS_NFT_ADDRESSES],
+    GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
   );
   const startTime = Number((await nft.startTime()).toString());
   const startTimeDate = new Date(startTime * 1000);
@@ -31,7 +31,7 @@ task("nft:starttime", "Sets the StartTime")
   .addParam("time", "StarTime in Unix format")
   .setAction(async ({ time }, hre) => {
     const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
-      GENISIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENISIS_NFT_ADDRESSES],
+      GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
     );
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();

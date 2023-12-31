@@ -3,13 +3,13 @@ import "@nomiclabs/hardhat-waffle";
 // import { config } from "dotenv";
 import { task } from "hardhat/config";
 import { GenesisNft } from "../../typings";
-import { GENISIS_NFT_ADDRESSES } from "../constants/nft.constants";
+import { GENESIS_NFT_ADDRESSES } from "../constants/nft.constants";
 
 // example yarn hardhat nft:details --id 10 --network sepolia
 task("nft:details", "Prints the details of a specific nft")
   .addParam("id", "id of the nft")
   .setAction(async ({ id }, hre) => {
-    const nftAddress = GENISIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENISIS_NFT_ADDRESSES];
+    const nftAddress = GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES];
     const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(nftAddress);
 
     console.log("╔══════════════════════════════════════════════════════════════════════");
@@ -37,7 +37,7 @@ task("nft:details", "Prints the details of a specific nft")
 
 // example: yarn hardhat nft:info --network sepolia
 task("nft:info", "Prints the global information of the nft contract").setAction(async ({ _ }, hre) => {
-  const nftAddress = GENISIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENISIS_NFT_ADDRESSES];
+  const nftAddress = GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES];
   const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(nftAddress);
 
   console.log("╔══════════════════════════════════════════════════════════════════════");
