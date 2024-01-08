@@ -139,15 +139,15 @@ contract RewardTokens is Ownable {
      * @dev It loops of all previous months and callls the function that calculates the reward for a specific month,
      *  starting at the 1 first month, since in month 0 you cannot claim anything.
      * @param _nftId The id of the nft for which you want to claim the rewards.
-     * @return _totalRewards The total amount that a nftId can claim.
+     * @return _rewardNftId The total amount that a nftId can claim.
      */
-    function getRewardNftId(uint256 _nftId) public view returns (uint256 _totalRewards) {
+    function getRewardNftId(uint256 _nftId) public view returns (uint256 _rewardNftId) {
         uint256 currentMonth = nft.getCurrentMonth();
         if(currentMonth == 0) {
             return 0;
         }
         for (uint256 i = 1; i <= currentMonth; i++) {
-            _totalRewards += getRewardNftIdMonth(_nftId, i);
+            _rewardNftId += getRewardNftIdMonth(_nftId, i);
         }
     }
 

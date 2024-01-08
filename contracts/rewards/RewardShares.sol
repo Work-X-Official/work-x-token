@@ -111,12 +111,12 @@ contract RewardShares is Ownable {
             revert NftNotOwned();
         }
 
-        uint256 nftIdClaimable = claimable(_nftId);
+        uint256 claimableNftId = claimable(_nftId);
 
-        if (nftIdClaimable > 0) {
-            claimed[_nftId] += nftIdClaimable;
-            nft.reward(_nftId, nftIdClaimable);
-            emit Claimed(_nftId, msg.sender, nftIdClaimable);
+        if (claimableNftId > 0) {
+            claimed[_nftId] += claimableNftId;
+            nft.reward(_nftId, claimableNftId);
+            emit Claimed(_nftId, msg.sender, claimableNftId);
         }
         return true;
     }
@@ -139,19 +139,16 @@ contract RewardShares is Ownable {
      * @dev It loops of all previous months and callls the function that calculates the reward for a specific month,
      *  starting at the 1 first month, since in month 0 you cannot claim anything.
      * @param _nftId The id of the nft for which you want to claim the rewards.
-     * @return The total amount that a nftId can claim.
+     * @return _rewardNftId The total amount that a nftId can claim.
      */
-    function getRewardNftId(uint256 _nftId) public view returns (uint256) {
+    function getRewardNftId(uint256 _nftId) public view returns (uint256 _rewardNftId) {
         uint256 currentMonth = nft.getCurrentMonth();
         if(currentMonth == 0) {
             return 0;
         }
-        uint256 totalClaimable = 0;
-
         for (uint256 i = 1; i <= currentMonth; i++) {
-            totalClaimable += getRewardNftIdMonth(_nftId, i);
+            _rewardNftId += getRewardNftIdMonth(_nftId, i);
         }
-        return totalClaimable;
     }
 
     /**
@@ -166,11 +163,12 @@ contract RewardShares is Ownable {
         if (_month == 0) {
             return 0;
         }
-        (uint256 totalShares, , ) = nft.getTotals(_month);
 
+        (uint256 totalShares, , ) = nft.getTotals(_month);
         if (totalShares == 0) {
             return 0;
         }
+
         uint256 nftIdShares = nft.getShares(_nftId, _month);
         if (nftIdShares == 0) {
             return 0;
