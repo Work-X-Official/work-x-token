@@ -286,6 +286,61 @@ describe("RewardShares", () => {
         await expect(reward.getRewardNftIdMonth(nftId1, 2)).to.be.reverted;
       });
     });
+
+    describe("getRewardNftIdMonth, correctly looks at the shares of the previous month", async () => {
+      let shares1: BigNumber;
+      let shares2: BigNumber;
+      let totalShares: BigNumber;
+
+      before(async () => {
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 31;
+        ({
+          workToken,
+          distribution,
+          nft,
+          rewardShares: reward,
+        } = await regenerateContracts(accounts, accounts[0].address, startTime));
+        await distribution.setWalletClaimable([nftMinter1.address], [0], [0], [0], [0]);
+        await distribution.setWalletClaimable([nftMinter2.address], [10000], [0], [0], [0]);
+        ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
+        const amountMint2 = 10000;
+        ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountMint2, 0, 0, chainId));
+        shares1 = (await nft.getNftInfo(nftId1))._shares;
+        shares2 = (await nft.getNftInfo(nftId2))._shares;
+        totalShares = shares1.add(shares2);
+      });
+
+      it("Right after mint the rewards in month 1 and 2 are based on the shares in month 0", async () => {
+        expect(await reward.getRewardNftIdMonth(nftId1, 1)).to.equal(amount(REWARDS[0]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 1)).to.equal(amount(REWARDS[0]).mul(shares2).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId1, 2)).to.equal(amount(REWARDS[1]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 2)).to.equal(amount(REWARDS[1]).mul(shares2).div(totalShares));
+      });
+
+      it("Go to month 1 and stake in nftId 1, then the rewardNftIdMonth in month 1 should still be based on the original shares", async () => {
+        await mineDays(22, network);
+        await mineDays(30, network);
+        expect(await nft.getCurrentMonth()).to.equal(1);
+
+        await nft.connect(nftMinter1).stake(nftId1, amount(3000));
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 1)).to.equal(amount(REWARDS[0]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 1)).to.equal(amount(REWARDS[0]).mul(shares2).div(totalShares));
+      });
+
+      it("Go to month 2, the rewardNftIdMonth in month 2 should be based on the new shares in month 1, which are more than the old shares", async () => {
+        await mineDays(30, network);
+        expect(await nft.getCurrentMonth()).to.equal(2);
+        const oldShares1 = shares1;
+        shares1 = (await nft.getNftInfo(nftId1))._shares;
+        expect(shares1).to.be.gt(oldShares1);
+        shares2 = (await nft.getNftInfo(nftId2))._shares;
+        totalShares = shares1.add(shares2);
+
+        expect(await reward.getRewardNftIdMonth(nftId1, 2)).to.equal(amount(REWARDS[1]).mul(shares1).div(totalShares));
+        expect(await reward.getRewardNftIdMonth(nftId2, 2)).to.equal(amount(REWARDS[1]).mul(shares2).div(totalShares));
+      });
+    });
   });
 
   describe("Testing getRewardNftId", async () => {

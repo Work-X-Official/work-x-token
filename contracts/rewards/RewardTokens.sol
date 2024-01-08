@@ -156,9 +156,9 @@ contract RewardTokens is Ownable {
      * @dev The loop over the months from current to previous months is done to find the minimum  value that a user staked in that month.
      * @param _nftId The id of the nft for which you want to find the claimable amount.
      * @param _month The month for which you want to find the claimable amount.
-     * @return The amount that a nftId can claim for a specific month.
+     * @return _rewardNftIdMonth The reward for a nftId for a specific month based on the minimum of the previous month.
      */
-    function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view returns (uint256) {
+    function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view returns (uint256 _rewardNftIdMonth) {
         if (_month == 0) {
             return 0;
         }
@@ -175,21 +175,18 @@ contract RewardTokens is Ownable {
 
         uint256 rewardTotalMonth = getRewardTotalMonth(_month);
 
-        uint nftIdRewardMonth = (nftIdMinimum * rewardTotalMonth) / totalMinimum;
-
-        return nftIdRewardMonth;
+        _rewardNftIdMonth = (nftIdMinimum * rewardTotalMonth) / totalMinimum;
     }
 
     /**
      * @notice Get the total reward for a specific month according to the rewards array.
      * @param _month The month for which you want to find the total reward.
-     * @return The total reward for a specific month.
+     * @return _rewardTotalMonth The total reward for a specific month.
      */
-    function getRewardTotalMonth(uint256 _month) public view returns (uint256) {
+    function getRewardTotalMonth(uint256 _month) public view returns (uint256 _rewardTotalMonth) {
         if (_month > REWARD_MONTHS || _month == 0) {
             return 0;
         }
-        uint256 rewardTotalMonth = rewards[_month - 1] * ONE_E18;
-        return rewardTotalMonth;
+        _rewardTotalMonth = rewards[_month - 1] * ONE_E18;
     }
 }

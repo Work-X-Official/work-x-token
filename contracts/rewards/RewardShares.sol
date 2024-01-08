@@ -157,40 +157,37 @@ contract RewardShares is Ownable {
      * @dev The amount of shares of a user is divided by the total shares. To find his percentage of the rewards of that month.
      * @param _nftId The id of the nft for which you want to find the claimable amount.
      * @param _month The month for which you want to find the claimable amount.
-     * @return The amount that a nftId can claim for a specific month.
+     * @return _rewardNftIdMonth The reward for a nftId for a specific month based on the minimum of the previous month.
      */
-    function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view returns (uint256) {
+    function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view returns (uint256 _rewardNftIdMonth) {
         if (_month == 0) {
             return 0;
         }
 
-        (uint256 totalShares, , ) = nft.getTotals(_month);
+        (uint256 totalShares, , ) = nft.getTotals(_month-1);
         if (totalShares == 0) {
             return 0;
         }
 
-        uint256 nftIdShares = nft.getShares(_nftId, _month);
+        uint256 nftIdShares = nft.getShares(_nftId, _month-1);
         if (nftIdShares == 0) {
             return 0;
         }
 
         uint256 rewardTotalMonth = getRewardTotalMonth(_month);
 
-        uint nftIdRewardMonth = (nftIdShares * rewardTotalMonth) / totalShares;
-
-        return nftIdRewardMonth;
+        _rewardNftIdMonth = (nftIdShares * rewardTotalMonth) / totalShares;
     }
 
     /**
      * @notice Get the total reward for a specific month according to the rewards array.
      * @param _month The month for which you want to find the total reward.
-     * @return The total reward for a specific month.
+     * @return _rewardTotalMonth The total reward for a specific month.
      */
-    function getRewardTotalMonth(uint256 _month) public view returns (uint256) {
+    function getRewardTotalMonth(uint256 _month) public view returns (uint256 _rewardTotalMonth) {
         if (_month > REWARD_MONTHS || _month == 0) {
             return 0;
         }
-        uint256 rewardTotalMonth = rewards[_month - 1] * ONE_E18;
-        return rewardTotalMonth;
+        _rewardTotalMonth = rewards[_month - 1] * ONE_E18;
     }
 }
