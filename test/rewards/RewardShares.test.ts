@@ -9,7 +9,7 @@ import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { REWARDS } from "../constants/rewards.constants";
-import { getRewardsTotal, testRewardClaimed } from "../util/rewards.util";
+import { getRewardsTotal, mineStakeMonths, testRewardClaimed } from "../util/rewards.util";
 
 config();
 
@@ -595,21 +595,21 @@ describe("RewardShares", () => {
     });
 
     it("Go to month 11, claims for each nft the claimable reward", async () => {
-      await mineDays(30 * 11, network);
+      await mineStakeMonths(nftMinter1, nft, nftId1, 11, network);
       await testRewardClaimed(reward, nftId1, nftMinter1);
       await testRewardClaimed(reward, nftId2, nftMinter2);
       await testRewardClaimed(reward, nftId3, nftMinter3);
     });
 
     it("Go to month 40, claims for each nft the claimable reward", async () => {
-      await mineDays(30 * 29, network);
+      await mineStakeMonths(nftMinter1, nft, nftId1, 29, network);
       await testRewardClaimed(reward, nftId1, nftMinter1);
       await testRewardClaimed(reward, nftId2, nftMinter2);
       await testRewardClaimed(reward, nftId3, nftMinter3);
     });
 
     it("Go to month 45 and claim", async () => {
-      await mineDays(30 * 5, network);
+      await mineStakeMonths(nftMinter1, nft, nftId1, 5, network);
       await testRewardClaimed(reward, nftId1, nftMinter1);
       await testRewardClaimed(reward, nftId2, nftMinter2);
       await testRewardClaimed(reward, nftId3, nftMinter3);
