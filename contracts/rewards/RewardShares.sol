@@ -14,12 +14,10 @@ contract RewardShares is RewardBase {
         RewardBase(_genesisNftAddress, _workTokenAddress){}
 
     /**
-     * @notice Calculates how much a nftId is allowed to claim for a specific month by taking into account
-     *  the rewards of this month, the nftIdShares and the totalShares at the end of the previous month, because this amount has been staked for at least this whole month.
-     * @dev The amount of shares of a user is divided by the total shares. To find his percentage of the rewards of that month.
-     * @param _nftId The id of the nft for which you want to find the claimable amount.
-     * @param _month The month for which you want to find the claimable amount.
-     * @return _rewardNftIdMonth The reward for a nftId for a specific month based on the minimum of the previous month.
+     * @notice Calculates the reward of a nftId for a specific month based on the total rewards of this month and shares of the previous month.
+     * @param _nftId Id of the nft for which you want to get the reward amount.
+     * @param _month Month for which you want to get the reward amount.
+     * @return _rewardNftIdMonth Reward of a nftId for a specific month based on shares.
      */
     function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view override returns (uint256 _rewardNftIdMonth) {
         if (_month == 0) {

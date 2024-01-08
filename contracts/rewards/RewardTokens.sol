@@ -14,11 +14,10 @@ contract RewardTokens is RewardBase {
         RewardBase(_genesisNftAddress, _workTokenAddress){}
 
     /**
-     * @notice Calculates how much a nftId is allowed to claim for a specific month based on the amount of minimum amount of tokensstaked in a month.
-     * @dev The loop over the months from current to previous months is done to find the minimum  value that a user staked in that month.
-     * @param _nftId The id of the nft for which you want to find the claimable amount.
-     * @param _month The month for which you want to find the claimable amount.
-     * @return _rewardNftIdMonth The reward for a nftId for a specific month based on the minimum of the previous month.
+     * @notice Calculates the reward of a nftId for a specific month based on the total rewards of this month and the minimum staked of the previous month.
+     * @param _nftId Id of the nft for which you want to get the reward amount.
+     * @param _month Month for which you want to get the reward amount.
+     * @return _rewardNftIdMonth Reward of a nftId for a specific month based on tokens staked.
      */
     function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view override returns (uint256 _rewardNftIdMonth) {
         if (_month == 0) {
