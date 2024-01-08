@@ -63,7 +63,7 @@ contract RewardTokens is Ownable {
         1258
     ];
 
-    event Claimed(uint256 indexed tokenId, address indexed claimer, uint256 amountClaimed);
+    event Claimed(uint256 indexed nftId, address indexed claimer, uint256 amountClaimed);
 
     /**
      * @notice initializes the contract with the nft and workToken addresses and the start time of the nft.
@@ -135,28 +135,28 @@ contract RewardTokens is Ownable {
     }
 
     /**
-     * @notice Calculates how much a tokenId is allowed to claim by finding how much you can claim for each month summed.
+     * @notice Calculates how much a nftId is allowed to claim by finding how much you can claim for each month summed.
      * @dev It loops of all previous months and callls the function that calculates the reward for a specific month,
      *  starting at the 1 first month, since in month 0 you cannot claim anything.
      * @param _nftId The id of the nft for which you want to claim the rewards.
-     * @return _totalRewards The total amount that a tokenId can claim.
+     * @return _totalRewards The total amount that a nftId can claim.
      */
     function getRewardNftId(uint256 _nftId) public view returns (uint256 _totalRewards) {
         uint256 currentMonth = nft.getCurrentMonth();
         if(currentMonth == 0) {
             return 0;
         }
-        for (uint256 i = 0; i <= currentMonth; i++) {
+        for (uint256 i = 1; i <= currentMonth; i++) {
             _totalRewards += getRewardNftIdMonth(_nftId, i);
         }
     }
 
     /**
-     * @notice Calculates how much a tokenId is allowed to claim for a specific month based on the amount of minimum amount of tokensstaked in a month.
+     * @notice Calculates how much a nftId is allowed to claim for a specific month based on the amount of minimum amount of tokensstaked in a month.
      * @dev The loop over the months from current to previous months is done to find the minimum  value that a user staked in that month.
      * @param _nftId The id of the nft for which you want to find the claimable amount.
      * @param _month The month for which you want to find the claimable amount.
-     * @return The amount that a tokenId can claim for a specific month.
+     * @return The amount that a nftId can claim for a specific month.
      */
     function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view returns (uint256) {
         if (_month == 0) {
