@@ -14,7 +14,7 @@ config();
 
 chai.use(solidity);
 
-describe.only("RewardTokensScenarios", () => {
+describe("RewardTokensScenarios", () => {
   let nft: GenesisNft;
   let accounts: SignerWithAddress[];
 
