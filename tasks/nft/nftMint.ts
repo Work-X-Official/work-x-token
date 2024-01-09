@@ -46,8 +46,8 @@ task("nft:minttreasury").setAction(async (_, hre) => {
 
   console.log("");
   console.log("╔══════════════════════════════════════════════════════════════════════");
-  console.log("║" + " Minting remaining NFTs to treasury" + deployer.address);
-  console.log("║" + " On chain id" + chainId);
+  console.log("║" + " Minting remaining NFTs to treasury " + deployer.address);
+  console.log("║" + " On chain id " + chainId);
   await nft.mintRemainingToTreasury();
   console.log("║" + " Done");
   console.log("╚══════════════════════════════════════════════════════════════════════");

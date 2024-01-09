@@ -45,7 +45,7 @@ task("nft:starttime", "Sets the StartTime")
 
     console.log("");
     console.log("╔══════════════════════════════════════════════════════════════════════");
-    console.log("║ Set the TokenDistribution.startTime on " + hre.network.name);
+    console.log("║ Set the Nft.startTime on " + hre.network.name);
     console.log("║ " + "current block time", currentTimestamp);
     console.log("║ startTime in Unix:", time);
     console.log("║ startTime in Date", startTimeDate);
@@ -55,3 +55,21 @@ task("nft:starttime", "Sets the StartTime")
     console.log("╚══════════════════════════════════════════════════════════════════════");
     console.log("");
   });
+
+// example yarn hardhat nft:initcompleted --network sepolia
+task("nft:initcompleted", "Sets the init to completed").setAction(async ({ _ }, hre) => {
+  const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
+    GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
+  );
+
+  const transaction = await nft.setInitCompleted();
+
+  console.log("");
+  console.log("╔══════════════════════════════════════════════════════════════════════");
+  console.log("║ Call Nft.setInitCompleted() on " + hre.network.name);
+  console.log("║ Awaiting confirmation");
+  const receipt = await transaction.wait();
+  console.log("║ Tx: " + receipt.transactionHash);
+  console.log("╚══════════════════════════════════════════════════════════════════════");
+  console.log("");
+});
