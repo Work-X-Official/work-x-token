@@ -1,7 +1,7 @@
 import { GenesisNft } from "../../typings";
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
-import { GENESIS_NFT_ADDRESSES } from "../constants/nft.constants";
+import { GENESIS_NFT_ADDRESSES, GENESIS_NFT_IPFS_FOLDER } from "../constants/nft.constants";
 import { big } from "../../test/util/helpers.util";
 
 // example: yarn hardhat nft:getstarttime --network sepolia
@@ -56,7 +56,7 @@ task("nft:starttime", "Sets the StartTime")
     console.log("");
   });
 
-// example yarn hardhat nft:initcompleted --network sepolia
+//yarn hardhat nft:initcompleted --network sepolia
 task("nft:initcompleted", "Sets the init to completed").setAction(async ({ _ }, hre) => {
   const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
     GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
@@ -67,6 +67,25 @@ task("nft:initcompleted", "Sets the init to completed").setAction(async ({ _ }, 
   console.log("");
   console.log("╔══════════════════════════════════════════════════════════════════════");
   console.log("║ Call Nft.setInitCompleted() on " + hre.network.name);
+  console.log("║ Awaiting confirmation");
+  const receipt = await transaction.wait();
+  console.log("║ Tx: " + receipt.transactionHash);
+  console.log("╚══════════════════════════════════════════════════════════════════════");
+  console.log("");
+});
+
+//yarn hardhat nft:ipfs --network sepolia
+task("nft:ipfs", "Sets the ipfs folder hash").setAction(async ({ _ }, hre) => {
+  const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
+    GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
+  );
+
+  const ipfsFolderHash = GENESIS_NFT_IPFS_FOLDER[hre.network.name as keyof typeof GENESIS_NFT_IPFS_FOLDER];
+  const transaction = await nft.setIpfsFolder(`ipfs://${ipfsFolderHash}/`);
+
+  console.log("");
+  console.log("╔══════════════════════════════════════════════════════════════════════");
+  console.log("║ Call Nft.setIpfsFolder() on " + hre.network.name + " with " + `ipfs://${ipfsFolderHash}/`);
   console.log("║ Awaiting confirmation");
   const receipt = await transaction.wait();
   console.log("║ Tx: " + receipt.transactionHash);
