@@ -1,6 +1,6 @@
 export const GENESIS_NFT_IPFS_FOLDER = {
   goerli: "",
-  sepolia: "QmaMHueEs6K4uM33XzKN2z29QRRsbkYPXYkxywLDT4fw5w",
+  sepolia: "QmbrP6G85XMD8DVYbzXnATtBmRVupLPhTWpcAqnJr9noXg",
   hardhat: "",
   kovan: "",
   mainnet: "",
@@ -17,7 +17,7 @@ export const GENESIS_NFT_IPFS_FOLDER = {
 
 export const GENESIS_NFT_ADDRESSES = {
   goerli: "",
-  sepolia: "0x99e55586a4efe1037bb3953F11F8Ec10f54282b6",
+  sepolia: "0xab4B5b515CEE540b78E37FD6C7e94b9704a4da75",
   hardhat: "",
   kovan: "",
   mainnet: "0xdf284759F3689eE82A42C9565003eD0C44444444",

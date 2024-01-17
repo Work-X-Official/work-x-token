@@ -63,21 +63,3 @@ task("nft:info", "Prints the global information of the nft contract").setAction(
     console.log("retrieving information went wrong", error);
   }
 });
-
-// example yarn hardhat nft:setipfs --network sepolia
-task("nft:setipfs", "Sets the ipfs folder location").setAction(async ({ _ }, hre) => {
-  const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
-    GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
-  );
-
-  const transaction = await nft.setIpfsFolder("ipfs://QmQLEDPK7KK7KYHD9MqYWZcumpoRwMayNfSmHZdmce1SS9/");
-
-  console.log("");
-  console.log("╔══════════════════════════════════════════════════════════════════════");
-  console.log("║ Call Nft.setIpfsFolder on " + hre.network.name);
-  console.log("║ Awaiting confirmation");
-  const receipt = await transaction.wait();
-  console.log("║ Tx: " + receipt.transactionHash);
-  console.log("╚══════════════════════════════════════════════════════════════════════");
-  console.log("");
-});

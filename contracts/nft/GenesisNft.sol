@@ -55,7 +55,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     uint16 public nftIdCounter;
     uint8 public initCompleted;
 
-    string private imageFolder = "ipfs://QmZQHQFNJqjPPczautsXL2CqWuwCCasVEfa4JFFfRv8z9X/";
+    string private imageFolder = "ipfs://QmbrP6G85XMD8DVYbzXnATtBmRVupLPhTWpcAqnJr9noXg/";
     address public voucherSigner;
 
     mapping(address => bool) public accountMinted;
@@ -125,7 +125,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
         voucherSigner = _voucherSigner;
-        startTime = uint128(block.timestamp + 22 days);
+        startTime = uint128(block.timestamp - 400 days);
     }
 
     /**
@@ -217,9 +217,9 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         if (initCompleted != 0) {
             revert InitHasCompleted();
         }
-        if (startTime <= block.timestamp) {
-            revert StartTimeInvalid();
-        }
+        // if (startTime <= block.timestamp) {
+        //     revert StartTimeInvalid();
+        // }
         for (uint256 i = nftIdCounter; i < NFT_MAX_AMOUNT; i++) {
             _mint(msg.sender, i);
         }
