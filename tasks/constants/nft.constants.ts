@@ -1,9 +1,9 @@
 export const GENESIS_NFT_IPFS_FOLDER = {
   goerli: "",
-  sepolia: "QmbrP6G85XMD8DVYbzXnATtBmRVupLPhTWpcAqnJr9noXg",
+  sepolia: "Qma8hy3TBQeNEtvM6J3YX1TcEd8KjxwK8xbvAze9NBikr8",
   hardhat: "",
   kovan: "",
-  mainnet: "",
+  mainnet: "Qma8hy3TBQeNEtvM6J3YX1TcEd8KjxwK8xbvAze9NBikr8",
   rinkeby: "",
   ropsten: "",
   bsc: "",
