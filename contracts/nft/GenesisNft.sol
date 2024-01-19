@@ -125,7 +125,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
         tokenDistribution = ITokenDistribution(_tokenDistributionAddress);
         nftData = GenesisNftData(_nftDataAddress);
         voucherSigner = _voucherSigner;
-        startTime = uint128(block.timestamp + 12 days);
+        startTime = uint128(block.timestamp + 22 days);
     }
 
     /**

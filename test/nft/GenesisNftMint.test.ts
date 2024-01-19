@@ -493,12 +493,12 @@ describe("GenesisNftMint", () => {
 
     it("At day 0, NftMinter 1 tries to claim something, but there is nothing to claim yet at start", async () => {
       const balanceBefore = await workToken.balanceOf(nftMinter1.address);
-      expect(balanceBefore).to.be.equal(amount(250_000));
+      expect(balanceBefore).to.be.equal(amount(3250_000));
       await expect(distribution.connect(nftMinter1).claimTokens()).to.be.revertedWith(
         "TokenDistribution: You don't have any tokens to claim",
       );
       const balanceAfter = await workToken.balanceOf(nftMinter1.address);
-      expect(balanceAfter).to.be.equal(amount(250_000));
+      expect(balanceAfter).to.be.equal(amount(3250_000));
       expect(balanceAfter).to.be.equal(balanceBefore);
     });
 
@@ -557,7 +557,7 @@ describe("GenesisNftMint", () => {
       expect(_tokenIdInfoAtMonth[0]).to.be.equal(amount(0));
       expect(_tokenIdInfoAtMonth[1]).to.be.equal(amount(0));
       const balance = await workToken.balanceOf(nftMinter1.address);
-      expect(balance).to.be.equal(amount(250_000 + 5000));
+      expect(balance).to.be.equal(amount(3250_000 + 5000));
       const claimed = await distribution.claimedTokens(nftMinter1.address);
       expect(claimed).to.be.equal(amount(5000));
     });
@@ -592,7 +592,7 @@ describe("GenesisNftMint", () => {
       expect(_tokenIdInfoAtMonth[0]).to.be.equal(amount(50000));
       expect(_tokenIdInfoAtMonth[1]).to.be.equal(amount(50000));
       const balance = await workToken.balanceOf(nftMinter4.address);
-      expect(balance).to.be.equal(amount(2250000 + 50000));
+      expect(balance).to.be.equal(amount(250000 + 50000));
       const claimed = await distribution.claimedTokens(nftMinter4.address);
       expect(claimed).to.be.equal(amount(100_000));
     });
