@@ -14,7 +14,7 @@ config();
 
 chai.use(solidity);
 
-describe.only("RewardBase", () => {
+describe("RewardBase", () => {
   let nft: GenesisNft;
   let accounts: SignerWithAddress[];
 

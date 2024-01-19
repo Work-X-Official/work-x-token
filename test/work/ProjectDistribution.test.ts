@@ -7,7 +7,7 @@ import { regenerateProjectDistribution } from "../util/distribution.util";
 import { BigNumber } from "ethers";
 
 // this test requires the "initialDate: "2023-12-05 10:10:00 AM"," to be commented in, in hardhat.config.ts
-describe.only("ProjectDistribution", function () {
+describe.skip("ProjectDistribution", function () {
   let distribution: ProjectDistribution;
   let accounts: SignerWithAddress[];
   let workToken: WorkToken;
