@@ -11,7 +11,7 @@ import {
   regenerateTokenDistribution,
   setClaimable,
   setClaimableByInvestment,
-} from "../util/sale-distribution.util";
+} from "../util/distribution.util";
 import { vestingPeriod3Cliff, zeroInv } from "../util/sale.util";
 import {
   VESTING_LENGHT_PRESALE_MONTHS,

@@ -42,7 +42,7 @@ import {
   seed251Inv,
   zeroInv,
 } from "../util/sale.util";
-import { maxLockLength, regenerateTokenDistribution } from "../util/sale-distribution.util";
+import { maxLockLength, regenerateTokenDistribution } from "../util/distribution.util";
 import { workBought } from "../../tasks/util/utils";
 
 config();

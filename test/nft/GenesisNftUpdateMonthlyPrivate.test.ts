@@ -8,7 +8,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Wallet } from "ethers";
 import { Stake, mintNft, regenerateNft } from "../util/nft.util";
 import { regenerateWorkToken, sendTokens } from "../util/worktoken.util";
-import { regenerateTokenDistribution } from "../util/sale-distribution.util";
+import { regenerateTokenDistribution } from "../util/distribution.util";
 
 config();
 
