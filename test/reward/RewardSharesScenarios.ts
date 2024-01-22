@@ -8,7 +8,7 @@ import { mintNft, testShares, testTotalShares } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  getRewardersTotal,
+  getRewardsSharesTotal,
   mineStakeMonths,
   claimAndVerifyClaimed,
   testGetClaimables,
@@ -80,7 +80,7 @@ describe("RewardSharesScenarios", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
     ({
       workToken,
       distribution,
@@ -236,12 +236,12 @@ describe("RewardSharesScenarios", () => {
 
   describe("Test Claim, claimed vs getClaimable with stake/unstake.", async () => {
     before("Generate contracts and mint nft 1,2,3 and go to startime", async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,
         nft,
-        rewardTokens: reward,
+        rewardShares: reward,
       } = await regenerateContracts(accounts, accounts[0].address, startTime));
 
       await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
@@ -293,10 +293,9 @@ describe("RewardSharesScenarios", () => {
       await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
-    it("In month 6, nftId 2,3 stake 1000 and then 1,2 claim", async () => {
+    it("In month 6, nftId 3 stake 1000 and then 1,2 claim", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 2, network);
       const amountStake = 1000;
-      await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
       await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
       await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
       await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
@@ -328,7 +327,7 @@ describe("RewardSharesScenarios", () => {
       const claimed2 = await reward.connect(nftMinter2).claimed(nftId2);
       const claimed3 = await reward.connect(nftMinter3).claimed(nftId3);
       const claimedTotal = claimed1.add(claimed2).add(claimed3);
-      const rewardsTotal = getRewardersTotal();
+      const rewardsTotal = getRewardsSharesTotal();
       expect(claimedTotal.add(2)).to.closeTo(amount(rewardsTotal), amount(1));
     });
   });

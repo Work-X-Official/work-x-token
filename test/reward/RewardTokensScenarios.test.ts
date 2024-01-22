@@ -8,7 +8,7 @@ import { mintNft, testStaked, testTotals } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  getRewardersTotal,
+  getRewardsTokensTotal,
   mineStakeMonths,
   testGetClaimables,
   testGetRewardNftIdMonth,
@@ -86,7 +86,7 @@ describe("RewardTokensScenarios", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
     ({
       workToken,
       distribution,
@@ -255,7 +255,7 @@ describe("RewardTokensScenarios", () => {
 
   describe("Test Claim, claimed vs getClaimable with stake/unstake.", async () => {
     before("Generate contracts and mint nft 1,2,3 and go to startime", async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,
@@ -347,7 +347,7 @@ describe("RewardTokensScenarios", () => {
       const claimed2 = await reward.connect(nftMinter2).claimed(nftId2);
       const claimed3 = await reward.connect(nftMinter3).claimed(nftId3);
       const claimedTotal = claimed1.add(claimed2).add(claimed3);
-      const rewardsTotal = getRewardersTotal();
+      const rewardsTotal = getRewardsTokensTotal();
       expect(claimedTotal).to.closeTo(amount(rewardsTotal), amount(1));
     });
   });

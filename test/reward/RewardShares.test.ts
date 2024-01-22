@@ -48,7 +48,7 @@ describe("RewardShares", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
     ({
       workToken,
       distribution,
@@ -209,7 +209,7 @@ describe("RewardShares", () => {
       let totalShares: BigNumber;
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
         ({
           workToken,
           distribution,
@@ -277,7 +277,7 @@ describe("RewardShares", () => {
 
   describe("Testing approve function", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,
@@ -311,7 +311,7 @@ describe("RewardShares", () => {
   describe("Testing getClaimable", async () => {
     describe("Simple test getClaimable when there is only 1 nft", async () => {
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
         ({
           workToken,
           distribution,
@@ -377,7 +377,7 @@ describe("RewardShares", () => {
       let totalShares: BigNumber;
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
         ({
           workToken,
           distribution,
@@ -540,7 +540,7 @@ describe("RewardShares", () => {
 
   describe("Test claim function, claimed va claimable", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,
@@ -607,7 +607,7 @@ describe("RewardShares", () => {
 
   describe("Test monthClaimed, it should keep track of the month in which nft last claimed reward", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,

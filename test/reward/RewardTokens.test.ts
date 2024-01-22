@@ -8,9 +8,9 @@ import { regenerateContracts } from "../util/contract.util";
 import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { REWARDS } from "../../tasks/constants/reward.constants";
+import { REWARDS_TOKENS } from "../../tasks/constants/reward.constants";
 import {
-  getRewardersTotal,
+  getRewardsTokensTotal,
   mineStakeMonths,
   testGetRewardNftIdMonth,
   claimAndVerifyClaimed,
@@ -48,7 +48,7 @@ describe("RewardTokens", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
     ({
       workToken,
       distribution,
@@ -68,7 +68,7 @@ describe("RewardTokens", () => {
 
     it("getRewardersTotal is correct for month 1 till 40", async () => {
       for (let i = 1; i <= 40; i++) {
-        expect(await reward.getRewardTotalMonth(i)).to.equal(amount(REWARDS[i - 1]));
+        expect(await reward.getRewardTotalMonth(i)).to.equal(amount(REWARDS_TOKENS[i - 1]));
       }
     });
 
@@ -109,7 +109,7 @@ describe("RewardTokens", () => {
 
       it("getRewardNftIdMonth is correct all rewards in months 1 - 40 are for nftId1", async () => {
         for (let i = 1; i <= 40; i++) {
-          expect(await reward.getRewardNftIdMonth(nftId1, i)).to.equal(amount(REWARDS[i - 1]));
+          expect(await reward.getRewardNftIdMonth(nftId1, i)).to.equal(amount(REWARDS_TOKENS[i - 1]));
         }
       });
 
@@ -206,7 +206,7 @@ describe("RewardTokens", () => {
 
   describe("Testing approve function", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,
@@ -240,7 +240,7 @@ describe("RewardTokens", () => {
   describe("Testing getClaimable", async () => {
     describe("Simple test getClaimable when there is only 1 nft", async () => {
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
         ({
           workToken,
           distribution,
@@ -266,30 +266,30 @@ describe("RewardTokens", () => {
 
       it("Go to month 1, getClaimable returns all rewards", async () => {
         await mineDays(30, network);
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS[0]));
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_TOKENS[0]));
       });
 
       it("Go to month 2, getClaimable returns rewards from month 1 and month 2", async () => {
         await mineDays(30, network);
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS[0]).add(amount(REWARDS[1])));
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_TOKENS[0]).add(amount(REWARDS_TOKENS[1])));
       });
 
       it("Go to month 39, getClaimable returns rewards from month 1 to month 39", async () => {
         await mineDays(30 * 37, network);
         expect(await nft.getCurrentMonth()).to.equal(39);
-        const rewardsTotal = getRewardersTotal();
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal - REWARDS[39]));
+        const rewardsTotal = getRewardsTokensTotal();
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal - REWARDS_TOKENS[39]));
       });
 
       it("Go to month 40, getClaimable returns also the last month rewards", async () => {
         await mineDays(30, network);
-        const rewardsTotal = getRewardersTotal();
+        const rewardsTotal = getRewardsTokensTotal();
         expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal));
       });
 
       it("Later months the reward does not increase", async () => {
         await mineDays(30, network);
-        const rewardsTotal = getRewardersTotal();
+        const rewardsTotal = getRewardsTokensTotal();
         expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal));
         await mineDays(30, network);
         expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal));
@@ -306,7 +306,7 @@ describe("RewardTokens", () => {
       let totalMinimum: BigNumber;
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
         ({
           workToken,
           distribution,
@@ -347,9 +347,9 @@ describe("RewardTokens", () => {
 
       it("Go to month 1, getClaimable returns for each the reward of month 0", async () => {
         await mineDays(30, network);
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS[0]).mul(minimum1).div(totalMinimum));
-        expect(await reward.getClaimable(nftId2)).to.equal(amount(REWARDS[0]).mul(minimum2).div(totalMinimum));
-        expect(await reward.getClaimable(nftId3)).to.equal(amount(REWARDS[0]).mul(minimum3).div(totalMinimum));
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_TOKENS[0]).mul(minimum1).div(totalMinimum));
+        expect(await reward.getClaimable(nftId2)).to.equal(amount(REWARDS_TOKENS[0]).mul(minimum2).div(totalMinimum));
+        expect(await reward.getClaimable(nftId3)).to.equal(amount(REWARDS_TOKENS[0]).mul(minimum3).div(totalMinimum));
       });
 
       it("Go to month 40, getClaimable returns for each the reward of month 0 to month 39", async () => {
@@ -357,7 +357,7 @@ describe("RewardTokens", () => {
         let sumRewards1: BigNumber = big(0);
         let sumRewards2: BigNumber = big(0);
         let sumRewards3: BigNumber = big(0);
-        for (const value of REWARDS) {
+        for (const value of REWARDS_TOKENS) {
           sumRewards1 = sumRewards1.add(amount(value).mul(minimum1).div(totalMinimum));
           sumRewards2 = sumRewards2.add(amount(value).mul(minimum2).div(totalMinimum));
           sumRewards3 = sumRewards3.add(amount(value).mul(minimum3).div(totalMinimum));
@@ -471,7 +471,7 @@ describe("RewardTokens", () => {
 
   describe("Test claim function, claimed vs getClaimable, two nfts", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,
@@ -534,7 +534,7 @@ describe("RewardTokens", () => {
       const claimed1 = await reward.connect(nftMinter1).claimed(nftId1);
       const claimed2 = await reward.connect(nftMinter2).claimed(nftId2);
       const claimedTotal = claimed1.add(claimed2);
-      const rewardsTotal = getRewardersTotal();
+      const rewardsTotal = getRewardsTokensTotal();
       expect(claimedTotal).to.closeTo(amount(rewardsTotal), amount(1));
     });
   });
@@ -662,7 +662,7 @@ describe("RewardTokens", () => {
 
   describe("Test monthClaimed, it should keep track of the month in which nft last claimed reward", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
       ({
         workToken,
         distribution,

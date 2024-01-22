@@ -7,7 +7,8 @@ import { regenerateContracts } from "../util/contract.util";
 import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { REWARDS } from "../../tasks/constants/reward.constants";
+import { REWARDS_SHARES } from "../../tasks/constants/reward.constants";
+import { REWARDS_TOKENS } from "../../tasks/constants/reward.constants";
 import { claimAndVerifyStaked, getClaimable } from "../util/reward.util";
 
 config();
@@ -39,7 +40,7 @@ describe("RewardWrapper", () => {
     nftMinter1 = accounts[3];
     nftMinter2 = accounts[4];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
     ({ workToken, distribution, nft, rewardTokens, rewardShares, rewardWrapper } = await regenerateContracts(
       accounts,
       accounts[0].address,
@@ -96,7 +97,7 @@ describe("RewardWrapper", () => {
     it("When only having shares, claim claims only claimable from shares and increase nft staked", async () => {
       const { rewardSharesClaimable, rewardTokensClaimable } = await getClaimable(rewardTokens, rewardShares, nftId1);
 
-      const rewardSharesReward = amount(REWARDS[0])
+      const rewardSharesReward = amount(REWARDS_SHARES[0])
         .mul(big(51))
         .div(big(51 + 154));
 
@@ -109,10 +110,10 @@ describe("RewardWrapper", () => {
     it("When having shares and tokens staked, claim claims claimable from shares and from tokens staked", async () => {
       const { rewardSharesClaimable, rewardTokensClaimable } = await getClaimable(rewardTokens, rewardShares, nftId2);
 
-      const rewardSharesReward = amount(REWARDS[0])
+      const rewardSharesReward = amount(REWARDS_SHARES[0])
         .mul(big(154))
         .div(big(51 + 154));
-      const rewardTokensReward = amount(REWARDS[0]);
+      const rewardTokensReward = amount(REWARDS_TOKENS[0]);
 
       expect(rewardSharesClaimable).to.equal(rewardSharesReward);
       expect(rewardTokensClaimable).to.equal(rewardTokensReward);
