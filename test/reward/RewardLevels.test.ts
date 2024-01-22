@@ -1,6 +1,6 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
-import { RewardShares, RewardWrapper, GenesisNft, WorkToken, TokenDistribution } from "../../typings";
+import { RewardLevels, RewardWrapper, GenesisNft, WorkToken, TokenDistribution } from "../../typings";
 import { ethers, network } from "hardhat";
 import { BigNumber } from "ethers";
 import { mineDays, amount, big } from "../util/helpers.util";
@@ -8,9 +8,9 @@ import { regenerateContracts } from "../util/contract.util";
 import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { REWARDS_SHARES } from "../../tasks/constants/reward.constants";
+import { REWARDS_LEVELS } from "../../tasks/constants/reward.constants";
 import {
-  getRewardsSharesTotal,
+  getRewardsLevelsTotal,
   mineStakeMonths,
   testGetRewardNftIdMonth,
   claimAndVerifyClaimed,
@@ -21,7 +21,7 @@ config();
 
 chai.use(solidity);
 
-describe("RewardShares", () => {
+describe("RewardLevels", () => {
   let nft: GenesisNft;
   let accounts: SignerWithAddress[];
 
@@ -35,7 +35,7 @@ describe("RewardShares", () => {
 
   let distribution: TokenDistribution;
   let workToken: WorkToken;
-  let reward: RewardShares;
+  let reward: RewardLevels;
   let rewardWrapper: RewardWrapper;
 
   let chainId: number;
@@ -53,7 +53,7 @@ describe("RewardShares", () => {
       workToken,
       distribution,
       nft,
-      rewardShares: reward,
+      rewardLevels: reward,
     } = await regenerateContracts(accounts, accounts[0].address, startTime));
 
     await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
@@ -68,7 +68,7 @@ describe("RewardShares", () => {
 
     it("getRewardersTotal is correct for month 1 till 40", async () => {
       for (let i = 1; i <= 40; i++) {
-        expect(await reward.getRewardTotalMonth(i)).to.equal(amount(REWARDS_SHARES[i - 1]));
+        expect(await reward.getRewardTotalMonth(i)).to.equal(amount(REWARDS_LEVELS[i - 1]));
       }
     });
 
@@ -81,7 +81,7 @@ describe("RewardShares", () => {
     });
   });
 
-  describe("Testing Reward per nft per month from Shares, getRewardNftIdMonth", async () => {
+  describe("Testing Reward per nft per month from Levels, getRewardNftIdMonth", async () => {
     describe("getRewardNftIdMonth when there are no nfts", async () => {
       it("Before minting, the rewards are 0 for any month", async () => {
         for (let i = 0; i <= 5; i++) {
@@ -109,7 +109,7 @@ describe("RewardShares", () => {
 
       it("getRewardNftIdMonth is correct all rewards in months 1 - 40 are for nftId1", async () => {
         for (let i = 1; i <= 40; i++) {
-          expect(await reward.getRewardNftIdMonth(nftId1, i)).to.equal(amount(REWARDS_SHARES[i - 1]));
+          expect(await reward.getRewardNftIdMonth(nftId1, i)).to.equal(amount(REWARDS_LEVELS[i - 1]));
         }
       });
 
@@ -214,7 +214,7 @@ describe("RewardShares", () => {
           workToken,
           distribution,
           nft,
-          rewardShares: reward,
+          rewardLevels: reward,
         } = await regenerateContracts(accounts, accounts[0].address, startTime));
         await distribution.setWalletClaimable([nftMinter1.address], [0], [0], [0], [0]);
         await distribution.setWalletClaimable([nftMinter2.address], [10000], [0], [0], [0]);
@@ -228,16 +228,16 @@ describe("RewardShares", () => {
 
       it("Right after mint the rewards in month 1 and 2 are based on the shares in month 0", async () => {
         expect(await reward.getRewardNftIdMonth(nftId1, 1)).to.equal(
-          amount(REWARDS_SHARES[0]).mul(shares1).div(totalShares),
+          amount(REWARDS_LEVELS[0]).mul(shares1).div(totalShares),
         );
         expect(await reward.getRewardNftIdMonth(nftId2, 1)).to.equal(
-          amount(REWARDS_SHARES[0]).mul(shares2).div(totalShares),
+          amount(REWARDS_LEVELS[0]).mul(shares2).div(totalShares),
         );
         expect(await reward.getRewardNftIdMonth(nftId1, 2)).to.equal(
-          amount(REWARDS_SHARES[1]).mul(shares1).div(totalShares),
+          amount(REWARDS_LEVELS[1]).mul(shares1).div(totalShares),
         );
         expect(await reward.getRewardNftIdMonth(nftId2, 2)).to.equal(
-          amount(REWARDS_SHARES[1]).mul(shares2).div(totalShares),
+          amount(REWARDS_LEVELS[1]).mul(shares2).div(totalShares),
         );
       });
 
@@ -249,10 +249,10 @@ describe("RewardShares", () => {
         await nft.connect(nftMinter1).stake(nftId1, amount(3000));
 
         expect(await reward.getRewardNftIdMonth(nftId1, 1)).to.equal(
-          amount(REWARDS_SHARES[0]).mul(shares1).div(totalShares),
+          amount(REWARDS_LEVELS[0]).mul(shares1).div(totalShares),
         );
         expect(await reward.getRewardNftIdMonth(nftId2, 1)).to.equal(
-          amount(REWARDS_SHARES[0]).mul(shares2).div(totalShares),
+          amount(REWARDS_LEVELS[0]).mul(shares2).div(totalShares),
         );
       });
 
@@ -266,10 +266,10 @@ describe("RewardShares", () => {
         totalShares = shares1.add(shares2);
 
         expect(await reward.getRewardNftIdMonth(nftId1, 2)).to.equal(
-          amount(REWARDS_SHARES[1]).mul(shares1).div(totalShares),
+          amount(REWARDS_LEVELS[1]).mul(shares1).div(totalShares),
         );
         expect(await reward.getRewardNftIdMonth(nftId2, 2)).to.equal(
-          amount(REWARDS_SHARES[1]).mul(shares2).div(totalShares),
+          amount(REWARDS_LEVELS[1]).mul(shares2).div(totalShares),
         );
       });
     });
@@ -282,7 +282,7 @@ describe("RewardShares", () => {
         workToken,
         distribution,
         nft,
-        rewardShares: reward,
+        rewardLevels: reward,
       } = await regenerateContracts(accounts, accounts[0].address, startTime));
       await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
       const amountMint1 = 25000;
@@ -316,7 +316,7 @@ describe("RewardShares", () => {
           workToken,
           distribution,
           nft,
-          rewardShares: reward,
+          rewardLevels: reward,
         } = await regenerateContracts(accounts, accounts[0].address, startTime));
         await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
       });
@@ -337,30 +337,30 @@ describe("RewardShares", () => {
 
       it("Go to month 1, getClaimable returns all rewards", async () => {
         await mineDays(30, network);
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_SHARES[0]));
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_LEVELS[0]));
       });
 
       it("Go to month 2, getClaimable returns rewards from month 1 and month 2", async () => {
         await mineDays(30, network);
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_SHARES[0]).add(amount(REWARDS_SHARES[1])));
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_LEVELS[0]).add(amount(REWARDS_LEVELS[1])));
       });
 
       it("Go to month 39, getClaimable returns rewards from month 1 to month 39", async () => {
         await mineDays(30 * 37, network);
         expect(await nft.getCurrentMonth()).to.equal(39);
-        const rewardsTotal = getRewardsSharesTotal();
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal - REWARDS_SHARES[39]));
+        const rewardsTotal = getRewardsLevelsTotal();
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal - REWARDS_LEVELS[39]));
       });
 
       it("Go to month 40, getClaimable returns also the last month rewards", async () => {
         await mineDays(30, network);
-        const rewardsTotal = getRewardsSharesTotal();
+        const rewardsTotal = getRewardsLevelsTotal();
         expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal));
       });
 
       it("Later months the reward does not increase", async () => {
         await mineDays(30, network);
-        const rewardsTotal = getRewardsSharesTotal();
+        const rewardsTotal = getRewardsLevelsTotal();
         expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal));
         await mineDays(30, network);
         expect(await reward.getClaimable(nftId1)).to.equal(amount(rewardsTotal));
@@ -382,7 +382,7 @@ describe("RewardShares", () => {
           workToken,
           distribution,
           nft,
-          rewardShares: reward,
+          rewardLevels: reward,
         } = await regenerateContracts(accounts, accounts[0].address, startTime));
         await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
         await distribution.setWalletClaimable([nftMinter2.address], [50000], [0], [0], [0]);
@@ -417,16 +417,16 @@ describe("RewardShares", () => {
       });
       it("Go to month 1, getClaimable returns for each the reward of month 0", async () => {
         await mineDays(30, network);
-        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_SHARES[0]).mul(shares1).div(totalShares));
-        expect(await reward.getClaimable(nftId2)).to.equal(amount(REWARDS_SHARES[0]).mul(shares2).div(totalShares));
-        expect(await reward.getClaimable(nftId3)).to.equal(amount(REWARDS_SHARES[0]).mul(shares3).div(totalShares));
+        expect(await reward.getClaimable(nftId1)).to.equal(amount(REWARDS_LEVELS[0]).mul(shares1).div(totalShares));
+        expect(await reward.getClaimable(nftId2)).to.equal(amount(REWARDS_LEVELS[0]).mul(shares2).div(totalShares));
+        expect(await reward.getClaimable(nftId3)).to.equal(amount(REWARDS_LEVELS[0]).mul(shares3).div(totalShares));
       });
       it("Go to month 40, getClaimable returns for each the reward of month 0 to month 39", async () => {
         await mineDays(30 * 39, network);
         let sumRewards1: BigNumber = big(0);
         let sumRewards2: BigNumber = big(0);
         let sumRewards3: BigNumber = big(0);
-        for (const value of REWARDS_SHARES) {
+        for (const value of REWARDS_LEVELS) {
           sumRewards1 = sumRewards1.add(amount(value).mul(shares1).div(totalShares));
           sumRewards2 = sumRewards2.add(amount(value).mul(shares2).div(totalShares));
           sumRewards3 = sumRewards3.add(amount(value).mul(shares3).div(totalShares));
@@ -445,7 +445,7 @@ describe("RewardShares", () => {
         workToken,
         distribution,
         nft,
-        rewardShares: reward,
+        rewardLevels: reward,
       } = await regenerateContracts(accounts, accounts[0].address, startTime));
       await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
       await reward.approve(nft.address, amount(1000000));
@@ -491,14 +491,14 @@ describe("RewardShares", () => {
     });
   });
 
-  describe("Claim from RewardShares with RewardWrapper", async () => {
+  describe("Claim from RewardLevels with RewardWrapper", async () => {
     before(async () => {
       const startTime = (await ethers.provider.getBlock("latest")).timestamp + 40;
       ({
         workToken,
         distribution,
         nft,
-        rewardShares: reward,
+        rewardLevels: reward,
         rewardWrapper: rewardWrapper,
       } = await regenerateContracts(accounts, accounts[0].address, startTime));
       await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
@@ -513,7 +513,7 @@ describe("RewardShares", () => {
       await mineDays(22, network);
     });
 
-    it("Set the RewardShares in the wrapper contract as the only rewardTarget address", async () => {
+    it("Set the RewardLevels in the wrapper contract as the only rewardTarget address", async () => {
       await rewardWrapper.setRewarders([reward.address]);
     });
 
@@ -545,7 +545,7 @@ describe("RewardShares", () => {
         workToken,
         distribution,
         nft,
-        rewardShares: reward,
+        rewardLevels: reward,
       } = await regenerateContracts(accounts, accounts[0].address, startTime));
       await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [50000], [0], [0], [0]);
@@ -600,7 +600,7 @@ describe("RewardShares", () => {
       const claimed2 = await reward.connect(nftMinter2).claimed(nftId2);
       const claimed3 = await reward.connect(nftMinter3).claimed(nftId3);
       const claimedTotal = claimed1.add(claimed2).add(claimed3);
-      const rewardsTotal = getRewardsSharesTotal();
+      const rewardsTotal = getRewardsLevelsTotal();
       expect(claimedTotal).to.closeTo(amount(rewardsTotal), amount(1));
     });
   });
@@ -612,7 +612,7 @@ describe("RewardShares", () => {
         workToken,
         distribution,
         nft,
-        rewardShares: reward,
+        rewardLevels: reward,
       } = await regenerateContracts(accounts, accounts[0].address, startTime));
       await distribution.setWalletClaimable([nftMinter1.address], [25000], [0], [0], [0]);
       await distribution.setWalletClaimable([nftMinter2.address], [50000], [0], [0], [0]);

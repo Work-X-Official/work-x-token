@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 error ClaimNotAllowed();
 
-contract RewardShares is Ownable, IRewarder {
+contract RewardLevels is Ownable, IRewarder {
     IGenesisNft public nft;
     IERC20 public workToken;
 
@@ -21,8 +21,8 @@ contract RewardShares is Ownable, IRewarder {
 
     mapping(uint256 => uint256) public monthClaimed;
 
-      /**
-     * @notice  The formula is: (40000 - sqrt(month * 40000000)) * 10 / 4 , but is multiplied by 10 ** 18 to get the amount in wei.
+    /**
+     * @notice  The formula is: ((40000 - sqrt(month * 40000000)) * 10 / 4) / 2 , but is multiplied by 10 ** 18 to get the amount in wei.
      * Array with total reward amounts per month, filled with the formula above.
      */
     uint24[REWARD_MONTHS] private rewards = [
@@ -72,7 +72,7 @@ contract RewardShares is Ownable, IRewarder {
 
 
     /**
-     * @notice Initializes the RewardShares contract with the given addresses.
+     * @notice Initializes the RewardLevels contract with the given addresses.
      * @param _genesisNftAddress The address of the Genesis NFT contract.
      * @param _workTokenAddress The address of the WORK token contract.
      */
