@@ -188,14 +188,13 @@ contract RewardLevels is Ownable, IRewarder {
         }
         uint256 monthPrev = _month - 1;
         (uint256 totalShares, , ) = nft.getTotals(monthPrev);
-        if (totalShares == 0) {
-            return 0;
-        }
+        totalShares = totalShares - (51 * 999);
 
         uint256 nftIdShares = nft.getShares(_nftId, monthPrev);
-        if (nftIdShares == 0) {
+        if (nftIdShares == 0 || nftIdShares == 51) {
             return 0;
         }
+        nftIdShares = nftIdShares - 51;
 
         uint256 rewardTotalMonth = getRewardTotalMonth(_month);
 

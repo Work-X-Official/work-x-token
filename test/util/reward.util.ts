@@ -6,6 +6,7 @@ import { REWARDS_LEVELS, REWARDS_SHARES, REWARDS_TOKENS } from "../../tasks/cons
 import { expect } from "chai";
 import { Network } from "hardhat/types/runtime";
 import { amount, mineDays } from "./helpers.util";
+import { approveWorkToken } from "./worktoken.util";
 
 export const regenerateRewardShares = async (
   ownerRewards: SignerWithAddress,
@@ -182,5 +183,30 @@ export const mineStakeMonths = async (
   for (let i = 0; i < months; i++) {
     await nft.connect(account).stake(nftId, 0);
     await mineDays(30, network);
+  }
+};
+
+export const mintRemainingNftsAndStake = async (
+  account: SignerWithAddress,
+  nft: GenesisNft,
+  workToken: WorkToken,
+  network: Network,
+) => {
+  const nftIdCounter = await nft.nftIdCounter();
+  const remainingNfts = 999 - nftIdCounter;
+
+  const stakeAmountSingle = 500;
+  const stakeAmountAll = stakeAmountSingle * remainingNfts;
+  await workToken.connect(account).mint(account.address, amount(stakeAmountAll));
+
+  await approveWorkToken(network, workToken, account, nft.address);
+
+  await nft.mintRemainingToTreasury();
+
+  await mineDays(22, network);
+  await mineDays(1, network);
+
+  for (let i = nftIdCounter; i < 999; i++) {
+    await nft.connect(account).stake(i, amount(stakeAmountSingle));
   }
 };
