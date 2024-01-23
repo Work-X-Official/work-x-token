@@ -19,54 +19,12 @@ contract RewardLevels is Ownable, IRewarder {
     uint256 private constant REWARD_MONTHS = 40;
     uint256 private constant ONE_E18 = 10 ** 18;
 
+
+    uint256 private constant REWARD_LEVEL_MONTH = 50 * ONE_E18;
+
+    mapping(uint16 => uint8) public levelShares;
     mapping(uint256 => uint256) public monthClaimed;
 
-    /**
-     * @notice  The formula is: ((40000 - sqrt(month * 40000000)) * 10 / 4) / 2 , but is multiplied by 10 ** 18 to get the amount in wei.
-     * Array with total reward amounts per month, filled with the formula above.
-     */
-    uint24[REWARD_MONTHS] private rewards = [
-        50000,
-        42094,
-        38820,
-        36307,
-        34189,
-        32322,
-        30635,
-        29083,
-        27639,
-        26283,
-        25000,
-        23780,
-        22614,
-        21496,
-        20420,
-        19381,
-        18377,
-        17404,
-        16459,
-        15540,
-        14645,
-        13772,
-        12919,
-        12086,
-        11270,
-        10472,
-        9689,
-        8921,
-        8167,
-        7427,
-        6699,
-        5983,
-        5279,
-        4585,
-        3902,
-        3229,
-        2566,
-        1912,
-        1266,
-        629
-    ];
 
     event Claimed(uint256 indexed nftId, address indexed claimer, uint256 amountClaimed);
 
@@ -160,24 +118,13 @@ contract RewardLevels is Ownable, IRewarder {
         }
     }
 
-    /**
-     * @notice Get the total reward for a specific month according to the rewards array. In month 0 there is no reward and from month 1,
-     * the rewards are stored in the array.
-     * @param _month Month for which you want to find the total reward.
-     * @return _rewardTotalMonth Total reward in specific month.
-     */
-    function getRewardTotalMonth(uint256 _month) public view returns (uint256 _rewardTotalMonth) {
-        if (_month > REWARD_MONTHS || _month == 0) {
-            return 0;
-        }
-        _rewardTotalMonth = rewards[_month - 1] * ONE_E18;
-    }
+
 
     /**
-     * @notice Calculates the reward of a nftId for a specific month based on the total rewards of this month and shares of the previous month.
+     * @notice Calculates the reward of a nftId for a specific month based. In each month, an nft gets the REWARD_LEVEL_MONTH per level.
      * @param _nftId Id of the nft for which you want to get the reward amount.
      * @param _month Month for which you want to get the reward amount.
-     * @return _rewardNftIdMonth Reward of a nftId for a specific month based on shares.
+     * @return _rewardNftIdMonth Reward of a nftId for a specific month based on the level of the nft.
      */
     function getRewardNftIdMonth(
         uint256 _nftId,
@@ -187,17 +134,14 @@ contract RewardLevels is Ownable, IRewarder {
             return 0;
         }
         uint256 monthPrev = _month - 1;
-        (uint256 totalShares, , ) = nft.getTotals(monthPrev);
-        totalShares = totalShares - (51 * 999);
 
         uint256 nftIdShares = nft.getShares(_nftId, monthPrev);
         if (nftIdShares == 0 || nftIdShares == 51) {
             return 0;
         }
-        nftIdShares = nftIdShares - 51;
 
-        uint256 rewardTotalMonth = getRewardTotalMonth(_month);
+        uint256 nftIdLevel = levelShares[uint16(nftIdShares)];
 
-        _rewardNftIdMonth = (nftIdShares * rewardTotalMonth) / totalShares;
+        _rewardNftIdMonth = nftIdLevel * REWARD_LEVEL_MONTH;
     }
 }
