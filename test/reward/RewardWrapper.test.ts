@@ -1,13 +1,21 @@
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
-import { GenesisNft, WorkToken, TokenDistribution, RewardTokens, RewardWrapper, RewardShares } from "../../typings";
+import {
+  GenesisNft,
+  WorkToken,
+  TokenDistribution,
+  RewardTokens,
+  RewardWrapper,
+  RewardShares,
+  RewardLevels,
+} from "../../typings";
 import { ethers, network } from "hardhat";
 import { amount, big, mineDays } from "../util/helpers.util";
 import { regenerateContracts } from "../util/contract.util";
 import { mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { REWARDS_SHARES } from "../../tasks/constants/reward.constants";
+import { REWARDS_SHARES, REWARD_LEVEL_MONTH } from "../../tasks/constants/reward.constants";
 import { REWARDS_TOKENS } from "../../tasks/constants/reward.constants";
 import { claimAndVerifyStaked, getClaimable } from "../util/reward.util";
 
@@ -29,6 +37,7 @@ describe("RewardWrapper", () => {
   let distribution: TokenDistribution;
   let rewardTokens: RewardTokens;
   let rewardShares: RewardShares;
+  let rewardLevels: RewardLevels;
   let rewardWrapper: RewardWrapper;
 
   let chainId: number;
@@ -41,19 +50,18 @@ describe("RewardWrapper", () => {
     nftMinter2 = accounts[4];
 
     const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
-    ({ workToken, distribution, nft, rewardTokens, rewardShares, rewardWrapper } = await regenerateContracts(
-      accounts,
-      accounts[0].address,
-      startTime,
-    ));
+    ({ workToken, distribution, nft, rewardTokens, rewardShares, rewardLevels, rewardWrapper } =
+      await regenerateContracts(accounts, accounts[0].address, startTime));
 
     await distribution.setWalletClaimable([nftMinter2.address], [50000], [0], [0], [0]);
 
     await rewardTokens.approve(nft.address, amount(1000000));
     await rewardShares.approve(nft.address, amount(1000000));
+    await rewardLevels.approve(nft.address, amount(1000000));
 
     await rewardTokens.setRewardWrapper(rewardWrapper.address);
     await rewardShares.setRewardWrapper(rewardWrapper.address);
+    await rewardLevels.setRewardWrapper(rewardWrapper.address);
 
     ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, 0, 0, 0, chainId));
     ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, 50000, 0, 0, chainId));
@@ -87,6 +95,15 @@ describe("RewardWrapper", () => {
       expect(rewards[0]).to.be.equal(rewardTokens.address);
       expect(rewards[1]).to.be.equal(rewardShares.address);
     });
+
+    it("Should set rewards with three values", async () => {
+      await rewardWrapper.setRewarders([rewardTokens.address, rewardShares.address, rewardLevels.address]);
+      const rewards = await rewardWrapper.getRewarders();
+      expect(rewards.length).to.be.equal(3);
+      expect(rewards[0]).to.be.equal(rewardTokens.address);
+      expect(rewards[1]).to.be.equal(rewardShares.address);
+      expect(rewards[2]).to.be.equal(rewardLevels.address);
+    });
   });
 
   describe("Test claim", () => {
@@ -95,7 +112,12 @@ describe("RewardWrapper", () => {
     });
 
     it("When only having shares, claim claims only claimable from shares and increase nft staked", async () => {
-      const { rewardSharesClaimable, rewardTokensClaimable } = await getClaimable(rewardTokens, rewardShares, nftId1);
+      const { rewardSharesClaimable, rewardTokensClaimable, rewardLevelsClaimable } = await getClaimable(
+        rewardTokens,
+        rewardShares,
+        rewardLevels,
+        nftId1,
+      );
 
       const rewardSharesReward = amount(REWARDS_SHARES[0])
         .mul(big(51))
@@ -103,22 +125,34 @@ describe("RewardWrapper", () => {
 
       expect(rewardSharesClaimable).to.equal(rewardSharesReward);
       expect(rewardTokensClaimable).to.equal(0);
+      expect(rewardLevelsClaimable).to.equal(0);
 
       await claimAndVerifyStaked(rewardWrapper, nft, nftId1, nftMinter1, rewardSharesReward);
     });
 
-    it("When having shares and tokens staked, claim claims claimable from shares and from tokens staked", async () => {
-      const { rewardSharesClaimable, rewardTokensClaimable } = await getClaimable(rewardTokens, rewardShares, nftId2);
+    it("When having staked and leveled, claim claims claimable from shares and from tokens staked and claimable based on level", async () => {
+      const { rewardSharesClaimable, rewardTokensClaimable, rewardLevelsClaimable } = await getClaimable(
+        rewardTokens,
+        rewardShares,
+        rewardLevels,
+        nftId2,
+      );
 
       const rewardSharesReward = amount(REWARDS_SHARES[0])
         .mul(big(154))
         .div(big(51 + 154));
       const rewardTokensReward = amount(REWARDS_TOKENS[0]);
 
+      const rewardLevelsReward = (await nft.getNftInfo(nftId2))._level.mul(REWARD_LEVEL_MONTH);
+
       expect(rewardSharesClaimable).to.equal(rewardSharesReward);
       expect(rewardTokensClaimable).to.equal(rewardTokensReward);
+      expect(rewardLevelsClaimable).to.equal(rewardLevelsReward);
 
-      const nftStakedExpected = rewardSharesReward.add(rewardTokensReward).add(amount(50000));
+      const rewardsExpected = rewardSharesReward.add(rewardTokensReward).add(rewardLevelsReward);
+      const mintStake = amount(50000);
+
+      const nftStakedExpected = rewardsExpected.add(mintStake);
 
       await claimAndVerifyStaked(rewardWrapper, nft, nftId2, nftMinter2, nftStakedExpected);
     });

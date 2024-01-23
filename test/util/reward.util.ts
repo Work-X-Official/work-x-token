@@ -105,11 +105,17 @@ export const claimAndVerifyStaked = async (
   expect(nftStaked).to.eq(nftStakedExpected);
 };
 
-export const getClaimable = async (rewardTokens: RewardTokens, rewardShares: RewardShares, nftId: number) => {
+export const getClaimable = async (
+  rewardTokens: RewardTokens,
+  rewardShares: RewardShares,
+  rewardLevels: RewardLevels,
+  nftId: number,
+) => {
   const rewardSharesClaimable = await rewardShares.getClaimable(nftId);
   const rewardTokensClaimable = await rewardTokens.getClaimable(nftId);
+  const rewardLevelsClaimable = await rewardLevels.getClaimable(nftId);
 
-  return { rewardSharesClaimable, rewardTokensClaimable };
+  return { rewardSharesClaimable, rewardTokensClaimable, rewardLevelsClaimable };
 };
 
 export const testMonthClaimed = async (
