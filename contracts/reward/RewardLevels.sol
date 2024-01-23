@@ -63,6 +63,17 @@ contract RewardLevels is Ownable, IRewarder {
         _success = workToken.approve(_spender, _amount);
     }
 
+
+    /**
+     * @notice Set the level shares for each level, only callable by the contract owner.
+     * @param _levelShares Array of shares in each level.
+     */
+    function setLevelShares(uint16[81] memory _levelShares) external onlyOwner {
+        for (uint8 i = 0; i < _levelShares.length; ++i) {
+            levelShares[_levelShares[i]] = i;
+        }
+    }
+
     /****
      **** EXTERNAL WRITE
      ****/
@@ -130,7 +141,7 @@ contract RewardLevels is Ownable, IRewarder {
         uint256 _nftId,
         uint256 _month
     ) public view returns (uint256 _rewardNftIdMonth) {
-        if (_month == 0) {
+        if (_month > REWARD_MONTHS || _month == 0) {
             return 0;
         }
         uint256 monthPrev = _month - 1;

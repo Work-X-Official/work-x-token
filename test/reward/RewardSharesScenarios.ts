@@ -12,7 +12,7 @@ import {
   mineStakeMonths,
   claimAndVerifyClaimed,
   testGetClaimables,
-  testGetRewardNftIdMonth,
+  testFractionGetRewardNftIdMonth,
 } from "../util/reward.util";
 import { BASE_STAKE } from "../../tasks/constants/nft.constants";
 
@@ -67,9 +67,9 @@ describe("RewardSharesScenarios", () => {
   };
 
   const testGetRewardNftIdMonthCurrent = async () => {
-    await testGetRewardNftIdMonth(reward, nft, nftId1, sharesPrev1, sharesPrevTotal);
-    await testGetRewardNftIdMonth(reward, nft, nftId2, sharesPrev2, sharesPrevTotal);
-    await testGetRewardNftIdMonth(reward, nft, nftId3, sharesPrev3, sharesPrevTotal);
+    await testFractionGetRewardNftIdMonth(reward, nft, nftId1, sharesPrev1, sharesPrevTotal);
+    await testFractionGetRewardNftIdMonth(reward, nft, nftId2, sharesPrev2, sharesPrevTotal);
+    await testFractionGetRewardNftIdMonth(reward, nft, nftId3, sharesPrev3, sharesPrevTotal);
   };
 
   before(async () => {
@@ -80,7 +80,7 @@ describe("RewardSharesScenarios", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
     ({
       workToken,
       distribution,
@@ -228,15 +228,15 @@ describe("RewardSharesScenarios", () => {
     it("In month 16, on day 485, the GetRewardNftIdMonth and getClaimable are correct", async () => {
       await mineDays(30, network);
       updateShares();
-      await testGetRewardNftIdMonth(reward, nft, nftId1, sharesPrev1, sharesPrevTotal);
-      await testGetRewardNftIdMonth(reward, nft, nftId3, sharesPrev3, sharesPrevTotal);
+      await testFractionGetRewardNftIdMonth(reward, nft, nftId1, sharesPrev1, sharesPrevTotal);
+      await testFractionGetRewardNftIdMonth(reward, nft, nftId3, sharesPrev3, sharesPrevTotal);
       await testGetClaimables(reward, nft, [nftId1, nftId3]);
     });
   });
 
   describe("Test Claim, claimed vs getClaimable with stake/unstake.", async () => {
     before("Generate contracts and mint nft 1,2,3 and go to startime", async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 35;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
       ({
         workToken,
         distribution,

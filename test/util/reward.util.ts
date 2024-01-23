@@ -2,7 +2,12 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { GenesisNft, RewardLevels, RewardShares, RewardTokens, RewardWrapper, WorkToken } from "../../typings";
 import { ethers } from "hardhat";
 import { BigNumber, BigNumberish, Signer } from "ethers";
-import { REWARDS_LEVELS, REWARDS_SHARES, REWARDS_TOKENS } from "../../tasks/constants/reward.constants";
+import {
+  LEVEL_SHARES,
+  REWARDS_SHARES,
+  REWARDS_TOKENS,
+  REWARD_LEVEL_MONTH,
+} from "../../tasks/constants/reward.constants";
 import { expect } from "chai";
 import { Network } from "hardhat/types/runtime";
 import { amount, mineDays } from "./helpers.util";
@@ -50,6 +55,9 @@ export const regenerateRewardLevels = async (
 
   await workToken.connect(ownerRewards).transfer(rewardLevels.address, ethers.utils.parseEther("700000"));
   await nft.setRewarder(rewardLevels.address, true);
+
+  await rewardLevels.setLevelShares(LEVEL_SHARES);
+
   return rewardLevels;
 };
 
@@ -70,7 +78,7 @@ export const regenerateRewardWrapper = async (
 };
 
 export const claimAndVerifyClaimed = async (
-  reward: RewardShares | RewardTokens,
+  reward: RewardShares | RewardTokens | RewardLevels,
   nftId: number,
   account: SignerWithAddress,
 ) => {
@@ -105,7 +113,7 @@ export const getClaimable = async (rewardTokens: RewardTokens, rewardShares: Rew
 };
 
 export const testMonthClaimed = async (
-  reward: RewardTokens | RewardShares,
+  reward: RewardTokens | RewardShares | RewardLevels,
   nftIds: number[],
   monthClaimedExpected: number[],
 ) => {
@@ -133,7 +141,7 @@ export const testGetClaimable = async (reward: RewardTokens | RewardShares, nft:
   expect(claimable.add(claimed)).to.be.equal(rewardNftIdExpected);
 };
 
-export const testGetRewardNftIdMonth = async (
+export const testFractionGetRewardNftIdMonth = async (
   reward: RewardTokens | RewardShares,
   nft: GenesisNft,
   nftId: number,
@@ -149,6 +157,21 @@ export const testGetRewardNftIdMonth = async (
   expect(rewardNftIdMonth).to.be.equal(rewardNftIdMonthExpected);
 };
 
+export const testLevelsGetRewardNftIdMonth = async (
+  reward: RewardLevels,
+  nft: GenesisNft,
+  nftId: number,
+  nftLevel: BigNumber,
+  month?: BigNumberish,
+) => {
+  month = month || (await nft.getCurrentMonth());
+  const rewardNftIdMonth = await reward.getRewardNftIdMonth(nftId, month);
+
+  const rewardNftIdMonthExpected = nftLevel.mul(REWARD_LEVEL_MONTH);
+
+  expect(rewardNftIdMonth).to.be.equal(rewardNftIdMonthExpected);
+};
+
 export const getRewardsTokensTotal = (): number => {
   let rewardsTotal = 0;
   for (const value of REWARDS_TOKENS) {
@@ -160,14 +183,6 @@ export const getRewardsTokensTotal = (): number => {
 export const getRewardsSharesTotal = (): number => {
   let rewardsTotal = 0;
   for (const value of REWARDS_SHARES) {
-    rewardsTotal += value;
-  }
-  return rewardsTotal;
-};
-
-export const getRewardsLevelsTotal = (): number => {
-  let rewardsTotal = 0;
-  for (const value of REWARDS_LEVELS) {
     rewardsTotal += value;
   }
   return rewardsTotal;
