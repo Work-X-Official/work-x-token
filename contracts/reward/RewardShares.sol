@@ -209,8 +209,8 @@ contract RewardShares is Ownable, IRewarder {
         if(shares == 51) {
             return sharesReward;
         } else {
-            uint256 levelReward = _getLevelReward(_nftId, _month);
-            return sharesReward + levelReward;
+            uint256 levelsReward = _getLevelsReward(shares, _month);
+            return sharesReward + levelsReward;
         }
     }
 
@@ -240,12 +240,12 @@ contract RewardShares is Ownable, IRewarder {
      * @notice Calculates the reward of a nftId for a specific month based on the level of the nft.
      * @param _nftId Id of the nft for which you want to get the reward amount.
      * @param _month Month for which you want to get the reward amount.
-     * @return _levelReward Reward for a nft in a specific month based on the nft level.
+     * @return _levelsReward Reward for a nft in a specific month based on the nft level.
      */
-    function getLevelRewardNftIdMonth(
+    function getLevelsRewardNftIdMonth(
         uint256 _nftId,
         uint256 _month
-    ) public view returns (uint256 _levelReward) {
+    ) public view returns (uint256 _levelsReward) {
         if (_month == 0) {
             return 0;
         }
@@ -254,7 +254,7 @@ contract RewardShares is Ownable, IRewarder {
         if (shares == 0 || shares == 51) {
             return 0;
         }
-        _levelReward = _getLevelReward(shares, _month);
+        _levelsReward = _getLevelsReward(shares, _month);
     }
 
     /****
@@ -284,17 +284,17 @@ contract RewardShares is Ownable, IRewarder {
      * @notice Calculates the reward of a nftId for a specific month based on the level of the nft.
      * @param _shares Amount of shares of this nft.
      * @param _month Month for which you want to get the reward amount.
-     * @return _levelReward Reward for an amount of shares in a specific month based on the nft level.
+     * @return _levelsReward Reward for an amount of shares in a specific month based on the nft level.
      */
-    function _getLevelReward(
+    function _getLevelsReward(
         uint256 _shares,
         uint256 _month
-    ) internal view returns (uint256 _levelReward) {
+    ) internal view returns (uint256 _levelsReward) {
         if (_month > REWARD_MONTHS) {
             return 0;
         }
         uint256 nftIdLevel = levelShares[uint16(_shares)];
 
-        _levelReward = nftIdLevel * REWARD_LEVEL_MONTH;
+        _levelsReward = nftIdLevel * REWARD_LEVEL_MONTH;
     }
 }
