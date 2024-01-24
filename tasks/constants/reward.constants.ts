@@ -22,7 +22,7 @@ export const LEVEL_SHARES = [
 
 export const REWARD_SHARES_ADDRESSES = {
   goerli: "",
-  sepolia: "0x6A73c40B0bc50232d2215e854D73Ed32713f0EF6",
+  sepolia: "0x829Eb1058Cb70D497cCe663672C39a17516617fe",
   hardhat: "",
   kovan: "",
   mainnet: "",
