@@ -65,7 +65,7 @@ contract RewardLevels is Ownable, IRewarder {
 
 
     /**
-     * @notice Set the level shares for each level, only callable by the contract owner.
+     * @notice Set in levelShares, which level you are based on which amount of shares you have. only callable by the contract owner.
      * @param _levelShares Array of shares in each level.
      */
     function setLevelShares(uint16[81] memory _levelShares) external onlyOwner {
