@@ -22,7 +22,7 @@ export const LEVEL_SHARES = [
 
 export const REWARD_SHARES_ADDRESSES = {
   goerli: "",
-  sepolia: "0x829Eb1058Cb70D497cCe663672C39a17516617fe",
+  sepolia: "0xD9f7bFDb3D5cf19700fa166F898A8A354B08A988",
   hardhat: "",
   kovan: "",
   mainnet: "",
@@ -39,7 +39,7 @@ export const REWARD_SHARES_ADDRESSES = {
 
 export const REWARD_TOKENS_ADDRESSES = {
   goerli: "",
-  sepolia: "0xe575B1B5a8685B74324833116e427A75770b856E",
+  sepolia: "0xbb35223F7bC4B046303De00a9B34935b0843335A",
   hardhat: "",
   kovan: "",
   mainnet: "",
@@ -56,7 +56,7 @@ export const REWARD_TOKENS_ADDRESSES = {
 
 export const REWARD_WRAPPER_ADDRESSES = {
   goerli: "",
-  sepolia: "0xff802ED8d4D51B70e373Ea5eE38c16185dd6E657",
+  sepolia: "0x9a28bE0Fa70b37A1f39cba7CE7B422e68d9D42c3",
   hardhat: "",
   kovan: "",
   mainnet: "",
