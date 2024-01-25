@@ -12,7 +12,7 @@ import { REWARDS_TOKENS } from "../../tasks/constants/reward.constants";
 import {
   getRewardsTokensTotal,
   mineStakeMonths,
-  testFractionGetRewardNftIdMonth,
+  testTokensGetRewardNftIdMonth,
   claimAndVerifyClaimed,
   testMonthClaimed,
 } from "../util/reward.util";
@@ -48,7 +48,7 @@ describe("RewardTokens", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
     ({
       workToken,
       distribution,
@@ -145,39 +145,39 @@ describe("RewardTokens", () => {
       });
 
       it("In months 1- 4, all nfts get their poolFraction of the rewards", async () => {
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 1);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 1);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 1);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 2);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 2);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 2);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 2);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 2);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 2);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 3);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 3);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 3);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 3);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 3);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 3);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 4);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 4);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 4);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 4);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 4);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 4);
       });
 
       it("In month 37-41, all nfts get their poolFraction of the rewards", async () => {
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 37);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 37);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 37);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 37);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 37);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 37);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 38);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 38);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 38);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 38);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 38);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 38);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 39);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 39);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 39);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 39);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 39);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 39);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 40);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 40);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 40);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 40);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 40);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 40);
       });
 
       it("getRewardersNftIdMonth is 0 at month 41", async () => {
@@ -206,7 +206,7 @@ describe("RewardTokens", () => {
 
   describe("Testing approve function", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
@@ -240,7 +240,7 @@ describe("RewardTokens", () => {
   describe("Testing getClaimable", async () => {
     describe("Simple test getClaimable when there is only 1 nft", async () => {
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
         ({
           workToken,
           distribution,
@@ -306,7 +306,7 @@ describe("RewardTokens", () => {
       let totalMinimum: BigNumber;
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
         ({
           workToken,
           distribution,
@@ -471,7 +471,7 @@ describe("RewardTokens", () => {
 
   describe("Test claim function, claimed vs getClaimable, two nfts", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
@@ -561,28 +561,28 @@ describe("RewardTokens", () => {
 
       it("After 1 month, getRewardNftIdMonth, return total rewards in month 1 to nftId 1", async () => {
         await mineDays(30, network);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 1);
       });
 
       it("Claim and go to month 3 (skip month 2 without doing anything", async () => {
         await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 1);
         await mineDays(30 * 2, network);
       });
 
       it("In month 3,4,5, getRewardNftIdMonth, return total rewards to nftId 1", async () => {
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 3);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 4);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 5);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 3);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 4);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 5);
       });
 
       it("Go to month 6, claim and check for later months", async () => {
         await mineDays(30 * 3, network);
         await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 6);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 7);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 8);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 9);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 6);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 7);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 8);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 9);
       });
     });
 
@@ -611,58 +611,58 @@ describe("RewardTokens", () => {
 
       it("After 1 month, getRewardNftIdMonth, return half the total rewards in month 1 to both nfts", async () => {
         await mineDays(30, network);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 25000, 50000, 1);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000, 50000, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 25000, 50000, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000, 50000, 1);
       });
 
       it("Claim into nftId 1 and go to month 3 (skip month 2 without doing anything", async () => {
         await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 25000, 50000, 1);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 25000, 50000, 1);
         await mineDays(30 * 2, network);
       });
 
       it("In month 3,4,5, getRewardNftIdMonth, nftId 1 received 50000 reward so will get 75/100 share of the reward in later months", async () => {
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 3);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 4);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 5);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 3);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 4);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 5);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 3);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 4);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 5);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 3);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 4);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 5);
       });
 
       it("Go to month 6, claim and check reward and test that rewards are still based on previous months values", async () => {
         await mineDays(30 * 3, network);
         await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 6);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 6);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 6);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 6);
       });
 
       it("Go to month 7, in month 7 rewards based on minimum of month 6 so fractions did not change with claim in month 6", async () => {
         await mineDays(30, network);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 7);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 7);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 7);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 7);
       });
 
       it("In later months, the claim in month 6 matters and changes the minimum of nftId 2 and minimum total", async () => {
         const claimedNftId2 = amountFormatted(await reward.claimed(nftId2));
 
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 8);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 9);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 10);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 11);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 8);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 9);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 10);
-        await testFractionGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 11);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 8);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 9);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 10);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000 + claimedNftId2, 11);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 8);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 9);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 10);
+        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000 + claimedNftId2, 100000 + claimedNftId2, 11);
       });
     });
   });
 
   describe("Test monthClaimed, it should keep track of the month in which nft last claimed reward", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 36;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,

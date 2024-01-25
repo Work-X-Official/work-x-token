@@ -49,7 +49,7 @@ describe("RewardShares", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
     ({
       workToken,
       distribution,
@@ -191,7 +191,7 @@ describe("RewardShares", () => {
 
   describe("Testing Reward per nft per month from Levels, getLevelsRewardNftIdMonth", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
@@ -330,7 +330,7 @@ describe("RewardShares", () => {
       let level2: BigNumber;
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
         ({
           workToken,
           distribution,
@@ -381,7 +381,7 @@ describe("RewardShares", () => {
 
   describe("Testing Reward per nft per month from Shares, getSharesRewardNftIdMonth", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
@@ -520,7 +520,7 @@ describe("RewardShares", () => {
       let totalShares: BigNumber;
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
         ({
           workToken,
           distribution,
@@ -588,7 +588,7 @@ describe("RewardShares", () => {
 
   describe("Testing approve function", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
@@ -624,7 +624,7 @@ describe("RewardShares", () => {
 
     describe("Simple test getClaimable when there is only 1 nft", async () => {
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
         ({
           workToken,
           distribution,
@@ -695,7 +695,7 @@ describe("RewardShares", () => {
       let rewardNftIdMonthSum3 = big(0);
 
       before(async () => {
-        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+        const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
         ({
           workToken,
           distribution,
@@ -857,7 +857,7 @@ describe("RewardShares", () => {
 
   describe("Test claim function, claimed va claimable", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
@@ -915,7 +915,7 @@ describe("RewardShares", () => {
 
   describe("Test monthClaimed, it should keep track of the month in which nft last claimed reward", async () => {
     before(async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 33;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
