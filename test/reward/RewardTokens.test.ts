@@ -61,7 +61,7 @@ describe("RewardTokens", () => {
     await distribution.setWalletClaimable([nftMinter3.address], [150000], [0], [0], [0]);
   });
 
-  describe("Testing getRewardTotalMonth, total reward function on RewardBase", async () => {
+  describe("Testing getRewardTotalMonth, total reward function on RewardTokens", async () => {
     it("getRewardTotalMonth is correct month 0, 0", async () => {
       expect(await reward.getRewardTotalMonth(0)).to.equal(0);
     });
