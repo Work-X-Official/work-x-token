@@ -8,10 +8,10 @@ import { mintNft, testStaked, testTotals } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  getRewardersTotal,
+  getRewardsTokensTotal,
   mineStakeMonths,
   testGetClaimables,
-  testGetRewardNftIdMonth,
+  testTokensGetRewardNftIdMonth,
   claimAndVerifyClaimed,
 } from "../util/reward.util";
 
@@ -73,9 +73,9 @@ describe("RewardTokensScenarios", () => {
   };
 
   const testGetRewardNftIdMonthCurrent = async () => {
-    await testGetRewardNftIdMonth(reward, nft, nftId1, minimumStakedMonthPrev1, minimumBalanceMonthPrev);
-    await testGetRewardNftIdMonth(reward, nft, nftId2, minimumStakedMonthPrev2, minimumBalanceMonthPrev);
-    await testGetRewardNftIdMonth(reward, nft, nftId3, minimumStakedMonthPrev3, minimumBalanceMonthPrev);
+    await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimumStakedMonthPrev1, minimumBalanceMonthPrev);
+    await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimumStakedMonthPrev2, minimumBalanceMonthPrev);
+    await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimumStakedMonthPrev3, minimumBalanceMonthPrev);
   };
 
   before(async () => {
@@ -86,7 +86,7 @@ describe("RewardTokensScenarios", () => {
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
 
-    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+    const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
     ({
       workToken,
       distribution,
@@ -247,15 +247,15 @@ describe("RewardTokensScenarios", () => {
     it("In month 16, on day 485, the GetRewardNftIdMonth and getClaimable are correct", async () => {
       await mineDays(30, network);
       updateMinima();
-      await testGetRewardNftIdMonth(reward, nft, nftId1, minimumStakedMonthPrev1, minimumBalanceMonthPrev);
-      await testGetRewardNftIdMonth(reward, nft, nftId3, minimumStakedMonthPrev3, minimumBalanceMonthPrev);
+      await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimumStakedMonthPrev1, minimumBalanceMonthPrev);
+      await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimumStakedMonthPrev3, minimumBalanceMonthPrev);
       await testGetClaimables(reward, nft, [nftId1, nftId3]);
     });
   });
 
   describe("Test Claim, claimed vs getClaimable with stake/unstake.", async () => {
     before("Generate contracts and mint nft 1,2,3 and go to startime", async () => {
-      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 32;
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 34;
       ({
         workToken,
         distribution,
@@ -347,7 +347,7 @@ describe("RewardTokensScenarios", () => {
       const claimed2 = await reward.connect(nftMinter2).claimed(nftId2);
       const claimed3 = await reward.connect(nftMinter3).claimed(nftId3);
       const claimedTotal = claimed1.add(claimed2).add(claimed3);
-      const rewardsTotal = getRewardersTotal();
+      const rewardsTotal = getRewardsTokensTotal();
       expect(claimedTotal).to.closeTo(amount(rewardsTotal), amount(1));
     });
   });
