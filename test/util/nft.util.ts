@@ -112,6 +112,11 @@ export const getShares = async (tokenId: number, nft: GenesisNft): Promise<BigNu
   return _nft._shares;
 };
 
+export const getLevel = async (nft: GenesisNft, nftId: number): Promise<BigNumber> => {
+  const info = await nft.getNftInfo(nftId);
+  return info._level;
+};
+
 export type Voucher = {
   voucherId: number;
   walletAddress: string;

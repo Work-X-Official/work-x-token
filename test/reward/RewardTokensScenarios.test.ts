@@ -10,9 +10,9 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   getRewardsTokensTotal,
   mineStakeMonths,
-  testGetClaimables,
+  testTokensGetClaimables,
   testTokensGetRewardNftIdMonth,
-  claimAndVerifyClaimed,
+  tokensClaimAndVerifyClaimed,
 } from "../util/reward.util";
 
 config();
@@ -127,14 +127,14 @@ describe("RewardTokensScenarios", () => {
 
     it("In month 0, on day 5, nothing to claim, because the total reward in month 0 is 0", async () => {
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 1, on day 35, the GetRewardNftIdMonth and getClaimable are correct", async () => {
       await mineDays(30, network);
       updateMinima();
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 1, on day 35, nftId2 and nftId3 both stake 8000", async () => {
@@ -151,7 +151,7 @@ describe("RewardTokensScenarios", () => {
       await mineDays(30, network);
       updateMinima();
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 2, on day 65, nftId3 unstake 100 and nftId1 stakes 5000", async () => {
@@ -168,14 +168,14 @@ describe("RewardTokensScenarios", () => {
 
     it("In month 2, on day 65, the GetRewardNftIdMonth and getClaimable are correct after staking in month 2", async () => {
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 3, on day 95, the GetRewardNftIdMonth and getClaimable are correct", async () => {
       await mineDays(30, network);
       updateMinima();
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 3, on day 95, nftId2 stakes 1000 and nftId1 unstakes 2000", async () => {
@@ -192,14 +192,14 @@ describe("RewardTokensScenarios", () => {
 
     it("In month 3, on day 95, the GetRewardNftIdMonth and getClaimable are correct", async () => {
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 4, on day 125, the GetRewardNftIdMonth and getClaimable are correct", async () => {
       await mineDays(30, network);
       updateMinima();
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 4, the balances do not change and we go to month 14", async () => {
@@ -209,7 +209,7 @@ describe("RewardTokensScenarios", () => {
 
     it("In month 14, on day 425, the GetRewardNftIdMonth and getClaimable are correct", async () => {
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 14, on day 425,  nftId 1,2,3 all stake 100.000", async () => {
@@ -228,7 +228,7 @@ describe("RewardTokensScenarios", () => {
       await mineDays(30, network);
       updateMinima();
       await testGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 15, on day 455, nftId1 stakes 1000, nftId2 is destroyed", async () => {
@@ -249,7 +249,7 @@ describe("RewardTokensScenarios", () => {
       updateMinima();
       await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimumStakedMonthPrev1, minimumBalanceMonthPrev);
       await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimumStakedMonthPrev3, minimumBalanceMonthPrev);
-      await testGetClaimables(reward, nft, [nftId1, nftId3]);
+      await testTokensGetClaimables(reward, nft, [nftId1, nftId3]);
     });
   });
 
@@ -289,27 +289,27 @@ describe("RewardTokensScenarios", () => {
       await mineDays(30, network);
       const amountStake = 3000;
       await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("In month 2, on day 65, nftId1 claims, and then unstakes 1000", async () => {
       await mineDays(30, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
       const amountUnstake = 1000;
       await nft.connect(nftMinter1).unstake(nftId1, amount(amountUnstake));
     });
 
     it("In month 3, nftId3 claims and then stakes 1000", async () => {
       await mineDays(30, network);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await tokensClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
       const amountStake = 1000;
       await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
     });
 
     it("In month 4, nftId 1,2 claim", async () => {
       await mineDays(30, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("In month 6, nftId 2,3 stake 1000 and then 1,2 claim", async () => {
@@ -317,29 +317,29 @@ describe("RewardTokensScenarios", () => {
       const amountStake = 1000;
       await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
       await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("In month 16, nftId 3 claims, and nftId1 stakes", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 10, network);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await tokensClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
       const amountStake = 1000;
       await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
     });
 
     it("Go to month 30, all nfts claim everything, nftId 1 destroys", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 14, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
       await nft.connect(nftMinter1).destroyNft(nftId1);
     });
 
     it("Go to month 41, the remaining nft claim", async () => {
       await mineStakeMonths(nftMinter2, nft, nftId2, 11, network);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
     });
 
     it("Total claimed is equal to the total rewards, each claim in each month are rounded down so they are roughly equal", async () => {

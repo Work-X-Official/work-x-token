@@ -4,13 +4,13 @@ import { GenesisNft, WorkToken, TokenDistribution, RewardShares } from "../../ty
 import { ethers, network } from "hardhat";
 import { amount, big, mineDays } from "../util/helpers.util";
 import { regenerateContracts } from "../util/contract.util";
-import { mintNft, testShares, testTotalShares } from "../util/nft.util";
+import { getLevel, mintNft, testShares, testTotalShares } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   mineStakeMonths,
-  claimAndVerifyClaimed,
-  testGetClaimables,
+  sharesClaimAndVerifyClaimed,
+  testSharesGetClaimables,
   testSharesGetRewardNftIdMonth,
   testLevelsGetRewardNftIdMonth,
   testCombiGetRewardNftIdMonth,
@@ -100,11 +100,6 @@ describe("RewardSharesScenarios", () => {
     await testCombiGetRewardNftIdMonth(reward, nft, nftId3);
   };
 
-  const getLevel = async (nftId: number): Promise<BigNumber> => {
-    const info = await nft.getNftInfo(nftId);
-    return info._level;
-  };
-
   before(async () => {
     accounts = await ethers.getSigners();
     chainId = (await ethers.provider.getNetwork()).chainId;
@@ -131,15 +126,15 @@ describe("RewardSharesScenarios", () => {
       const amountStaked1 = 10000;
       ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountStaked1, 0, 0, chainId));
       sharesCurr1 = BASE_STAKE + 21;
-      levelCurr1 = await getLevel(nftId1);
+      levelCurr1 = await getLevel(nft, nftId1);
       const amountStaked2 = 50000;
       ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountStaked2, 0, 0, chainId));
       sharesCurr2 = BASE_STAKE + 104;
-      levelCurr2 = await getLevel(nftId2);
+      levelCurr2 = await getLevel(nft, nftId2);
       const amountStaked3 = 100;
       ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, amountStaked3, 0, 0, chainId));
       sharesCurr3 = BASE_STAKE + 1;
-      levelCurr3 = await getLevel(nftId3);
+      levelCurr3 = await getLevel(nft, nftId3);
       await mineDays(22, network);
     });
 
@@ -148,21 +143,21 @@ describe("RewardSharesScenarios", () => {
       const amountStake = 1000;
       await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
       sharesCurr1 = BASE_STAKE + 23;
-      levelCurr1 = await getLevel(nftId1);
+      levelCurr1 = await getLevel(nft, nftId1);
       await testSharesCurrent();
       await testTotalSharesCurrent();
     });
 
     it("In month 0, on day 5, nothing to claim, because the total reward in month 0 is 0", async () => {
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 1, on day 35, the GetSharesRewardNftIdMonth and getClaimable are correct", async () => {
       await mineDays(30, network);
       updateShares();
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 1, on day 35 also test GetLevelsRewardNftIdMonth and getRewardNftIdMonth", async () => {
@@ -177,8 +172,8 @@ describe("RewardSharesScenarios", () => {
       await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
       sharesCurr2 = BASE_STAKE + 120;
       sharesCurr3 = BASE_STAKE + 13;
-      levelCurr2 = await getLevel(nftId2);
-      levelCurr3 = await getLevel(nftId3);
+      levelCurr2 = await getLevel(nft, nftId2);
+      levelCurr3 = await getLevel(nft, nftId3);
       await testSharesCurrent();
       await testTotalSharesCurrent();
     });
@@ -187,7 +182,7 @@ describe("RewardSharesScenarios", () => {
       await mineDays(30, network);
       updateShares();
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 2, on day 65, the GetLevelsRewardNftIdMonth and getRewardNftIdMonth are correct", async () => {
@@ -202,14 +197,14 @@ describe("RewardSharesScenarios", () => {
       await nft.connect(nftMinter3).unstake(nftId3, amount(amountUnstake));
       await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
       sharesCurr1 = BASE_STAKE + 31;
-      levelCurr1 = await getLevel(nftId1);
+      levelCurr1 = await getLevel(nft, nftId1);
       await testSharesCurrent();
       await testTotalSharesCurrent();
     });
 
     it("In month 2, on day 65, the GetSharesRewardNftIdMonth and getClaimable are correct", async () => {
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 2, on day 65, also test GetLevelsRewardNftIdMonth and getRewardNftIdMonth", async () => {
@@ -222,7 +217,7 @@ describe("RewardSharesScenarios", () => {
       updateShares();
 
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 3, on day 95, also test GetLevelsRewardNftIdMonth and getRewardNftIdMonth", async () => {
@@ -237,7 +232,7 @@ describe("RewardSharesScenarios", () => {
       await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
       await nft.connect(nftMinter1).unstake(nftId1, amount(amountUnstake));
       sharesCurr2 = BASE_STAKE + 120;
-      levelCurr2 = await getLevel(nftId2);
+      levelCurr2 = await getLevel(nft, nftId2);
       await testSharesCurrent();
       await testTotalSharesCurrent();
     });
@@ -246,7 +241,7 @@ describe("RewardSharesScenarios", () => {
       await mineDays(30, network);
       updateShares();
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 4, on day 125, also test GetLevelsRewardNftIdMonth and getRewardNftIdMonth", async () => {
@@ -262,7 +257,7 @@ describe("RewardSharesScenarios", () => {
     it("In month 14, on day 425, the GetSharesRewardNftIdMonth and getClaimable are correct", async () => {
       updateShares();
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 14, on day 425, also test GetLevelsRewardNftIdMonth and getRewardNftIdMonth", async () => {
@@ -279,9 +274,9 @@ describe("RewardSharesScenarios", () => {
       sharesCurr1 = BASE_STAKE + 235;
       sharesCurr2 = BASE_STAKE + 320;
       sharesCurr3 = BASE_STAKE + 222;
-      levelCurr1 = await getLevel(nftId1);
-      levelCurr2 = await getLevel(nftId2);
-      levelCurr3 = await getLevel(nftId3);
+      levelCurr1 = await getLevel(nft, nftId1);
+      levelCurr2 = await getLevel(nft, nftId2);
+      levelCurr3 = await getLevel(nft, nftId3);
       await testSharesCurrent();
       await testTotalSharesCurrent();
     });
@@ -290,7 +285,7 @@ describe("RewardSharesScenarios", () => {
       await mineDays(30, network);
       updateShares();
       await testSharesGetRewardNftIdMonthCurrent();
-      await testGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId2, nftId3]);
     });
 
     it("In month 15, on day 455,  also test GetLevelsRewardNftIdMonth and getRewardNftIdMonth", async () => {
@@ -305,7 +300,7 @@ describe("RewardSharesScenarios", () => {
       await nft.connect(nftMinter2).destroyNft(nftId2);
       sharesCurr1 = BASE_STAKE + 235;
       sharesCurr2 = 0;
-      levelCurr1 = await getLevel(nftId1);
+      levelCurr1 = await getLevel(nft, nftId1);
       levelCurr2 = big(0);
       await testShares(nft, nftId1, sharesCurr1);
       await expect(testShares(nft, nftId2, sharesCurr2)).to.be.revertedWith("NftNotExists");
@@ -318,7 +313,7 @@ describe("RewardSharesScenarios", () => {
       updateShares();
       await testSharesGetRewardNftIdMonth(reward, nft, nftId1, sharesPrev1, sharesPrevTotal);
       await testSharesGetRewardNftIdMonth(reward, nft, nftId3, sharesPrev3, sharesPrevTotal);
-      await testGetClaimables(reward, nft, [nftId1, nftId3]);
+      await testSharesGetClaimables(reward, nft, [nftId1, nftId3]);
     });
 
     it("In month 16, on day 485, also test GetLevelsRewardNftIdMonth and getRewardNftIdMonth", async () => {
@@ -366,56 +361,56 @@ describe("RewardSharesScenarios", () => {
       await mineDays(30, network);
       const amountStake = 3000;
       await nft.connect(nftMinter2).stake(nftId2, amount(amountStake));
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await sharesClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("In month 2, on day 65, nftId1 claims, and then unstakes 1000", async () => {
       await mineDays(30, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await sharesClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
       const amountUnstake = 1000;
       await nft.connect(nftMinter1).unstake(nftId1, amount(amountUnstake));
     });
 
     it("In month 3, nftId3 claims and then stakes 1000", async () => {
       await mineDays(30, network);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await sharesClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
       const amountStake = 1000;
       await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
     });
 
     it("In month 4, nftId 1,2 claim", async () => {
       await mineDays(30, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await sharesClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await sharesClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("In month 6, nftId 3 stake 1000 and then 1,2 claim", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 2, network);
       const amountStake = 1000;
       await nft.connect(nftMinter3).stake(nftId3, amount(amountStake));
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await sharesClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await sharesClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("In month 16, nftId 3 claims, and nftId1 stakes", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 10, network);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await sharesClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
       const amountStake = 1000;
       await nft.connect(nftMinter1).stake(nftId1, amount(amountStake));
     });
 
     it("Go to month 30, all nfts claim everything, nftId 1 destroys", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 14, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await sharesClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await sharesClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await sharesClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
       await nft.connect(nftMinter1).destroyNft(nftId1);
     });
 
     it("Go to month 41, the remaining nfts claim", async () => {
       await mineStakeMonths(nftMinter2, nft, nftId2, 11, network);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
-      await claimAndVerifyClaimed(reward, nftId3, nftMinter3);
+      await sharesClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await sharesClaimAndVerifyClaimed(reward, nftId3, nftMinter3);
     });
   });
 });

@@ -13,7 +13,7 @@ import {
   getRewardsTokensTotal,
   mineStakeMonths,
   testTokensGetRewardNftIdMonth,
-  claimAndVerifyClaimed,
+  tokensClaimAndVerifyClaimed,
   testMonthClaimed,
 } from "../util/reward.util";
 
@@ -496,38 +496,38 @@ describe("RewardTokens", () => {
 
     it("Go to month 1, claims for each nft the claimable reward", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 1, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("Go to month 2, claims for each nft the claimable reward", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 1, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("Go to month 3, claims for each nft the claimable reward", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 1, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("Go to month 11, claims for each nft the claimable reward", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 8, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("Go to month 40, claims for each nft the claimable reward", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 29, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("Go to month 45, claims for each nft the claimable reward", async () => {
       await mineStakeMonths(nftMinter1, nft, nftId1, 5, network);
-      await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
-      await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+      await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
+      await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
     });
 
     it("Total claimed is equal to the total rewards, each claim in each month are rounded down so they are roughly equal", async () => {
@@ -565,7 +565,7 @@ describe("RewardTokens", () => {
       });
 
       it("Claim and go to month 3 (skip month 2 without doing anything", async () => {
-        await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
+        await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
         await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 1);
         await mineDays(30 * 2, network);
       });
@@ -578,7 +578,7 @@ describe("RewardTokens", () => {
 
       it("Go to month 6, claim and check for later months", async () => {
         await mineDays(30 * 3, network);
-        await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
+        await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
         await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 6);
         await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 7);
         await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 1, 1, 8);
@@ -616,7 +616,7 @@ describe("RewardTokens", () => {
       });
 
       it("Claim into nftId 1 and go to month 3 (skip month 2 without doing anything", async () => {
-        await claimAndVerifyClaimed(reward, nftId1, nftMinter1);
+        await tokensClaimAndVerifyClaimed(reward, nftId1, nftMinter1);
         await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 25000, 50000, 1);
         await mineDays(30 * 2, network);
       });
@@ -633,7 +633,7 @@ describe("RewardTokens", () => {
 
       it("Go to month 6, claim and check reward and test that rewards are still based on previous months values", async () => {
         await mineDays(30 * 3, network);
-        await claimAndVerifyClaimed(reward, nftId2, nftMinter2);
+        await tokensClaimAndVerifyClaimed(reward, nftId2, nftMinter2);
 
         await testTokensGetRewardNftIdMonth(reward, nft, nftId1, 75000, 100000, 6);
         await testTokensGetRewardNftIdMonth(reward, nft, nftId2, 25000, 100000, 6);
