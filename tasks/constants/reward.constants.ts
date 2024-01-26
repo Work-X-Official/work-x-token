@@ -11,7 +11,7 @@ export const REWARDS_SHARES = [
   3229, 2566, 1912, 1266, 629,
 ];
 
-export const REWARD_LEVEL_MONTH = amount(50);
+export const REWARD_LEVEL_MONTH = amount(8);
 
 export const LEVEL_SHARES = [
   51, 52, 53, 54, 55, 57, 58, 59, 60, 61, 63, 65, 66, 68, 70, 71, 73, 75, 77, 78, 81, 83, 85, 88, 90, 93, 95, 97, 100,
