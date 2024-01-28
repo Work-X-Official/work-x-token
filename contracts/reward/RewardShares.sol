@@ -8,6 +8,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 error ClaimNotAllowed();
 
+/**
+ * @notice RewardShares rewards NFTs in 2 separate ways:
+ * 1. The amount of shares of the NFT in the previous month determines the amount of WORK tokens that can be claimed.
+ *    This reward type is capped at 693,261 WORK tokens, and spread out over 40 months, giving predetermined total reward portions per month that are shared by all NFTs.
+ * 2. The level of the NFT determines the amount of WORK tokens that can be claimed. This second reward is capped at 693,261 WORK tokens.
+ *    This reward type is capped at 693,261 WORK tokens, but does not have a predetermined amount per month, meaning it is uncertain how this reward system will run for.
+ *    The total amount per month will depend on the amount of NFTs that are eligible for this reward (lvl1+) and what their levels are.
+ */
 contract RewardShares is Ownable, IRewarder {
     IGenesisNft public nft;
     IERC20 public workToken;

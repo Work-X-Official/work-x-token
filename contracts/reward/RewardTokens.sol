@@ -8,8 +8,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 error ClaimNotAllowed();
 
+/**
+ * @notice RewardTokens rewards users that hold an NFT based on the amount of tokens staked in the NFT:
+ *    The amount of tokens staked in the NFT in the previous month determines the amount of $WORK tokens that can be claimed.
+ *    This reward is capped by 1,386,522 $WORK tokens, and spread out over 40 months, giving a predetermined total reward portions per month,
+ *    that are shared proportionally by all NFTs based on the amount of tokens staked in them.
+ */
 contract RewardTokens is Ownable {
-     IGenesisNft public nft;
+    IGenesisNft public nft;
     IERC20 public workToken;
 
     address public rewardWrapper;
@@ -69,6 +75,7 @@ contract RewardTokens is Ownable {
     ];
 
     event Claimed(uint256 indexed nftId, address indexed claimer, uint256 amountClaimed);
+
     /**
      * @notice Initializes the RewardTokens contract with the given addresses.
      * @param _genesisNftAddress The address of the Genesis NFT contract.
@@ -78,7 +85,6 @@ contract RewardTokens is Ownable {
         nft = IGenesisNft(_genesisNftAddress);
         workToken = IERC20(_workTokenAddress);
     }
-
 
     /****
      **** ONLY OWNER
@@ -178,10 +184,7 @@ contract RewardTokens is Ownable {
      * @param _month Month for which you want to get the reward amount.
      * @return _rewardNftIdMonth Reward of a nftId for a specific month based on tokens staked.
      */
-    function getRewardNftIdMonth(
-        uint256 _nftId,
-        uint256 _month
-    ) public view returns (uint256 _rewardNftIdMonth) {
+    function getRewardNftIdMonth(uint256 _nftId, uint256 _month) public view returns (uint256 _rewardNftIdMonth) {
         if (_month == 0) {
             return 0;
         }
