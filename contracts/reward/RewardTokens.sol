@@ -18,20 +18,18 @@ contract RewardTokens is Ownable {
     IGenesisNft public nft;
     IERC20 public workToken;
 
-    address public rewardWrapper;
-
-    mapping(uint256 => uint256) public claimed;
-
     uint256 private constant REWARD_MONTHS = 40;
     uint256 private constant ONE_E18 = 10 ** 18;
 
+    address public rewardWrapper;
+    mapping(uint256 => uint256) public claimed;
     mapping(uint256 => uint256) public monthClaimed;
 
     /**
      * @notice  The formula is: (40000 - sqrt(month * 40000000)) * 10 / 4 , but is multiplied by 10 ** 18 to get the amount in wei.
      * Array with total reward amounts per month, filled with the formula above.
      */
-    uint24[REWARD_MONTHS] private rewards = [
+    uint24[REWARD_MONTHS] public rewards = [
         100000,
         84189,
         77639,

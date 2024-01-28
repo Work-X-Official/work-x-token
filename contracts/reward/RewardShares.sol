@@ -37,7 +37,7 @@ contract RewardShares is Ownable, IRewarder {
      * @notice  The formula is: (40000 - sqrt(month * 40000000)) * 10 / 8 , but is multiplied by 10 ** 18 to get the amount in wei.
      * Array with total reward amounts per month, filled with the formula above.
      */
-    uint16[REWARD_MONTHS] private rewards = [
+    uint16[REWARD_MONTHS] public rewards = [
         50000,
         42094,
         38820,
