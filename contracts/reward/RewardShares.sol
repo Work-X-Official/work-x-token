@@ -20,20 +20,18 @@ contract RewardShares is Ownable, IRewarder {
     IGenesisNft public nft;
     IERC20 public workToken;
 
-    address public rewardWrapper;
-
-    mapping(uint256 => uint256) public claimed;
-
     uint256 private constant REWARD_MONTHS = 40;
     uint256 private constant ONE_E18 = 10 ** 18;
     uint256 private constant REWARD_LEVEL_MONTH = 8 * ONE_E18;
     uint256 private constant SHARES_LEVEL_ZERO = 51;
     uint256 private constant TOTAL_LEVEL_REWARDS = 693_261 * ONE_E18;
 
-    mapping(uint16 => uint8) public levelShares;
-    mapping(uint256 => uint256) public monthClaimed;
+    address public rewardWrapper;
+    uint256 public totalLevelClaimed;
 
-    uint256 private totalLevelClaimed = 0;
+    mapping(uint256 => uint8) public levelShares;
+    mapping(uint256 => uint256) public claimed;
+    mapping(uint256 => uint256) public monthClaimed;
 
     /**
      * @notice  The formula is: (40000 - sqrt(month * 40000000)) * 10 / 8 , but is multiplied by 10 ** 18 to get the amount in wei.
