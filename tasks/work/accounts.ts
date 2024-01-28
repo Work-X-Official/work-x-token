@@ -1,13 +1,13 @@
 import { task } from "hardhat/config";
 import { TokenDistribution } from "../../typings";
-import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 
 // yarn hardhat account:info --address 0x0 --network sepolia
-task("account:info", "Prints the list of accounts")
+task("account:info", "Prints info about an account")
   .addParam("address", "address of the account")
   .setAction(async ({ address }, hre) => {
     const tokenDistribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-      DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
     );
 
     console.log("");
@@ -25,3 +25,10 @@ task("account:info", "Prints the list of accounts")
     console.log("╚══════════════════════════════════════════════════════════════════════");
     console.log("");
   });
+
+task("accounts", "Prints the list of accounts").setAction(async ({ _ }, hre) => {
+  const accounts = await hre.ethers.getSigners();
+  for (const account of accounts) {
+    console.log('"' + account.address + '",');
+  }
+});

@@ -1,24 +1,24 @@
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
-import { DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
+import { SALE_DISTRIBUTION_ADDRESSES } from "../constants/distribution.constants";
 import { TokenDistribution, WorkToken } from "../../typings";
 import {
   GENESIS_NFT_ATTRIBUTES_ADDRESSES,
   GENESIS_NFT_DATA_ADDRESSES,
-  GENISIS_NFT_ADDRESSES,
+  GENESIS_NFT_ADDRESSES,
 } from "../constants/nft.constants";
 
 // deploys a contract and sets who can sign vouchers and set grants the token distribution contract the right to mint tokens, which is needed for the NFT mint.
 // example:
-// yarn hardhat nft:deploy --network sepolia
 
+// yarn hardhat nft:deploy --network sepolia
 task("nft:deploy").setAction(async (_, hre) => {
   const workToken: WorkToken = (await hre.ethers.getContractFactory("WorkToken")).attach(
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
   );
   const distribution: TokenDistribution = (await hre.ethers.getContractFactory("TokenDistribution")).attach(
-    DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+    SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
   );
   const nftAttributesAddress =
     GENESIS_NFT_ATTRIBUTES_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ATTRIBUTES_ADDRESSES];
@@ -102,12 +102,12 @@ task("nft:verify").setAction(async (_, hre) => {
   console.log("║");
   await hre.run("verify:verify", {
     contract: "contracts/nft/GenesisNft.sol:GenesisNft",
-    address: GENISIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENISIS_NFT_ADDRESSES],
+    address: GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
     constructorArguments: [
       "Work X Genesis NFT",
       "Work X Genesis NFT",
       WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
-      DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof DISTRIBUTION_ADDRESSES],
+      SALE_DISTRIBUTION_ADDRESSES[hre.network.name as keyof typeof SALE_DISTRIBUTION_ADDRESSES],
       GENESIS_NFT_DATA_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_DATA_ADDRESSES],
       nftVoucherSigner.address,
     ],

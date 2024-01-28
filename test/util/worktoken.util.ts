@@ -14,7 +14,7 @@ export const regenerateWorkToken = async (
   for (let i = 0; i < 10; i++) {
     await workToken.mint(accounts[i].address, amount(250000));
   }
-  await workToken.mint(accounts[3].address, amount(2000000));
+  await workToken.mint(minter, amount(3000000));
   return workToken;
 };
 

@@ -11,6 +11,7 @@ import { resolve } from "path";
 import "./tasks/work";
 import "./tasks/sale";
 import "./tasks/nft";
+import "./tasks/reward";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
@@ -113,12 +114,14 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      initialDate: "2023-12-05 10:10:00 AM",
       // gas: 20000000,
       accounts: {
         count: 10,
         // mnemonic: mnemonic,
         accountsBalance: "100000000000000000000000000",
       },
+
       chainId: chainIds.hardhat,
       // forking: process.env.FORK
       //   ? {

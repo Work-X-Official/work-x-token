@@ -19,8 +19,8 @@ describe("WorkToken", () => {
 
   before(async () => {
     accounts = await ethers.getSigners();
-    minter1 = accounts[3];
-    minter2 = accounts[4];
+    minter1 = accounts[0];
+    minter2 = accounts[1];
 
     workToken = await regenerateWorkToken(accounts, accounts[0].address);
   });
@@ -57,7 +57,7 @@ describe("WorkToken", () => {
       const balanceBefore = await workToken.balanceOf(minter1.address);
       expect(balanceBefore).to.be.gt(0);
 
-      await workToken.connect(minter1).burn(ethers.utils.parseUnits("2250100", 18));
+      await workToken.connect(minter1).burn(ethers.utils.parseUnits("3250100", 18));
       const balanceAfter = await workToken.balanceOf(minter1.address);
       expect(balanceAfter).to.be.eq(0);
     });

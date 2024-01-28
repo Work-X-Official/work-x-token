@@ -10,6 +10,11 @@ import { MIN_TOKEN_STAKING, VESTING_LENGHT_BUY_MORE_MONTHS } from "../../tasks/c
 import { avgMonthsVest, maxLockLength } from "./distribution.util";
 import { ethers } from "hardhat";
 
+export interface Stake {
+  staked: BigNumber;
+  minimumStaked: BigNumber;
+}
+
 interface NftIds {
   nftId: number;
   voucherId: number;
@@ -105,6 +110,11 @@ export const getVoucherSigner = (): Wallet => {
 export const getShares = async (tokenId: number, nft: GenesisNft): Promise<BigNumber> => {
   const _nft = await nft.getNftInfo(tokenId);
   return _nft._shares;
+};
+
+export const getLevel = async (nft: GenesisNft, nftId: number): Promise<BigNumber> => {
+  const info = await nft.getNftInfo(nftId);
+  return info._level;
 };
 
 export type Voucher = {
@@ -250,7 +260,33 @@ export const mintNftMany = async (
   return nftIds;
 };
 
-export interface Stake {
-  staked: BigNumber;
-  minimumStaked: BigNumber;
-}
+export const testStaked = async (
+  nft: GenesisNft,
+  nftId: number,
+  stakedAmountExpected: number,
+  stakedAmountMinimumExpected: number,
+) => {
+  const currMonth = await nft.getCurrentMonth();
+  const _tokenIdInfoAtMonth = await nft.getStaked(nftId, currMonth);
+  expect(_tokenIdInfoAtMonth[0]).to.be.equal(amount(stakedAmountExpected));
+  expect(_tokenIdInfoAtMonth[1]).to.be.equal(amount(stakedAmountMinimumExpected));
+};
+
+export const testTotals = async (nft: GenesisNft, totalBalanceExpected: number, minimumBalanceExpected: number) => {
+  const currMonth = await nft.getCurrentMonth();
+  const [, _totalBalance, _minimumBalance] = await nft.getTotals(currMonth);
+  expect(_totalBalance).to.be.equal(amount(totalBalanceExpected));
+  expect(_minimumBalance).to.be.equal(amount(minimumBalanceExpected));
+};
+
+export const testShares = async (nft: GenesisNft, nftId: number, sharesExpected: number) => {
+  const currMonth = await nft.getCurrentMonth();
+  const _shares = await nft.getShares(nftId, currMonth);
+  expect(_shares).to.be.equal(sharesExpected);
+};
+
+export const testTotalShares = async (nft: GenesisNft, totalSharesExpected: number) => {
+  const currMonth = await nft.getCurrentMonth();
+  const [_totalShares, ,] = await nft.getTotals(currMonth);
+  expect(_totalShares).to.be.equal(totalSharesExpected);
+};

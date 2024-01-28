@@ -1,6 +1,23 @@
-export const GENISIS_NFT_ADDRESSES = {
+export const GENESIS_NFT_IPFS_FOLDER = {
   goerli: "",
-  sepolia: "0xb288a42a41dc37C1c5E23D99F440a126CB0Bcd3d",
+  sepolia: "Qma8hy3TBQeNEtvM6J3YX1TcEd8KjxwK8xbvAze9NBikr8",
+  hardhat: "",
+  kovan: "",
+  mainnet: "Qma8hy3TBQeNEtvM6J3YX1TcEd8KjxwK8xbvAze9NBikr8",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+  scrollSepolia: "",
+};
+
+export const GENESIS_NFT_ADDRESSES = {
+  goerli: "",
+  sepolia: "0xab4B5b515CEE540b78E37FD6C7e94b9704a4da75",
   hardhat: "",
   kovan: "",
   mainnet: "0xdf284759F3689eE82A42C9565003eD0C44444444",
@@ -48,3 +65,9 @@ export const GENESIS_NFT_ATTRIBUTES_ADDRESSES = {
   mumbai: "",
   scrollSepolia: "",
 };
+
+export const DAILY_STAKING_ALLOWANCE = 294;
+export const COUNT_GUAR = 400;
+export const COUNT_FCFS = 150;
+export const COUNT_INV = 449;
+export const BASE_STAKE = 50;

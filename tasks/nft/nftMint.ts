@@ -1,6 +1,6 @@
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
-import { GENISIS_NFT_ADDRESSES } from "../constants/nft.constants";
+import { GENESIS_NFT_ADDRESSES } from "../constants/nft.constants";
 import { mintNft } from "../util/nft.mint.util";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
 import { WorkToken } from "../../typings";
@@ -8,7 +8,7 @@ import { WorkToken } from "../../typings";
 // yarn hardhat nft:mint --network sepolia
 
 task("nft:mint").setAction(async (_, hre) => {
-  const nftAddress = GENISIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENISIS_NFT_ADDRESSES];
+  const nftAddress = GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES];
   const nft = (await hre.ethers.getContractFactory("GenesisNft")).attach(nftAddress);
   const workToken: WorkToken = (await hre.ethers.getContractFactory("WorkToken")).attach(
     WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES],
@@ -32,4 +32,23 @@ task("nft:mint").setAction(async (_, hre) => {
     `║  The nft will be visible on Opensea in a few mintues: https://testnets.opensea.io/assets/${hre.network.name}/${nft.address}/`,
   );
   console.log("╚═════�");
+});
+
+// yarn hardhat nft:minttreasury --network sepolia
+task("nft:minttreasury").setAction(async (_, hre) => {
+  const nft = (await hre.ethers.getContractFactory("GenesisNft")).attach(
+    GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES],
+  );
+
+  const [deployer] = await hre.ethers.getSigners();
+  const net = await hre.ethers.provider.getNetwork();
+  const chainId = net.chainId;
+
+  console.log("");
+  console.log("╔══════════════════════════════════════════════════════════════════════");
+  console.log("║" + " Minting remaining NFTs to treasury " + deployer.address);
+  console.log("║" + " On chain id " + chainId);
+  await nft.mintRemainingToTreasury();
+  console.log("║" + " Done");
+  console.log("╚══════════════════════════════════════════════════════════════════════");
 });

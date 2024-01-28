@@ -55,7 +55,7 @@ contract GenesisNft is ERC721, Ownable, EIP712, IERC4906 {
     uint16 public nftIdCounter;
     uint8 public initCompleted;
 
-    string private imageFolder = "ipfs://QmdXcctk5G1rkqFuqsEAVhoKxJ6tMoV1fjqYRXri3VY47b/";
+    string private imageFolder = "ipfs://QmbrP6G85XMD8DVYbzXnATtBmRVupLPhTWpcAqnJr9noXg/";
     address public voucherSigner;
 
     mapping(address => bool) public accountMinted;
