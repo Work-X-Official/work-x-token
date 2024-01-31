@@ -14,7 +14,7 @@ error ClaimNotAllowed();
  *    This reward is capped by 1,386,522 $WORK tokens, and spread out over 40 months, giving a predetermined total reward portions per month,
  *    that are shared proportionally by all NFTs based on the amount of tokens staked in them.
  */
-contract RewardTokens is Ownable {
+contract RewardTokens is Ownable, IRewarder {
     IGenesisNft public nft;
     IERC20 public workToken;
 
