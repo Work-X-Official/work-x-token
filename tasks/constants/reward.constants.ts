@@ -1,5 +1,8 @@
 import { amount } from "../../test/util/helpers.util";
 
+
+export const TOTAL_LEVEL_REWARDS = amount(693261);
+
 export const REWARDS_TOKENS = [
   100000, 84189, 77639, 72614, 68377, 64645, 61270, 58167, 55279, 52566, 50000, 47560, 45228, 42991, 40839, 38763,
   36754, 34808, 32918, 31080, 29289, 27543, 25838, 24171, 22540, 20943, 19377, 17842, 16334, 14853, 13397, 11966, 10557,
@@ -22,7 +25,7 @@ export const LEVEL_SHARES = [
 
 export const REWARD_SHARES_ADDRESSES = {
   goerli: "",
-  sepolia: "0xD9f7bFDb3D5cf19700fa166F898A8A354B08A988",
+  sepolia: "0xa3558B0b6765b35B460738C7FA2Efa8EC61c48D2",
   hardhat: "",
   kovan: "",
   mainnet: "",
@@ -39,7 +42,7 @@ export const REWARD_SHARES_ADDRESSES = {
 
 export const REWARD_TOKENS_ADDRESSES = {
   goerli: "",
-  sepolia: "0xbb35223F7bC4B046303De00a9B34935b0843335A",
+  sepolia: "0xD0d6A764710BAf623b94126Ea47394BF2BCC2D49",
   hardhat: "",
   kovan: "",
   mainnet: "",

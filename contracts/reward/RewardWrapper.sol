@@ -8,9 +8,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 error NftNotOwned();
 
 contract RewardWrapper is Ownable {
-    IGenesisNft public nft;
+    IGenesisNft immutable nft;
     IRewarder[] public rewarder;
 
+    event RewardersSet(address[] rewarders);
     /**
      * @notice Initializes the contract with given addresses.
      * @param _genesisNftAddress Address of the Genesis NFT contract.
@@ -46,17 +47,14 @@ contract RewardWrapper is Ownable {
         for (uint256 i = 0; i < _rewardAddresses.length; ++i) {
             rewarder.push(IRewarder(_rewardAddresses[i]));
         }
+        emit RewardersSet(_rewardAddresses);
     }
 
     /**
      * Get the array of reward contract addresses.
+     * @return rewarder array of reward contract addresses.
      */
-    function getRewarders() external view returns (address[] memory) {
-        address[] memory rewardAddresses = new address[](rewarder.length);
-        uint256 rewarderLength = rewarder.length;
-        for (uint256 i = 0; i < rewarderLength; ++i) {
-            rewardAddresses[i] = address(rewarder[i]);
-        }
-        return rewardAddresses;
+    function getRewarders() external view returns (IRewarder[] memory) {
+        return rewarder;
     }
 }

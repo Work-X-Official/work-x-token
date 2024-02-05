@@ -5,8 +5,11 @@ import "./../interface/IGenesisNft.sol";
 import "./../interface/IRewarder.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error ClaimNotAllowed();
+error TransferFailed();
+error WithdrawWorkNotAllowed();
 
 /**
  * @notice RewardShares rewards NFTs in 2 separate ways:
@@ -17,8 +20,10 @@ error ClaimNotAllowed();
  *    The total amount per month will depend on the amount of NFTs that are eligible for this reward (lvl1+) and what their levels are.
  */
 contract RewardShares is Ownable, IRewarder {
-    IGenesisNft public nft;
-    IERC20 public workToken;
+    using SafeERC20 for IERC20;
+
+    IGenesisNft immutable nft;
+    IERC20 immutable workToken;
 
     uint256 private constant REWARD_MONTHS = 40;
     uint256 private constant ONE_E18 = 10 ** 18;
@@ -179,13 +184,20 @@ contract RewardShares is Ownable, IRewarder {
      ****/
 
     /**
-     * @notice Rescue function for the contract owner to withdraw any ERC20 token from this contract.
+     * @notice Rescue function for the contract owner to withdraw any ERC20 token except $WORK from this contract.
+
      * @dev A failsafe for any token stuck in this contract. Only callable by the contract owner.
      * @param _tokenAddress Address of the ERC20 token contract.
      * @param _amount Amount of the ERC20 token to withdraw.
      **/
-    function withdrawTokens(address _tokenAddress, uint256 _amount) external payable onlyOwner {
-        IERC20(_tokenAddress).transfer(msg.sender, _amount);
+    function withdrawTokens(address _tokenAddress, uint256 _amount) external onlyOwner {
+        if (_tokenAddress != address(workToken)) {
+            if (!IERC20(_tokenAddress).transfer(msg.sender, _amount)) {
+                revert TransferFailed();
+            }
+        } else {
+            revert WithdrawWorkNotAllowed();
+        }
     }
 
     /**
@@ -256,6 +268,14 @@ contract RewardShares is Ownable, IRewarder {
             (uint256 claimableShares, uint256 claimableLevel) = getRewardNftIdMonth(_nftId, i);
             _claimableShares += claimableShares;
             _claimableLevel += claimableLevel;
+        }
+
+        if (totalLevelClaimed + _claimableLevel > TOTAL_LEVEL_REWARDS) {
+            if (totalLevelClaimed < TOTAL_LEVEL_REWARDS) {
+                _claimableLevel = TOTAL_LEVEL_REWARDS - totalLevelClaimed;
+            } else {
+                _claimableLevel = 0;
+            }
         }
     }
 
