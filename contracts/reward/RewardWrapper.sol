@@ -11,6 +11,7 @@ contract RewardWrapper is Ownable {
     IGenesisNft immutable nft;
     IRewarder[] public rewarder;
 
+    event RewardersSet(address[] rewarders);
     /**
      * @notice Initializes the contract with given addresses.
      * @param _genesisNftAddress Address of the Genesis NFT contract.
@@ -46,6 +47,7 @@ contract RewardWrapper is Ownable {
         for (uint256 i = 0; i < _rewardAddresses.length; ++i) {
             rewarder.push(IRewarder(_rewardAddresses[i]));
         }
+        emit RewardersSet(_rewardAddresses);
     }
 
     /**

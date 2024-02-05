@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error ClaimNotAllowed();
+error TransferFailed();
+error WithdrawWorkNotAllowed();
 
 /**
  * @notice RewardShares rewards NFTs in 2 separate ways:
@@ -189,7 +191,11 @@ contract RewardShares is Ownable, IRewarder {
      **/
     function withdrawTokens(address _tokenAddress, uint256 _amount) external onlyOwner {
         if (_tokenAddress != address(workToken)) {
-            IERC20(_tokenAddress).safeTransfer(msg.sender, _amount);
+            if (!IERC20(_tokenAddress).transfer(msg.sender, _amount)) {
+                revert TransferFailed();
+            }
+        } else {
+            revert WithdrawWorkNotAllowed();
         }
     }
 
@@ -257,18 +263,18 @@ contract RewardShares is Ownable, IRewarder {
     function getClaimable(uint256 _nftId) public view returns (uint256 _claimableShares, uint256 _claimableLevel) {
         uint256 currentMonth = nft.getCurrentMonth();
 
+        for (uint256 i = monthClaimed[_nftId] + 1; i <= currentMonth; ++i) {
+            (uint256 claimableShares, uint256 claimableLevel) = getRewardNftIdMonth(_nftId, i);
+            _claimableShares += claimableShares;
+            _claimableLevel += claimableLevel;
+        }
+
         if (totalLevelClaimed + _claimableLevel > TOTAL_LEVEL_REWARDS) {
             if (totalLevelClaimed < TOTAL_LEVEL_REWARDS) {
                 _claimableLevel = TOTAL_LEVEL_REWARDS - totalLevelClaimed;
             } else {
                 _claimableLevel = 0;
             }
-        }
-
-        for (uint256 i = monthClaimed[_nftId] + 1; i <= currentMonth; ++i) {
-            (uint256 claimableShares, uint256 claimableLevel) = getRewardNftIdMonth(_nftId, i);
-            _claimableShares += claimableShares;
-            _claimableLevel += claimableLevel;
         }
     }
 

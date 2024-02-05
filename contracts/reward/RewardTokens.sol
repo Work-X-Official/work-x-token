@@ -8,11 +8,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error ClaimNotAllowed();
+error TransferFailed();
+error WithdrawWorkNotAllowed();
 
 /**
  * @notice RewardTokens rewards users that hold an NFT based on the amount of tokens staked in the NFT:
  *    The amount of tokens staked in the NFT in the previous month determines the amount of $WORK tokens that can be claimed.
- *    This reward is capped by 1,386,522 $WORK tokens, and spread out over 40 months, giving a predetermined total reward portions per month,
+ *    This reward is capped by 1,386,516 $WORK tokens, and spread out over 40 months, giving a predetermined total reward portions per month,
  *    that are shared proportionally by all NFTs based on the amount of tokens staked in them.
  */
 contract RewardTokens is Ownable, IRewarder {
@@ -92,14 +94,18 @@ contract RewardTokens is Ownable, IRewarder {
      ****/
 
     /**
-     * @notice Rescue function for the contract owner to withdraw any ERC20 token exept $WORK from this contract.
+     * @notice Rescue function for the contract owner to withdraw any ERC20 token except $WORK from this contract.
      * @dev A failsafe for any token stuck in this contract. Only callable by the contract owner.
      * @param _tokenAddress Address of the ERC20 token contract.
      * @param _amount Amount of the ERC20 token to withdraw.
      **/
     function withdrawTokens(address _tokenAddress, uint256 _amount) external onlyOwner {
         if (_tokenAddress != address(workToken)) {
-            IERC20(_tokenAddress).safeTransfer(msg.sender, _amount);
+            if (!IERC20(_tokenAddress).transfer(msg.sender, _amount)) {
+                revert TransferFailed();
+            }
+        } else {
+            revert WithdrawWorkNotAllowed();
         }
     }
 
