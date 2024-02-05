@@ -185,6 +185,7 @@ contract RewardShares is Ownable, IRewarder {
 
     /**
      * @notice Rescue function for the contract owner to withdraw any ERC20 token except $WORK from this contract.
+
      * @dev A failsafe for any token stuck in this contract. Only callable by the contract owner.
      * @param _tokenAddress Address of the ERC20 token contract.
      * @param _amount Amount of the ERC20 token to withdraw.
