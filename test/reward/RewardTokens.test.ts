@@ -97,7 +97,7 @@ describe("RewardTokens", () => {
     });
 
     describe("getRewardNftIdMonth with single nft receives all rewards", async () => {
-      it("Minting an nft", async () => {
+      it("Minting a nft", async () => {
         const amountMint1 = 25000;
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountMint1, 0, 0, chainId));
         expect(await nft.ownerOf(nftId1)).to.be.equal(nftMinter1.address);
@@ -113,7 +113,7 @@ describe("RewardTokens", () => {
         }
       });
 
-      it("getRewardersNftIdMonth is 0 at month 41", async () => {
+      it("getRewardNftIdMonth is 0 at month 41", async () => {
         expect(await reward.getRewardNftIdMonth(nftId1, 41)).to.equal(0);
       });
     });
@@ -144,50 +144,22 @@ describe("RewardTokens", () => {
         expect(await reward.getRewardNftIdMonth(nftId3, 0)).to.equal(0);
       });
 
-      it("In months 1- 4, all nfts get their poolFraction of the rewards", async () => {
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 1);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 1);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 1);
-
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 2);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 2);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 2);
-
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 3);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 3);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 3);
-
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 4);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 4);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 4);
+      it("In all months, all nfts get their poolFraction of the rewards from tokens", async () => {
+        for (let i = 0; i <= 40; i++) {
+          await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, i);
+          await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, i);
+          await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, i);
+        }
       });
 
-      it("In month 37-41, all nfts get their poolFraction of the rewards", async () => {
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 37);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 37);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 37);
-
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 38);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 38);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 38);
-
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 39);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 39);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 39);
-
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId1, minimum1, totalMinimum, 40);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId2, minimum2, totalMinimum, 40);
-        await testTokensGetRewardNftIdMonth(reward, nft, nftId3, minimum3, totalMinimum, 40);
-      });
-
-      it("getRewardersNftIdMonth is 0 at month 41", async () => {
+      it("getRewardNftIdMonth is 0 at month 41", async () => {
         expect(await reward.getRewardNftIdMonth(nftId1, 41)).to.equal(0);
         expect(await reward.getRewardNftIdMonth(nftId2, 41)).to.equal(0);
         expect(await reward.getRewardNftIdMonth(nftId3, 41)).to.equal(0);
       });
     });
 
-    describe("After destroying an nft getRewardNftIdMonth reverts", async () => {
+    describe("After destroying a nft getRewardNftIdMonth reverts", async () => {
       it("The nft is eligible for rewards", async () => {
         await mineDays(22, network);
         await mineDays(30, network);

@@ -5,6 +5,7 @@ import "./../interface/IGenesisNft.sol";
 import "./../interface/IRewarder.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error ClaimNotAllowed();
 
@@ -14,9 +15,11 @@ error ClaimNotAllowed();
  *    This reward is capped by 1,386,522 $WORK tokens, and spread out over 40 months, giving a predetermined total reward portions per month,
  *    that are shared proportionally by all NFTs based on the amount of tokens staked in them.
  */
-contract RewardTokens is Ownable {
-    IGenesisNft public nft;
-    IERC20 public workToken;
+contract RewardTokens is Ownable, IRewarder {
+    using SafeERC20 for IERC20;
+
+    IGenesisNft immutable nft;
+    IERC20 immutable workToken;
 
     uint256 private constant REWARD_MONTHS = 40;
     uint256 private constant ONE_E18 = 10 ** 18;
@@ -89,13 +92,15 @@ contract RewardTokens is Ownable {
      ****/
 
     /**
-     * @notice Rescue function for the contract owner to withdraw any ERC20 token from this contract.
+     * @notice Rescue function for the contract owner to withdraw any ERC20 token exept $WORK from this contract.
      * @dev A failsafe for any token stuck in this contract. Only callable by the contract owner.
      * @param _tokenAddress Address of the ERC20 token contract.
      * @param _amount Amount of the ERC20 token to withdraw.
      **/
-    function withdrawTokens(address _tokenAddress, uint256 _amount) external payable onlyOwner {
-        IERC20(_tokenAddress).transfer(msg.sender, _amount);
+    function withdrawTokens(address _tokenAddress, uint256 _amount) external onlyOwner {
+        if (_tokenAddress != address(workToken)) {
+            IERC20(_tokenAddress).safeTransfer(msg.sender, _amount);
+        }
     }
 
     /**

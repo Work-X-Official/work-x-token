@@ -8,7 +8,12 @@ import { regenerateContracts } from "../util/contract.util";
 import { getLevel, mintNft } from "../util/nft.util";
 import { config } from "dotenv";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { LEVEL_SHARES, REWARDS_SHARES, REWARD_LEVEL_MONTH } from "../../tasks/constants/reward.constants";
+import {
+  LEVEL_SHARES,
+  REWARDS_SHARES,
+  REWARD_LEVEL_MONTH,
+  TOTAL_LEVEL_REWARDS,
+} from "../../tasks/constants/reward.constants";
 import {
   mineStakeMonths,
   testSharesGetRewardNftIdMonth,
@@ -29,10 +34,14 @@ describe("RewardShares", () => {
   let nftMinter1: SignerWithAddress;
   let nftMinter2: SignerWithAddress;
   let nftMinter3: SignerWithAddress;
+  let nftMinter4: SignerWithAddress;
+  let nftMinter5: SignerWithAddress;
 
   let nftId1: number;
   let nftId2: number;
   let nftId3: number;
+  let nftId4: number;
+  let nftId5: number;
 
   let distribution: TokenDistribution;
   let workToken: WorkToken;
@@ -48,6 +57,8 @@ describe("RewardShares", () => {
     nftMinter1 = accounts[3];
     nftMinter2 = accounts[4];
     nftMinter3 = accounts[5];
+    nftMinter4 = accounts[6];
+    nftMinter5 = accounts[7];
 
     const startTime = (await ethers.provider.getBlock("latest")).timestamp + 40;
     ({
@@ -101,7 +112,7 @@ describe("RewardShares", () => {
         }
       });
 
-      it("Before minting in month 1 the function reverts when an nft does not exist", async () => {
+      it("Before minting in month 1 the function reverts when a nft does not exist", async () => {
         for (let i = 0; i <= 5; i++) {
           await expect(reward.getRewardNftIdMonth(i, 1)).to.be.reverted;
         }
@@ -109,7 +120,7 @@ describe("RewardShares", () => {
     });
 
     describe("getRewardNftIdMonth with single nft is correctly the sum of getLevelsRewardNftIdMonth and getSharesRewardNftIdMonth", async () => {
-      it("Minting an nft", async () => {
+      it("Minting a nft", async () => {
         const amountMint1 = 25000;
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountMint1, 0, 0, chainId));
 
@@ -137,7 +148,7 @@ describe("RewardShares", () => {
     });
 
     describe("getRewardNftIdMonth with multiple nfts is correctly the sum of getLevelsRewardNftIdMonth and getSharesRewardNftIdMonth", async () => {
-      it("Minting another nft nft", async () => {
+      it("Minting nft 2 and nft 3", async () => {
         const amountMint2 = 50000;
         ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountMint2, 0, 0, chainId));
         expect(await nft.ownerOf(nftId2)).to.be.equal(nftMinter2.address);
@@ -163,7 +174,7 @@ describe("RewardShares", () => {
         }
       });
 
-      it("getRewardersNftIdMonth shares is 0 at month 41 and getRewardersNftIdMonth level it is based on the level ", async () => {
+      it("getRewardNftIdMonth shares is 0 at month 41 and getRewardNftIdMonth level it is based on the level ", async () => {
         const levelNft1 = await getLevel(nft, nftId1);
         expect((await reward.getRewardNftIdMonth(nftId1, 41))._rewardNftIdMonthLevel).to.equal(
           levelNft1.mul(REWARD_LEVEL_MONTH),
@@ -206,7 +217,7 @@ describe("RewardShares", () => {
         }
       });
 
-      it("Before minting in month 1 the function reverts when an nft does not exist", async () => {
+      it("Before minting in month 1 the function reverts when a nft does not exist", async () => {
         for (let i = 0; i <= 5; i++) {
           await expect(reward.getLevelsRewardNftIdMonth(i, 1)).to.be.reverted;
         }
@@ -214,7 +225,7 @@ describe("RewardShares", () => {
     });
 
     describe("getLevelsRewardNftIdMonth with single nft receives the correct amount based on its level", async () => {
-      it("Minting an nft", async () => {
+      it("Minting a nft", async () => {
         const amountMint1 = 25000;
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountMint1, 0, 0, chainId));
         expect(await nft.ownerOf(nftId1)).to.be.equal(nftMinter1.address);
@@ -238,12 +249,12 @@ describe("RewardShares", () => {
       });
     });
 
-    describe("getLevelsRewardNftIdMonth with multiple nfts share rewards", async () => {
+    describe("getLevelsRewardNftIdMonth, multiple nfts get rewards based on their level", async () => {
       let level1: BigNumber;
       let level2: BigNumber;
       let level3: BigNumber;
 
-      it("Minting another nft nft", async () => {
+      it("Minting two more nfts", async () => {
         const amountMint2 = 50000;
         ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountMint2, 0, 0, chainId));
         expect(await nft.ownerOf(nftId2)).to.be.equal(nftMinter2.address);
@@ -280,7 +291,7 @@ describe("RewardShares", () => {
       });
     });
 
-    describe("After destroying an nft getLevelsRewardNftIdMonth reverts", async () => {
+    describe("After destroying a nft getLevelsRewardNftIdMonth reverts", async () => {
       it("The nft is eligible for rewards", async () => {
         await mineDays(22, network);
         await mineDays(30, network);
@@ -380,7 +391,7 @@ describe("RewardShares", () => {
     });
 
     describe("getSharesRewardNftIdMonth with single nft receives all rewards", async () => {
-      it("Minting an nft", async () => {
+      it("Minting a nft", async () => {
         const amountMint1 = 25000;
         ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountMint1, 0, 0, chainId));
         expect(await nft.ownerOf(nftId1)).to.be.equal(nftMinter1.address);
@@ -407,7 +418,7 @@ describe("RewardShares", () => {
       let shares3: BigNumber;
       let totalShares: BigNumber;
 
-      it("Minting another nft nft", async () => {
+      it("Minting nft 2 and nft 3", async () => {
         const amountMint2 = 50000;
         ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountMint2, 0, 0, chainId));
         expect(await nft.ownerOf(nftId2)).to.be.equal(nftMinter2.address);
@@ -427,50 +438,22 @@ describe("RewardShares", () => {
         expect(await reward.getSharesRewardNftIdMonth(nftId3, 0)).to.equal(0);
       });
 
-      it("In months 1 - 4, all nfts get their poolFraction of the rewards", async () => {
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 1);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 1);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 1);
-
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 2);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 2);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 2);
-
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 3);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 3);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 3);
-
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 4);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 4);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 4);
+      it("In all months, all nfts get their poolFraction of the rewards", async () => {
+        for (let i = 0; i <= 40; i++) {
+          await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, i);
+          await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, i);
+          await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, i);
+        }
       });
 
-      it("In month 37-41, all nfts get their poolFraction of the rewards", async () => {
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 37);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 37);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 37);
-
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 38);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 38);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 38);
-
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 39);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 39);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 39);
-
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId1, shares1, totalShares, 40);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId2, shares2, totalShares, 40);
-        await testSharesGetRewardNftIdMonth(reward, nft, nftId3, shares3, totalShares, 40);
-      });
-
-      it("getRewardersNftIdMonth is 0 at month 41", async () => {
+      it("getSharesRewardNftIdMonth is 0 at month 41", async () => {
         expect(await reward.getSharesRewardNftIdMonth(nftId1, 41)).to.equal(0);
         expect(await reward.getSharesRewardNftIdMonth(nftId2, 41)).to.equal(0);
         expect(await reward.getSharesRewardNftIdMonth(nftId3, 41)).to.equal(0);
       });
     });
 
-    describe("After destroying an nft getSharesRewardNftIdMonth reverts", async () => {
+    describe("After destroying a nft getSharesRewardNftIdMonth reverts", async () => {
       it("The nft is eligible for rewards", async () => {
         await mineDays(22, network);
         await mineDays(30, network);
@@ -617,7 +600,7 @@ describe("RewardShares", () => {
         expect((await reward.getClaimable(nftId1))._claimableShares).to.equal(0);
       });
 
-      it("Go to starttime getRewarNftId, current month is zero so returns 0", async () => {
+      it("Go to starttime, getClaimable, current month is zero so returns 0", async () => {
         await mineDays(22, network);
         expect((await reward.getClaimable(nftId1))._claimableLevel).to.equal(0);
         expect((await reward.getClaimable(nftId1))._claimableShares).to.equal(0);
@@ -1022,6 +1005,100 @@ describe("RewardShares", () => {
       await testMonthClaimed(reward, [nftId1, nftId2], [3, 3]);
       await mineDays(30, network);
       await testMonthClaimed(reward, [nftId1, nftId2], [3, 3]);
+    });
+  });
+
+  describe("Test TOTAL_LEVEL_REWARDS", async () => {
+    before(async () => {
+      const startTime = (await ethers.provider.getBlock("latest")).timestamp + 40;
+      ({
+        workToken,
+        distribution,
+        nft,
+        rewardShares: reward,
+      } = await regenerateContracts(accounts, accounts[0].address, startTime));
+
+      await distribution.setWalletClaimable([nftMinter1.address], [200_000], [0], [0], [0]);
+      await distribution.setWalletClaimable([nftMinter2.address], [200_000], [0], [0], [0]);
+      await distribution.setWalletClaimable([nftMinter3.address], [200_000], [0], [0], [0]);
+      await distribution.setWalletClaimable([nftMinter4.address], [200_000], [0], [0], [0]);
+      await distribution.setWalletClaimable([nftMinter5.address], [200_000], [0], [0], [0]);
+      await reward.approve(nft.address, amount(1400000));
+    });
+
+    it("Mint 5 level 80 NFTs  and go to start", async () => {
+      const amountMint = 200_000;
+      ({ nftId: nftId1 } = await mintNft(network, nft, workToken, nftMinter1, amountMint, 0, 0, chainId));
+      expect(await nft.ownerOf(nftId1)).to.be.equal(nftMinter1.address);
+      ({ nftId: nftId2 } = await mintNft(network, nft, workToken, nftMinter2, amountMint, 0, 0, chainId));
+      expect(await nft.ownerOf(nftId2)).to.be.equal(nftMinter2.address);
+      ({ nftId: nftId3 } = await mintNft(network, nft, workToken, nftMinter3, amountMint, 0, 0, chainId));
+      expect(await nft.ownerOf(nftId3)).to.be.equal(nftMinter3.address);
+      ({ nftId: nftId4 } = await mintNft(network, nft, workToken, nftMinter4, amountMint, 0, 0, chainId));
+      expect(await nft.ownerOf(nftId4)).to.be.equal(nftMinter4.address);
+      ({ nftId: nftId5 } = await mintNft(network, nft, workToken, nftMinter5, amountMint, 0, 0, chainId));
+      expect(await nft.ownerOf(nftId5)).to.be.equal(nftMinter5.address);
+
+      const level1 = await getLevel(nft, nftId1);
+      expect(level1).to.equal(big(80));
+      const level2 = await getLevel(nft, nftId2);
+      expect(level2).to.equal(big(80));
+      const level3 = await getLevel(nft, nftId3);
+      expect(level3).to.equal(big(80));
+      const level4 = await getLevel(nft, nftId4);
+      expect(level4).to.equal(big(80));
+      const level5 = await getLevel(nft, nftId5);
+      expect(level5).to.equal(big(80));
+      await mineDays(22, network);
+    });
+
+    it("After 216 months, each nft can claim 8*80*216=138240 from level rewards. Together, (691200) almost still less than the total level rewards", async () => {
+      const months = 216;
+      await mineStakeMonths(nftMinter1, nft, nftId1, months, network);
+      const claimbleLevelExpected = big(80).mul(REWARD_LEVEL_MONTH).mul(big(months));
+      expect(claimbleLevelExpected).to.equal(amount(138240));
+      expect(claimbleLevelExpected.mul(3)).to.be.lt(TOTAL_LEVEL_REWARDS);
+      const claimable = await reward.getClaimable(nftId1);
+      const claimableLevel = claimable._claimableLevel;
+      expect(claimableLevel).to.equal(claimbleLevelExpected);
+    });
+
+    it("When 4/5 nfts claim, totalLevelClaimed remains below TOTAL_LEVEL_REWARDS", async () => {
+      await reward.connect(nftMinter1).claim(nftId1);
+      await reward.connect(nftMinter2).claim(nftId2);
+      await reward.connect(nftMinter3).claim(nftId3);
+      await reward.connect(nftMinter4).claim(nftId4);
+      const totalLevelClaimed = await reward.totalLevelClaimed();
+      expect(totalLevelClaimed).to.be.lt(TOTAL_LEVEL_REWARDS);
+    });
+
+    it("Wait 10 more months, now nft 5 accumulated extra 10*8*80=6400 level reward. claimablelevel is decreased, so claimablelevel+totalLevelClaimed is the TOTAL_LEVEL_REWARDS limit", async () => {
+      await mineDays(5 * 30, network);
+      const claimable = await reward.getClaimable(nftId5);
+      const claimableLevel = claimable._claimableLevel;
+      const totalLevelClaimed = await reward.totalLevelClaimed();
+      expect(totalLevelClaimed.add(claimableLevel)).to.eq(TOTAL_LEVEL_REWARDS);
+    });
+
+    it("The nft can claim and will claim exactly to the claiming limit", async () => {
+      await reward.connect(nftMinter5).claim(nftId5);
+      const totalLevelClaimed = await reward.totalLevelClaimed();
+      expect(totalLevelClaimed).to.eq(TOTAL_LEVEL_REWARDS);
+
+      const claimed1 = await reward.claimed(nftId1);
+      const claimed2 = await reward.claimed(nftId2);
+      const claimed3 = await reward.claimed(nftId3);
+      const claimed4 = await reward.claimed(nftId4);
+      const claimed5 = await reward.claimed(nftId5);
+      const claimedTotal = claimed1.add(claimed2).add(claimed3).add(claimed4).add(claimed5);
+      expect(claimedTotal).to.eq(TOTAL_LEVEL_REWARDS.mul(2));
+    });
+
+    it("Wait another month, there will not be any more claimable rewards", async () => {
+      await mineDays(30, network);
+      const claimable = await reward.getClaimable(nftId5);
+      const claimableLevel = claimable._claimableLevel;
+      expect(claimableLevel).to.eq(0);
     });
   });
 });
