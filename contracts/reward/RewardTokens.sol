@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error ClaimNotAllowed();
-error TransferFailed();
 error WithdrawWorkNotAllowed();
 
 /**
@@ -101,9 +100,7 @@ contract RewardTokens is Ownable, IRewarder {
      **/
     function withdrawTokens(address _tokenAddress, uint256 _amount) external onlyOwner {
         if (_tokenAddress != address(workToken)) {
-            if (!IERC20(_tokenAddress).transfer(msg.sender, _amount)) {
-                revert TransferFailed();
-            }
+            IERC20(_tokenAddress).safeTransfer(msg.sender, _amount);
         } else {
             revert WithdrawWorkNotAllowed();
         }
