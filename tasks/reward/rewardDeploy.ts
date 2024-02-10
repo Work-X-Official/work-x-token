@@ -95,7 +95,7 @@ task("rewardtokens:verify").setAction(async function (_, hre) {
   console.log("║ With NFT address:", nftAddress);
   console.log("║ And $WORK Token Address:", workTokenAddress);
   await hre.run("verify:verify", {
-    contract: "contracts/rewards/RewardTokens.sol:RewardTokens",
+    contract: "contracts/reward/RewardTokens.sol:RewardTokens",
     address: rewardTokens.address,
     constructorArguments: [nftAddress, workTokenAddress],
   });
@@ -117,7 +117,7 @@ task("rewardshares:verify").setAction(async function (_, hre) {
   console.log("║ With NFT address:", nftAddress);
   console.log("║ And $WORK Token Address:", workTokenAddress);
   await hre.run("verify:verify", {
-    contract: "contracts/rewards/RewardShares.sol:RewardShares",
+    contract: "contracts/reward/RewardShares.sol:RewardShares",
     address: rewardShares.address,
     constructorArguments: [nftAddress, workTokenAddress],
   });
@@ -138,7 +138,7 @@ task("rewardwrapper:verify").setAction(async function (_, hre) {
   console.log(`║ RewardWrapper with address ${rewardWrapper.address} is being verified`);
   console.log("║ With reward addresses of targets contracts:", rewardAddresses);
   await hre.run("verify:verify", {
-    contract: "contracts/rewards/RewardWrapper.sol:RewardWrapper",
+    contract: "contracts/reward/RewardWrapper.sol:RewardWrapper",
     address: rewardWrapper.address,
     constructorArguments: [nftAddress, rewardAddresses],
   });
