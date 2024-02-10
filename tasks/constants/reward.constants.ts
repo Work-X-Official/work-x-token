@@ -1,6 +1,5 @@
 import { amount } from "../../test/util/helpers.util";
 
-
 export const TOTAL_LEVEL_REWARDS = amount(693261);
 
 export const REWARDS_TOKENS = [
@@ -28,7 +27,7 @@ export const REWARD_SHARES_ADDRESSES = {
   sepolia: "0xa3558B0b6765b35B460738C7FA2Efa8EC61c48D2",
   hardhat: "",
   kovan: "",
-  mainnet: "",
+  mainnet: "0x3A6f4dEb40741d50C5fA4324f0413b0D42d86751",
   rinkeby: "",
   ropsten: "",
   bsc: "",
@@ -45,7 +44,7 @@ export const REWARD_TOKENS_ADDRESSES = {
   sepolia: "0xD0d6A764710BAf623b94126Ea47394BF2BCC2D49",
   hardhat: "",
   kovan: "",
-  mainnet: "",
+  mainnet: "0x05182335d2Fb7c2f54743F2e3f3e222424312410",
   rinkeby: "",
   ropsten: "",
   bsc: "",
@@ -62,7 +61,7 @@ export const REWARD_WRAPPER_ADDRESSES = {
   sepolia: "0x9a28bE0Fa70b37A1f39cba7CE7B422e68d9D42c3",
   hardhat: "",
   kovan: "",
-  mainnet: "",
+  mainnet: "0x6a5359f72c96070c6f12322DAF0612790Fa3D49F",
   rinkeby: "",
   ropsten: "",
   bsc: "",
