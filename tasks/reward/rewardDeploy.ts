@@ -88,8 +88,8 @@ task("rewardtokens:verify").setAction(async function (_, hre) {
   const rewardTokens: RewardTokens = (await hre.ethers.getContractFactory("RewardTokens")).attach(
     REWARD_TOKENS_ADDRESSES[hre.network.name as keyof typeof REWARD_TOKENS_ADDRESSES],
   );
-  const nftAddress = await rewardTokens.nft();
-  const workTokenAddress = await rewardTokens.workToken();
+  const nftAddress = GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES];
+  const workTokenAddress = WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES];
   console.log("╔══════════════════════════════════════════════════════════════════════");
   console.log(`║ RewardTokens with address ${rewardTokens.address} is being verified`);
   console.log("║ With NFT address:", nftAddress);
@@ -110,8 +110,8 @@ task("rewardshares:verify").setAction(async function (_, hre) {
   const rewardShares: RewardShares = (await hre.ethers.getContractFactory("RewardShares")).attach(
     REWARD_SHARES_ADDRESSES[hre.network.name as keyof typeof REWARD_SHARES_ADDRESSES],
   );
-  const nftAddress = await rewardShares.nft();
-  const workTokenAddress = await rewardShares.workToken();
+  const nftAddress = GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES];
+  const workTokenAddress = WORK_TOKEN_ADDRESSES[hre.network.name as keyof typeof WORK_TOKEN_ADDRESSES];
   console.log("╔══════════════════════════════════════════════════════════════════════");
   console.log(`║ RewardShares with address ${rewardShares.address} is being verified`);
   console.log("║ With NFT address:", nftAddress);
@@ -133,7 +133,7 @@ task("rewardwrapper:verify").setAction(async function (_, hre) {
     REWARD_WRAPPER_ADDRESSES[hre.network.name as keyof typeof REWARD_WRAPPER_ADDRESSES],
   );
   const rewardAddresses = await rewardWrapper.getRewarders();
-  const nftAddress = await rewardWrapper.nft();
+  const nftAddress = GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES];
   console.log("╔══════════════════════════════════════════════════════════════════════");
   console.log(`║ RewardWrapper with address ${rewardWrapper.address} is being verified`);
   console.log("║ With reward addresses of targets contracts:", rewardAddresses);
