@@ -37,3 +37,5 @@ contracts_list.txt
 **/workBuyers.ts
 **/workBalance.ts
 **/nftTraits.ts
+
+./work_tokens/*
