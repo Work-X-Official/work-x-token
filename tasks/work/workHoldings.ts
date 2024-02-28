@@ -35,6 +35,8 @@ interface Transaction {
 interface Holdings {
   address: string;
   minimum: number;
+  network: string;
+  guaranteed: number;
 }
 
 type Balances = Record<string, BigNumber>;
@@ -115,19 +117,15 @@ task("work:campaign", "Prints all work holder addresses that qualify for the hol
     const jsonBsc = fs.readFileSync(`./work_tokens/tx_all_bsc.json`, "utf8");
     const txMainnet = JSON.parse(jsonMainnet) as Transaction[];
     txMainnet.forEach(tx => (tx.network = "mainnet"));
-    const txBsc = JSON.parse(jsonBsc) as Transaction[];
+    const txBsc: Transaction[] = JSON.parse(jsonBsc) as Transaction[];
     txBsc.forEach(tx => (tx.network = "bsc"));
     const txAll = txMainnet.concat(txBsc);
 
-    const holdingsFromSunday = getMinimalWorkTokenBalanceInPeriod(txAll, Number(startDateSunday), Number(endDate));
-    const holdingsFromSaturday = getMinimalWorkTokenBalanceInPeriod(txAll, Number(startDateSaturday), Number(endDate));
-    const holdingsFromFriday = getMinimalWorkTokenBalanceInPeriod(txAll, Number(startDateFriday), Number(endDate));
-    const holdingsFromThursday = getMinimalWorkTokenBalanceInPeriod(txAll, Number(startDateThursday), Number(endDate));
-    const holdingsFromWednesday = getMinimalWorkTokenBalanceInPeriod(
-      txAll,
-      Number(startDateWednesday),
-      Number(endDate),
-    );
+    const holdingsFromSunday = getMinimalWorkTokenBalanceInPeriod(txAll, startDateSunday, endDate);
+    const holdingsFromSaturday = getMinimalWorkTokenBalanceInPeriod(txAll, startDateSaturday, endDate);
+    const holdingsFromFriday = getMinimalWorkTokenBalanceInPeriod(txAll, startDateFriday, endDate);
+    const holdingsFromThursday = getMinimalWorkTokenBalanceInPeriod(txAll, startDateThursday, endDate);
+    const holdingsFromWednesday = getMinimalWorkTokenBalanceInPeriod(txAll, startDateWednesday, endDate);
     const qualifyForGuaranteed = holdingsFromSunday.filter(holding => holding.minimum > 10);
     const sundayTotal = holdingsFromSunday.map(holding => holding.minimum).reduce((a, b) => a + b, 0);
     const saturdayTotal = holdingsFromSaturday.map(holding => holding.minimum).reduce((a, b) => a + b, 0);
@@ -135,14 +133,48 @@ task("work:campaign", "Prints all work holder addresses that qualify for the hol
     const thursdayTotal = holdingsFromThursday.map(holding => holding.minimum).reduce((a, b) => a + b, 0);
     const wednesdayTotal = holdingsFromWednesday.map(holding => holding.minimum).reduce((a, b) => a + b, 0);
 
-    console.log("holdingsSunday", holdingsFromSunday.length, sundayTotal);
-    console.log("holdingsFromSaturday", holdingsFromSaturday.length, saturdayTotal);
-    console.log("holdingsFromFriday", holdingsFromFriday.length, fridayTotal);
-    console.log("holdingsFromThursday", holdingsFromThursday.length, thursdayTotal);
-    console.log("holdingsFromWednesday", holdingsFromWednesday.length);
-    console.log("qualifyForGuaranteed", qualifyForGuaranteed.length, wednesdayTotal);
+    console.log("holdingsSunday", holdingsFromSunday.length, Math.ceil(sundayTotal));
+    console.log("holdingsFromSaturday", holdingsFromSaturday.length, Math.ceil(saturdayTotal));
+    console.log("holdingsFromFriday", holdingsFromFriday.length, Math.ceil(fridayTotal));
+    console.log("holdingsFromThursday", holdingsFromThursday.length, Math.ceil(thursdayTotal));
+    console.log("holdingsFromWednesday", holdingsFromWednesday.length, Math.ceil(wednesdayTotal));
+    const exclude: string[] = [];
+    const sundayWinner = getWinner(holdingsFromSunday, sundayTotal, exclude);
+    exclude.push(sundayWinner.address);
+    const saturdayWinner = getWinner(holdingsFromSaturday, saturdayTotal, exclude);
+    exclude.push(saturdayWinner.address);
+    const fridayWinner = getWinner(holdingsFromFriday, fridayTotal, exclude);
+    exclude.push(fridayWinner.address);
+    const thursdayWinner = getWinner(holdingsFromThursday, thursdayTotal, exclude);
+    exclude.push(thursdayWinner.address);
+    const wednesdayWinner = getWinner(holdingsFromWednesday, wednesdayTotal, exclude);
+
+    console.log("winnerSunday", sundayWinner.address, sundayWinner.network, sundayWinner.minimum);
+    console.log("winnerSaturday", saturdayWinner.address, saturdayWinner.network, saturdayWinner.minimum);
+    console.log("winnerFriday", fridayWinner.address, fridayWinner.network, fridayWinner.minimum);
+    console.log("winnerThursday", thursdayWinner.address, thursdayWinner.network, thursdayWinner.minimum);
+    console.log("winnerWednesday", wednesdayWinner.address, wednesdayWinner.network, wednesdayWinner.minimum);
+
+    console.log("qualifyForGuaranteed", qualifyForGuaranteed.length);
   },
 );
+
+const getWinner = (holdings: Holdings[], total: number, exclude: string[]): Holdings => {
+  const random = Math.floor(Math.random() * total);
+  let tot = 0;
+  for (let i = 0; i < holdings.length; i++) {
+    tot += holdings[i].minimum;
+    if (tot >= random && exclude.findIndex(ex => ex == holdings[i].address) == -1) {
+      console.log("tot", tot);
+      return holdings[i];
+    }
+  }
+  return holdings[holdings.length - 1];
+};
+
+const getGuaranteed = (holdings: Holdings[], total: number): number => {
+  return 1;
+};
 
 const getMinimalWorkTokenBalanceInPeriod = (txAll: Transaction[], startdate: number, enddate: number): Holdings[] => {
   const txTillStart = txAll.filter(tx => tx.timeStamp < startdate);
@@ -172,6 +204,7 @@ const getMinimalWorkTokenBalanceInPeriod = (txAll: Transaction[], startdate: num
     .filter(address => balancesEnd[address].gte(minimumReq) && balancesStart[address].gte(minimumReq))
     .map(address => ({
       address,
+      network: txAll.find(tx => tx.to === address)!.network,
       minimum: balancesEnd[address].gt(balancesStart[address])
         ? amountFormatted(balancesStart[address])
         : amountFormatted(balancesEnd[address]),
