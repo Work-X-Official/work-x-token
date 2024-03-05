@@ -32,8 +32,13 @@ yarn-error.log*
 
 contracts_list.txt
 
+
+
 **/*.csv
 
 **/workBuyers.ts
 **/workBalance.ts
 **/nftTraits.ts
+**/accounts.constants.ts
+
+**/work_tokens/*
