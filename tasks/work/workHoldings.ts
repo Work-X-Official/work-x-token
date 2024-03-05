@@ -88,21 +88,6 @@ task("work:alltx", "Get all $WORK transaction on a network").setAction(async (_,
   fs.writeFileSync(`./work_tokens/tx_all_${hre.network.name}_${latestBlockNumber}.json`, json);
 });
 
-// yarn hardhat work:holdings --startdate 1707688800 --enddate 1708210800 --network sepolia
-task("work:holdings", "Prints all work holder address with minimum hold amount at a start vs enddate")
-  .addParam("startdate", "the startdate of the holding period")
-  .addParam("enddate", "the enddate of the holding period ")
-  .setAction(async ({ startdate, enddate }, hre) => {
-    const json = fs.readFileSync(`./work_tokens/tx_all_${hre.network.name}.json`, "utf8");
-    const txAll = JSON.parse(json) as Transaction[];
-
-    const holdings = getMinimalWorkTokenBalanceInPeriod(txAll, Number(startdate), Number(enddate));
-    const qualifyForGuaranteed = holdings.filter(holding => holding.minimum > 10);
-
-    console.log("holdings.length", holdings.length);
-    console.log("qualifyForGuaranteed.length", qualifyForGuaranteed.length);
-  });
-
 // yarn hardhat work:campaign
 task("work:campaign", "Prints all work holder addresses that qualify for the holder campaign").setAction(
   async (_, __) => {
@@ -223,3 +208,18 @@ const exclude = kucoinHotAddresses
   .concat(liquidity)
   .concat([uniswapPool, pancakePool, genesisNft, rewardTokens, rewardShares])
   .map(address => address.toLowerCase());
+
+// yarn hardhat work:holdings --startdate 1707688800 --enddate 1708210800 --network sepolia
+task("work:holdings", "Prints all work holder address with minimum hold amount at a start vs enddate")
+  .addParam("startdate", "the startdate of the holding period")
+  .addParam("enddate", "the enddate of the holding period ")
+  .setAction(async ({ startdate, enddate }, hre) => {
+    const json = fs.readFileSync(`./work_tokens/tx_all_${hre.network.name}.json`, "utf8");
+    const txAll = JSON.parse(json) as Transaction[];
+
+    const holdings = getMinimalWorkTokenBalanceInPeriod(txAll, Number(startdate), Number(enddate));
+    const qualifyForGuaranteed = holdings.filter(holding => holding.minimum > 10);
+
+    console.log("holdings.length", holdings.length);
+    console.log("qualifyForGuaranteed.length", qualifyForGuaranteed.length);
+  });
