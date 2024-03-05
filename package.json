@@ -77,5 +77,8 @@
     "hardhat",
     "smart-contracts",
     "solidity"
-  ]
+  ],
+  "dependencies": {
+    "ethers-decode-error": "^2.1.3"
+  }
 }
