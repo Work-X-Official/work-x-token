@@ -8,11 +8,14 @@ import { amount } from "./helpers.util";
 export const regenerateWorkToken = async (
   accounts: SignerWithAddress[],
   minter = accounts[0].address,
+  mint = true,
 ): Promise<WorkToken> => {
   const workToken = await (await ethers.getContractFactory("WorkToken")).deploy();
   await workToken.grantRole(await workToken.MINTER_ROLE(), minter);
-  for (let i = 0; i < 10; i++) {
-    await workToken.mint(accounts[i].address, amount(250000));
+  if (mint) {
+    for (let i = 0; i < 10; i++) {
+      await workToken.mint(accounts[i].address, amount(250000));
+    }
   }
   await workToken.mint(minter, amount(3000000));
   return workToken;

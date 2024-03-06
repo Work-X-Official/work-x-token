@@ -1,6 +1,6 @@
 # Setup Rewards
 
-## Steps to setup reward contracts.
+## Steps to setup reward contracts
 
 ### Deploying
 
