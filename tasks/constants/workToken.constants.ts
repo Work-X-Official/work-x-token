@@ -15,9 +15,43 @@ export const WORK_TOKEN_ADDRESSES = {
   scrollSepolia: "",
 };
 
+export const WORK_TOKEN_ADDRESSES_V2 = {
+  goerli: "",
+  sepolia: "0x550a1618e99f2fdfF7f23869143117Fe2dFb7122",
+  hardhat: "",
+  kovan: "",
+  mainnet: "",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+  scrollSepolia: "",
+};
+
 export const PROJECT_DISTRIBUTION_ADDRESSES = {
   goerli: "",
   sepolia: "",
+  hardhat: "",
+  kovan: "",
+  mainnet: "",
+  rinkeby: "",
+  ropsten: "",
+  bsc: "",
+  bsctest: "",
+  xinfin: "",
+  apothem: "",
+  polygon: "",
+  mumbai: "",
+  scrollSepolia: "",
+};
+
+export const SWAP_V2 = {
+  goerli: "",
+  sepolia: "0xE390aE34bcFad2f4bD418D631c649B09CcAc801B",
   hardhat: "",
   kovan: "",
   mainnet: "",

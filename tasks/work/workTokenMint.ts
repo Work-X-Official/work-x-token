@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { WORK_TOKEN_ADDRESSES } from "../constants/workToken.constants";
 
-// Example: yarn hardhat work:mint --to 0x0 --amount 100 --network sepolia
+// yarn hardhat work:mint --to 0x0 --amount 100 --network sepolia
 task("work:mint")
   .addParam("to", "the addres you want to mint tokens to")
   .addParam("amount", "the amount you want to mint")
