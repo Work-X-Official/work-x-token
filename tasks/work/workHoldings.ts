@@ -21,6 +21,7 @@ import {
   rewardShares,
   rewardTokens,
   uniswapPool,
+  workxAddresses,
 } from "../constants/accounts.constants";
 
 interface Transaction {
@@ -203,8 +204,7 @@ const exclude = kucoinHotAddresses
   .concat(gateAddresses)
   .concat(contractAddresses)
   .concat(dwfAddresses)
-  .concat(bridgeAddresses)
-  .concat(opsAddresses)
+  .concat(workxAddresses)
   .concat(liquidity)
   .concat([uniswapPool, pancakePool, genesisNft, rewardTokens, rewardShares])
   .map(address => address.toLowerCase());
