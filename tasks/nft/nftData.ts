@@ -21,7 +21,7 @@ task("nft:data:all", "Prints the details of a specific nft").setAction(async ({ 
   console.log("╔══════════════════════════════════════════════════════════════════════");
   console.log("║  On '" + hre.network.name + "'");
   console.log("║  NFT contract address:", nft.address);
-  console.log("║  Retrieving the sum of _level over all nfts...");
+  console.log("║  Retrieving the _level, _tier, _stakedAmount over all nfts...");
 
   const nftIdCounter = Number(await nft.nftIdCounter());
   const records: NftData[] = [];
@@ -36,7 +36,7 @@ task("nft:data:all", "Prints the details of a specific nft").setAction(async ({ 
       });
     } catch (error) {
       /* needed for if the nft does not exists has been destroyed. */
-      console.log("  i does not exists", i);
+      console.log("Nft with id:", i, " does not exists");
     }
   }
 
@@ -71,33 +71,4 @@ task("nft:data:all", "Prints the details of a specific nft").setAction(async ({ 
         console.log("...Done");
       });
   });
-});
-
-// example: yarn hardhat nft:levels --network sepolia
-task("nft:levels", "Prints the sum of the level over all nfts").setAction(async ({ _ }, hre) => {
-  const nftAddress = GENESIS_NFT_ADDRESSES[hre.network.name as keyof typeof GENESIS_NFT_ADDRESSES];
-  const nft: GenesisNft = (await hre.ethers.getContractFactory("GenesisNft")).attach(nftAddress);
-
-  console.log("╔══════════════════════════════════════════════════════════════════════");
-  console.log("║  On '" + hre.network.name + "'");
-  console.log("║  NFT contract address:", nft.address);
-  console.log("║  Retrieving the sum of _level over all nfts...");
-
-  let nftIdLevel = 0;
-  let totalLevel = 0;
-  const nftIdCounter = Number(await nft.nftIdCounter());
-  for (let i = 0; i < nftIdCounter; i++) {
-    try {
-      process.stdout.write(`║  Retrieving level of NFT: ${i}/${nftIdCounter}\r`);
-      nftIdLevel = Number((await nft.getNftInfo(i))._level);
-      console.log("🚀 ~ task ~ nftIdLevel:", nftIdLevel);
-      totalLevel += Number(nftIdLevel);
-    } catch (error) {
-      /* needed for if the nft does not exists has been destroyed. */
-      console.log("  i does not exists", i);
-    }
-  }
-
-  console.log("║  Sum of all levels over all NFTs is: ", totalLevel);
-  console.log("╚══════════════════════════════════════════════════════════════════════");
 });
